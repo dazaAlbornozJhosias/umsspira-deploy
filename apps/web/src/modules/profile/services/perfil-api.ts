@@ -7,7 +7,7 @@ import type {
   ExperienceRecord,
   ProfileRecords,
 } from '@/modules/profile/types/profile-record';
-import { apiFetch } from '@/shared/services/api-client';
+import { ApiError, apiFetch } from '@/shared/services/api-client';
 
 // Endpoints del perfil del backend (apps/api/src/modules/perfil)
 export const PERFIL_URL = '/api/v1/perfil';
@@ -96,6 +96,32 @@ export function aCertificationRecord(certificacion: CertificacionApi): Certifica
   };
 }
 
+// Demo sin backend: si la API no responde (status 0) se guarda con los datos de prueba
+async function conDatosDePrueba<T>(llamada: () => Promise<T>, local: () => T): Promise<T> {
+  try {
+    return await llamada();
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 0) return local();
+    throw error;
+  }
+}
+
+let siguienteIdLocal = 0;
+function idLocal(seccion: string): string {
+  siguienteIdLocal += 1;
+  return `${seccion}-demo-${siguienteIdLocal}`;
+}
+
+function formacionLocal(id: string, formacion: FormacionAcademica): EducationRecord {
+  const cuerpo = cuerpoFormacion(formacion);
+  return aEducationRecord({ ...cuerpo, id, idTitulado: CURRENT_GRADUATE_ID, fechaCreacion: null });
+}
+
+function experienciaLocal(id: string, experiencia: Experiencia): ExperienceRecord {
+  const cuerpo = cuerpoExperiencia(experiencia);
+  return aExperienceRecord({ ...cuerpo, fechaFin: cuerpo.fechaFin ?? null, id, idTitulado: CURRENT_GRADUATE_ID, fechaCreacion: null });
+}
+
 function cuerpoFormacion(formacion: FormacionAcademica): FormacionCuerpo {
   return {
     institucion: formacion.institucion.trim(),
@@ -108,21 +134,25 @@ function cuerpoFormacion(formacion: FormacionAcademica): FormacionCuerpo {
 
 // POST /api/v1/perfil/formacion-academica -> 201 con el registro creado, 400 por campo o 409 si ya existe
 export async function crearFormacion(formacion: FormacionAcademica): Promise<EducationRecord> {
-  const creada = await apiFetch<FormacionApi>(`${PERFIL_URL}/formacion-academica`, {
-    method: 'POST',
-    body: JSON.stringify(cuerpoFormacion(formacion)),
-  });
-  return aEducationRecord(creada);
+  return conDatosDePrueba(async () => {
+    const creada = await apiFetch<FormacionApi>(`${PERFIL_URL}/formacion-academica`, {
+      method: 'POST',
+      body: JSON.stringify(cuerpoFormacion(formacion)),
+    });
+    return aEducationRecord(creada);
+  }, () => formacionLocal(idLocal('education'), formacion));
 }
 
 // PUT /api/v1/perfil/formacion-academica/:id -> registro actualizado, 400 por campo
 // o 409 si queda igual a otra formación (el propio registro no cuenta)
 export async function actualizarFormacion(id: string, formacion: FormacionAcademica): Promise<EducationRecord> {
-  const actualizada = await apiFetch<FormacionApi>(`${PERFIL_URL}/formacion-academica/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(cuerpoFormacion(formacion)),
-  });
-  return aEducationRecord(actualizada);
+  return conDatosDePrueba(async () => {
+    const actualizada = await apiFetch<FormacionApi>(`${PERFIL_URL}/formacion-academica/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(cuerpoFormacion(formacion)),
+    });
+    return aEducationRecord(actualizada);
+  }, () => formacionLocal(id, formacion));
 }
 
 function cuerpoExperiencia(experiencia: Experiencia): ExperienciaCuerpo {
@@ -138,21 +168,25 @@ function cuerpoExperiencia(experiencia: Experiencia): ExperienciaCuerpo {
 
 // POST /api/v1/perfil/experiencia-laboral -> 201 con el registro creado o 400 por campo
 export async function crearExperiencia(experiencia: Experiencia): Promise<ExperienceRecord> {
-  const creada = await apiFetch<ExperienciaApi>(`${PERFIL_URL}/experiencia-laboral`, {
-    method: 'POST',
-    body: JSON.stringify(cuerpoExperiencia(experiencia)),
-  });
-  return aExperienceRecord(creada);
+  return conDatosDePrueba(async () => {
+    const creada = await apiFetch<ExperienciaApi>(`${PERFIL_URL}/experiencia-laboral`, {
+      method: 'POST',
+      body: JSON.stringify(cuerpoExperiencia(experiencia)),
+    });
+    return aExperienceRecord(creada);
+  }, () => experienciaLocal(idLocal('experience'), experiencia));
 }
 
 // PUT /api/v1/perfil/experiencia-laboral/:id -> registro actualizado o 400 por campo.
 // Sin fechaFin el backend la guarda como null (trabajo actual) en vez de conservar la anterior
 export async function actualizarExperiencia(id: string, experiencia: Experiencia): Promise<ExperienceRecord> {
-  const actualizada = await apiFetch<ExperienciaApi>(`${PERFIL_URL}/experiencia-laboral/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(cuerpoExperiencia(experiencia)),
-  });
-  return aExperienceRecord(actualizada);
+  return conDatosDePrueba(async () => {
+    const actualizada = await apiFetch<ExperienciaApi>(`${PERFIL_URL}/experiencia-laboral/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(cuerpoExperiencia(experiencia)),
+    });
+    return aExperienceRecord(actualizada);
+  }, () => experienciaLocal(id, experiencia));
 }
 
 // GET /api/v1/perfil -> registros de las 3 secciones con el formato del estado del perfil

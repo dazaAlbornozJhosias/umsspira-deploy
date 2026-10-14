@@ -15,10 +15,25 @@ export type ProfileJson = {
   promocion: number;
   // respaldo: nombre del archivo adjunto, null si no tiene
   educacion: { institucion: string; titulo: string; grado: string; anio: number | null; respaldo: string | null }[];
-  // Fechas AAAA-MM-DD; fechaFin null = trabajo actual
-  experienciaLaboral: { empresa: string; cargo: string; fechaInicio: string; fechaFin: string | null }[];
+  // periodo: texto del resumen; fechas AAAA-MM-DD, fechaFin null = trabajo actual
+  experienciaLaboral: {
+    empresa: string;
+    cargo: string;
+    periodo: string;
+    fechaInicio: string;
+    fechaFin: string | null;
+  }[];
   certificaciones: { nombre: string; entidad: string; anio: number | null; grado: string }[];
 };
+
+const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+/** "2021-01-04" -> "Ene 2021"; vacío -> "Presente". */
+function formatMonthYear(date: string): string {
+  if (!date) return 'Presente';
+  const [year, month] = date.split('-');
+  return `${MONTHS[Number(month) - 1]} ${year}`;
+}
 
 function toYear(value: string | undefined): number | null {
   const match = value?.match(/\d{4}/);
@@ -48,6 +63,7 @@ export function buildProfileJson(header: ProfileHeader, records: ProfileRecords,
     experienciaLaboral: (records.experience as ExperienceRecord[]).map((record) => ({
       empresa: record.company,
       cargo: record.position,
+      periodo: `${formatMonthYear(record.startDate)} – ${formatMonthYear(record.endDate)}`,
       fechaInicio: record.startDate,
       fechaFin: record.endDate || null,
     })),

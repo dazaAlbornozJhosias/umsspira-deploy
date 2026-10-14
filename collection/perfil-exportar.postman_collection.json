@@ -1,0 +1,109 @@
+{
+  "info": {
+    "name": "UMSSPIRA · Perfil · Exportar JSON (T5.4)",
+    "description": "Pruebas de GET /api/v1/perfil/exportar-json.\n\nEl titulado se define en el servidor con la variable de entorno TITULADO_ID_PRUEBA (apps/api/.env). Cada prueba indica con qué valor debe estar el servidor:\n1. Perfil con datos: TITULADO_ID_PRUEBA = id de un titulado con registros.\n2. Perfil vacío: TITULADO_ID_PRUEBA = id de un titulado sin registros.\n3. Sin titulado: TITULADO_ID_PRUEBA sin definir.\nReiniciar la API después de cambiar la variable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" }
+  ],
+  "item": [
+    {
+      "name": "1. Perfil con datos (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/perfil/exportar-json",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "perfil", "exportar-json"]
+        },
+        "description": "Servidor con TITULADO_ID_PRUEBA = titulado con al menos un registro."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('es un archivo JSON de descarga', () => {",
+              "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+              "  pm.expect(pm.response.headers.get('Content-Disposition')).to.match(/^attachment; filename=\"perfil_[a-z0-9_]+_\\d{4}-\\d{2}-\\d{2}\\.json\"$/);",
+              "});",
+              "pm.test('el JSON tiene indentación de 2 espacios', () => {",
+              "  const texto = pm.response.text();",
+              "  pm.expect(texto).to.equal(JSON.stringify(JSON.parse(texto), null, 2));",
+              "});",
+              "pm.test('trae datos del titulado y al menos una sección con registros', () => {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.property('fechaExportacion');",
+              "  pm.expect(json.titulado).to.have.property('id');",
+              "  const total = json.formacionAcademica.total + json.experienciaLaboral.total + json.certificaciones.total;",
+              "  pm.expect(total).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Perfil vacío (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/perfil/exportar-json",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "perfil", "exportar-json"]
+        },
+        "description": "Servidor con TITULADO_ID_PRUEBA = titulado sin ningún registro."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('las 3 secciones salen vacías', () => {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.formacionAcademica).to.eql({ total: 0, registros: [] });",
+              "  pm.expect(json.experienciaLaboral).to.eql({ total: 0, registros: [] });",
+              "  pm.expect(json.certificaciones).to.eql({ total: 0, registros: [] });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Sin titulado autenticado (403)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/perfil/exportar-json",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "perfil", "exportar-json"]
+        },
+        "description": "Servidor con TITULADO_ID_PRUEBA sin definir."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('responde 403', () => pm.response.to.have.status(403));",
+              "pm.test('no entrega ningún archivo', () => {",
+              "  pm.expect(pm.response.headers.has('Content-Disposition')).to.be.false;",
+              "  pm.expect(pm.response.json().message).to.equal('El usuario no es un titulado');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

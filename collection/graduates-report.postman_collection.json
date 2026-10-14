@@ -1,0 +1,495 @@
+{
+  "info": {
+    "_postman_id": "04bbce83-ae5a-4e7c-a86a-30e807b68d2c",
+    "name": "HU4 - Reporte de titulados",
+    "description": "Grupo 5 · Épica 9 · HU4 (US-1.9.4). Consulta de titulados verificados u observados (#35) y exportación del reporte a PDF (#36).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "careerSinTitulados",
+      "value": "3f2a9c1e-7b4d-4e8a-9c6f-1a2b3c4d5e6f"
+    },
+    {
+      "key": "careerSistemas",
+      "value": "b1f4c7a2-3d5e-4f6a-8b9c-0d1e2f3a4b5c"
+    },
+    {
+      "key": "careerInformatica",
+      "value": "c2a5d8b3-4e6f-4a7b-9c8d-1e2f3a4b5c6d"
+    }
+  ],
+  "item": [
+    {
+      "name": "200 - Titulados verificados",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Estado verified', () => pm.expect(body.status).to.eql('verified'));",
+              "pm.test('Trae carrera, total y titulados', () => {",
+              "  pm.expect(body.careerName).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.total).to.eql(body.graduates.length);",
+              "  pm.expect(body.total).to.be.above(0);",
+              "});",
+              "pm.test('Cada titulado tiene los 9 datos', () => {",
+              "  const keys = ['number','fullName','sisCode','phone','email','admissionDate','graduationDate','careerDuration','statusDate'];",
+              "  body.graduates.forEach((g) => pm.expect(g).to.have.all.keys(keys));",
+              "});",
+              "pm.test('Duración en años y meses', () => pm.expect(body.graduates[0].careerDuration).to.match(/^(\\d+ años?(,? \\d+ mes(es)?)?|\\d+ mes(es)?|No disponible)$/));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report?status=verified",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "verified"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "200 - Titulados observados",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Estado observed', () => pm.expect(body.status).to.eql('observed'));",
+              "pm.test('Trae carrera, total y titulados', () => {",
+              "  pm.expect(body.careerName).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.total).to.eql(body.graduates.length);",
+              "  pm.expect(body.total).to.be.above(0);",
+              "});",
+              "pm.test('Cada titulado tiene los 9 datos', () => {",
+              "  const keys = ['number','fullName','sisCode','phone','email','admissionDate','graduationDate','careerDuration','statusDate'];",
+              "  body.graduates.forEach((g) => pm.expect(g).to.have.all.keys(keys));",
+              "});",
+              "pm.test('Duración en años y meses', () => pm.expect(body.graduates[0].careerDuration).to.match(/^(\\d+ años?(,? \\d+ mes(es)?)?|\\d+ mes(es)?|No disponible)$/));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report?status=observed",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "observed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "400 - Estado inválido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+              "pm.test('Mensaje de validación', () => pm.expect(pm.response.json().message.join(' ')).to.include('verified u observed'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report?status=hola",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "hola"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "400 - Sin estado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+              "pm.test('Mensaje de validación', () => pm.expect(pm.response.json().message.join(' ')).to.include('verified u observed'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report"
+          ],
+          "query": []
+        }
+      }
+    },
+    {
+      "name": "404 - Carrera sin titulados",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+              "pm.test('Mensaje de sin titulados', () => pm.expect(pm.response.json().message).to.eql('No hay titulados observados para exportar'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report?status=observed&careerId={{careerSinTitulados}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "observed"
+            },
+            {
+              "key": "careerId",
+              "value": "{{careerSinTitulados}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PDF 200 - Reporte de verificados",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Es un PDF', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'));",
+              "pm.test('Nombre reporte-titulados-verificados-AAAAMMDD.pdf', () => {",
+              "  const disposition = pm.response.headers.get('Content-Disposition');",
+              "  pm.expect(disposition).to.match(/filename=\"reporte-titulados-verificados-\\d{8}\\.pdf\"/);",
+              "});",
+              "pm.test('El nombre es visible para la web (CORS)', () => pm.expect(pm.response.headers.get('Access-Control-Expose-Headers') || '').to.include('Content-Disposition'));",
+              "pm.test('El archivo empieza como PDF', () => pm.expect(pm.response.stream.toString('latin1', 0, 5)).to.eql('%PDF-'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report/pdf?status=verified",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report",
+            "pdf"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "verified"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PDF 200 - Reporte de observados",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Es un PDF', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'));",
+              "pm.test('Nombre reporte-titulados-observados-AAAAMMDD.pdf', () => {",
+              "  const disposition = pm.response.headers.get('Content-Disposition');",
+              "  pm.expect(disposition).to.match(/filename=\"reporte-titulados-observados-\\d{8}\\.pdf\"/);",
+              "});",
+              "pm.test('El nombre es visible para la web (CORS)', () => pm.expect(pm.response.headers.get('Access-Control-Expose-Headers') || '').to.include('Content-Disposition'));",
+              "pm.test('El archivo empieza como PDF', () => pm.expect(pm.response.stream.toString('latin1', 0, 5)).to.eql('%PDF-'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report/pdf?status=observed",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report",
+            "pdf"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "observed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PDF 400 - Estado inválido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report/pdf?status=hola",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report",
+            "pdf"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "hola"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PDF 404 - Carrera sin titulados",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+              "pm.test('Mensaje de sin titulados', () => pm.expect(pm.response.json().message).to.eql('No hay titulados observados para exportar'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report/pdf?status=observed&careerId={{careerSinTitulados}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report",
+            "pdf"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "observed"
+            },
+            {
+              "key": "careerId",
+              "value": "{{careerSinTitulados}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Carrera - Verificados de Sistemas",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Es la carrera del administrador', () => pm.expect(body.careerName).to.eql('Ingeniería de Sistemas'));",
+              "pm.test('Trae sólo los titulados de esa carrera', () => pm.expect(body.total).to.eql(72));",
+              "pm.test('No mezcla titulados de la otra carrera', () => pm.expect(body.graduates.map((g) => g.fullName)).to.not.include('Alcócer Vargas, Daniela Sofía'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report?status=verified&careerId={{careerSistemas}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "verified"
+            },
+            {
+              "key": "careerId",
+              "value": "{{careerSistemas}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Carrera - Verificados de Informática",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Es la carrera del administrador', () => pm.expect(body.careerName).to.eql('Ingeniería Informática'));",
+              "pm.test('Trae sólo los titulados de esa carrera', () => pm.expect(body.total).to.eql(10));",
+              "pm.test('No mezcla titulados de la otra carrera', () => pm.expect(body.graduates.map((g) => g.fullName)).to.not.include('Camacho Rojas, Laura Andrea'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report?status=verified&careerId={{careerInformatica}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "verified"
+            },
+            {
+              "key": "careerId",
+              "value": "{{careerInformatica}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Carrera - PDF de observados de Informática",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('Es un PDF', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/graduates-report/pdf?status=observed&careerId={{careerInformatica}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "graduates-report",
+            "pdf"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "observed"
+            },
+            {
+              "key": "careerId",
+              "value": "{{careerInformatica}}"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { CURRENT_GRADUATE_ID, PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
+import { obtenerPerfil } from '@/modules/profile/services/perfil-api';
 import type {
   CertificationRecord,
   EducationRecord,
@@ -12,7 +13,8 @@ import type {
   RecordSection,
 } from '@/modules/profile/types/profile-record';
 
-type NewRecord<T> = Omit<T, 'id' | 'ownerId'>;
+// id es el que devuelve la API al crear; sin id se genera uno local
+type NewRecord<T> = Omit<T, 'id' | 'ownerId'> & { id?: string };
 
 type ProfileStore = {
   records: ProfileRecords;
@@ -33,20 +35,36 @@ function createId(section: RecordSection): string {
 
 /**
  * Estado compartido del perfil para todas sus pantallas (resumen, completar, mis registros y edición).
- * Mientras no exista el backend, vive en memoria: se conserva al navegar y vuelve a los datos
- * de prueba al recargar la página.
+ * Al montarse carga los registros reales con GET /api/v1/perfil; si la API no responde se quedan
+ * los datos de prueba. Con initialRecords (pruebas) no se consulta la API.
  */
 export function ProfileStoreProvider({
   children,
-  initialRecords = PROFILE_RECORDS_MOCK,
+  initialRecords,
 }: {
   children: React.ReactNode;
   initialRecords?: ProfileRecords;
 }) {
-  const [records, setRecords] = useState<ProfileRecords>(initialRecords);
+  const [records, setRecords] = useState<ProfileRecords>(initialRecords ?? PROFILE_RECORDS_MOCK);
+  const cargarDesdeApi = initialRecords === undefined;
 
-  const addRecord = useCallback((section: RecordSection, record: Omit<ProfileRecord, 'id' | 'ownerId'>) => {
-    const created = { ...record, id: createId(section), ownerId: CURRENT_GRADUATE_ID } as ProfileRecord;
+  useEffect(() => {
+    if (!cargarDesdeApi) return;
+    let vigente = true;
+    obtenerPerfil()
+      .then((perfil) => {
+        if (vigente) setRecords(perfil);
+      })
+      .catch(() => {
+        // Sin conexión con la API: se mantienen los datos de prueba
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [cargarDesdeApi]);
+
+  const addRecord = useCallback((section: RecordSection, record: NewRecord<ProfileRecord>) => {
+    const created = { ...record, id: record.id ?? createId(section), ownerId: CURRENT_GRADUATE_ID } as ProfileRecord;
     setRecords((current) => ({ ...current, [section]: [...current[section], created] }));
   }, []);
 

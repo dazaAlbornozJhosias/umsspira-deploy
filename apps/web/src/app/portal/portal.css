@@ -1,0 +1,33 @@
+
+.portal-view {
+  --umss-navy: #1E3A5F;
+  --umss-orange: #E85D3A;
+  --umss-cream: #F5F0E8;
+  --umss-dark: #1A1A2E;
+}
+
+.portal-view *, .portal-view *::before, .portal-view *::after { box-sizing: border-box; }
+
+.portal-view {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  color: #1A1A2E;
+}
+
+.portal-view {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.portal-view img, .portal-view svg, .portal-view video { max-width: 100%; height: auto; }
+
+.portal-view :is(p, h1, h2, h3, li) { overflow-wrap: anywhere; }

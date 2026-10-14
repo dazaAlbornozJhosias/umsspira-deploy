@@ -1,0 +1,10 @@
+{
+  "axes": [
+    { "area": "software-development", "weight": 4 },
+    { "area": "cloud-devops", "weight": 3 },
+    { "area": "data-ai", "weight": 3 },
+    { "area": "quality-assurance", "weight": 2 },
+    { "area": "cybersecurity-networks", "weight": 3 },
+    { "area": "it-management", "weight": 2 }
+  ]
+}

@@ -1,5 +1,6 @@
-import { profileHeader, profileTimeline } from '@/modules/profile/data/profile-data';
-import type { TimelineSection } from '@/modules/profile/data/profile-data';
+import { profileHeader } from '@/modules/profile/data/profile-data';
+import { PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
+import type { ProfileRecords } from '@/modules/profile/types/profile-record';
 
 import { buildProfileJson, hasProfileBlocks } from './build-profile-json';
 
@@ -7,7 +8,7 @@ describe('build-profile-json', () => {
   const date = new Date(2026, 9, 2);
 
   it('arma el JSON con los campos del perfil', () => {
-    const json = buildProfileJson(profileHeader, profileTimeline, date);
+    const json = buildProfileJson(profileHeader, PROFILE_RECORDS_MOCK, date);
 
     expect(json).toMatchObject({
       idEgresado: '000452',
@@ -19,13 +20,22 @@ describe('build-profile-json', () => {
     expect(json.educacion[0]).toEqual({
       institucion: 'Universidad Mayor de San Simón',
       titulo: 'Licenciatura en Ingeniería de Sistemas',
+      grado: 'Licenciatura',
       anio: 2018,
+      respaldo: 'respaldo.pdf',
     });
     expect(json.experienciaLaboral).toHaveLength(3);
     expect(json.experienciaLaboral[0]).toEqual({
       empresa: 'NTT DATA',
       cargo: 'Tech Lead',
-      periodo: 'Jul 2023 – Presente',
+      fechaInicio: '2023-07-01',
+      fechaFin: null,
+    });
+    expect(json.experienciaLaboral[1]).toEqual({
+      empresa: 'Jalasoft',
+      cargo: 'Desarrollador Senior',
+      fechaInicio: '2021-01-04',
+      fechaFin: '2023-06-30',
     });
     expect(json.certificaciones[0]).toEqual({
       nombre: 'AWS Solutions Architect',
@@ -35,8 +45,19 @@ describe('build-profile-json', () => {
     });
   });
 
-  it('devuelve listas vacías cuando falta una sección', () => {
-    const json = buildProfileJson(profileHeader, [], date);
+  const empty: ProfileRecords = { education: [], experience: [], certification: [] };
+
+  it('exporta respaldo null en una formación sin archivo adjunto', () => {
+    const records: ProfileRecords = {
+      ...PROFILE_RECORDS_MOCK,
+      education: [{ ...PROFILE_RECORDS_MOCK.education[0], backupFile: undefined }],
+    };
+
+    expect(buildProfileJson(profileHeader, records, date).educacion[0].respaldo).toBeNull();
+  });
+
+  it('devuelve listas vacías cuando las secciones no tienen registros', () => {
+    const json = buildProfileJson(profileHeader, empty, date);
 
     expect(json.educacion).toEqual([]);
     expect(json.experienciaLaboral).toEqual([]);
@@ -44,13 +65,7 @@ describe('build-profile-json', () => {
   });
 
   it('detecta si el perfil tiene al menos un bloque con registros', () => {
-    const empty: TimelineSection[] = [
-      { title: 'EDUCACIÓN', items: [] },
-      { title: 'EXPERIENCIA LABORAL', items: [] },
-      { title: 'CERTIFICACIONES', items: [] },
-    ];
-
-    expect(hasProfileBlocks(profileTimeline)).toBe(true);
+    expect(hasProfileBlocks(PROFILE_RECORDS_MOCK)).toBe(true);
     expect(hasProfileBlocks(empty)).toBe(false);
   });
 });

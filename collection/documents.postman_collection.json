@@ -1,0 +1,519 @@
+{
+  "info": {
+    "_postman_id": "b3774b36-c77c-55d2-8ba7-05252e4d8641",
+    "name": "UMSSPIRA - Documentos de respaldo (HU-03)",
+    "description": "POST /documents: carga del documento de respaldo al bucket privado de Supabase Storage.\n\nmultipart/form-data con los campos sessionToken (UUID de la sesion de registro), tipoDocumento (titulo_provision_nacional | diploma_academico | certificado_egreso) y archivo (PDF, PNG o JPG de maximo 5 MB, validado por su contenido real).\n\nAntes de ejecutar: crea una sesion con POST /registrations/sessions (HU-01), verifica el correo (HU-02) y copia el token en verifiedSessionToken. En cada request con archivo, selecciona el archivo de prueba en el campo archivo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "CA-03.2 - Carga valida",
+      "item": [
+        {
+          "name": "Subir PDF valido (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const { data } = pm.response.json();",
+                  "pm.test('Devuelve la ruta dentro de solicitudes/', () => pm.expect(data.path).to.match(/^solicitudes\\/[0-9a-f-]{36}\\/[0-9a-f-]{36}\\.pdf$/));",
+                  "pm.test('Detecta el tipo real', () => pm.expect(data.mimeType).to.eql('application/pdf'));",
+                  "pm.test('Conserva el tipo de documento', () => pm.expect(data.tipoDocumento).to.eql('titulo_provision_nacional'));",
+                  "pm.collectionVariables.set('documentPath', data.path);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sessionToken",
+                  "value": "{{verifiedSessionToken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "tipoDocumento",
+                  "value": "titulo_provision_nacional",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "",
+                  "description": "Selecciona el archivo de prueba indicado en la descripcion"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documents"
+              ]
+            },
+            "description": "Requiere una sesion con el correo verificado en {{verifiedSessionToken}} y Supabase configurado (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY y el bucket privado documentos-respaldo). Archivo: un PDF real de hasta 5 MB."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CA-03.1 - Correo no verificado",
+      "item": [
+        {
+          "name": "Sesion sin correo verificado (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));",
+                  "const body = pm.response.json();",
+                  "pm.test('Codigo EMAIL_NOT_VERIFIED', () => pm.expect(body.code).to.eql('EMAIL_NOT_VERIFIED'));",
+                  "pm.test('Mensaje oficial', () => pm.expect(body.message).to.eql('Debes verificar tu correo antes de adjuntar tu documento'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sessionToken",
+                  "value": "{{unverifiedSessionToken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "tipoDocumento",
+                  "value": "diploma_academico",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "",
+                  "description": "Selecciona el archivo de prueba indicado en la descripcion"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documents"
+              ]
+            },
+            "description": "Usa una sesion creada en POST /registrations/sessions sin verificar el correo ({{unverifiedSessionToken}})."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CA-03.3 - Formato o tamaño no permitido",
+      "item": [
+        {
+          "name": "Archivo renombrado a .pdf que no es PDF (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('Mensaje esperado', () => pm.expect(body.message).to.eql(\"Formato o tamaño no permitido. Adjunta un documento en PDF, PNG o JPG de máximo 5 MB\"));",
+                  "pm.test('Indica el campo archivo', () => pm.expect(body.errors[0].field).to.eql('archivo'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sessionToken",
+                  "value": "{{verifiedSessionToken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "tipoDocumento",
+                  "value": "diploma_academico",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "",
+                  "description": "Selecciona el archivo de prueba indicado en la descripcion"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documents"
+              ]
+            },
+            "description": "Archivo: cualquier archivo de texto renombrado como falso.pdf. El servidor revisa el contenido real."
+          },
+          "response": []
+        },
+        {
+          "name": "Extension no permitida (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('Mensaje esperado', () => pm.expect(body.message).to.eql(\"Formato o tamaño no permitido. Adjunta un documento en PDF, PNG o JPG de máximo 5 MB\"));",
+                  "pm.test('Indica el campo archivo', () => pm.expect(body.errors[0].field).to.eql('archivo'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sessionToken",
+                  "value": "{{verifiedSessionToken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "tipoDocumento",
+                  "value": "diploma_academico",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "",
+                  "description": "Selecciona el archivo de prueba indicado en la descripcion"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documents"
+              ]
+            },
+            "description": "Archivo: un documento .docx o .txt."
+          },
+          "response": []
+        },
+        {
+          "name": "Archivo de mas de 5 MB (413)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 413', () => pm.response.to.have.status(413));",
+                  "const body = pm.response.json();",
+                  "pm.test('Mensaje esperado', () => pm.expect(body.message).to.eql(\"Formato o tamaño no permitido. Adjunta un documento en PDF, PNG o JPG de máximo 5 MB\"));",
+                  "pm.test('Indica el campo archivo', () => pm.expect(body.errors[0].field).to.eql('archivo'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sessionToken",
+                  "value": "{{verifiedSessionToken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "tipoDocumento",
+                  "value": "diploma_academico",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "",
+                  "description": "Selecciona el archivo de prueba indicado en la descripcion"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documents"
+              ]
+            },
+            "description": "Archivo: un PDF de mas de 5 MB."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CA-03.5 - Campos faltantes",
+      "item": [
+        {
+          "name": "Sin tipo de documento (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('Mensaje esperado', () => pm.expect(body.message).to.eql(\"Selecciona el tipo de documento\"));",
+                  "pm.test('Indica el campo tipoDocumento', () => pm.expect(body.errors[0].field).to.eql('tipoDocumento'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sessionToken",
+                  "value": "{{verifiedSessionToken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "",
+                  "description": "Selecciona el archivo de prueba indicado en la descripcion"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documents"
+              ]
+            },
+            "description": "Archivo: un PDF valido."
+          },
+          "response": []
+        },
+        {
+          "name": "Sin archivo (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('Mensaje esperado', () => pm.expect(body.message).to.eql(\"Adjunta tu documento de respaldo\"));",
+                  "pm.test('Indica el campo archivo', () => pm.expect(body.errors[0].field).to.eql('archivo'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sessionToken",
+                  "value": "{{verifiedSessionToken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "tipoDocumento",
+                  "value": "certificado_egreso",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documents"
+              ]
+            },
+            "description": "No se adjunta ningun archivo."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sesion de registro",
+      "item": [
+        {
+          "name": "Token con formato invalido (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('Mensaje esperado', () => pm.expect(body.message).to.eql(\"Sesión de registro no válida\"));",
+                  "pm.test('Indica el campo sessionToken', () => pm.expect(body.errors[0].field).to.eql('sessionToken'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sessionToken",
+                  "value": "token-invalido",
+                  "type": "text"
+                },
+                {
+                  "key": "tipoDocumento",
+                  "value": "diploma_academico",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "",
+                  "description": "Selecciona el archivo de prueba indicado en la descripcion"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documents"
+              ]
+            },
+            "description": "Archivo: un PDF valido."
+          },
+          "response": []
+        },
+        {
+          "name": "Sesion vencida (410)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 410', () => pm.response.to.have.status(410));",
+                  "pm.test('Mensaje de vencimiento', () => pm.expect(pm.response.json().message).to.include('venció'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sessionToken",
+                  "value": "11111111-1111-4111-8111-111111111111",
+                  "type": "text"
+                },
+                {
+                  "key": "tipoDocumento",
+                  "value": "diploma_academico",
+                  "type": "text"
+                },
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": "",
+                  "description": "Selecciona el archivo de prueba indicado en la descripcion"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "documents"
+              ]
+            },
+            "description": "Usa un UUID que no exista en Redis. Archivo: un PDF valido."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "verifiedSessionToken",
+      "value": ""
+    },
+    {
+      "key": "unverifiedSessionToken",
+      "value": ""
+    },
+    {
+      "key": "documentPath",
+      "value": ""
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{{platformName}}
+
+{{greeting}}
+
+Tu solicitud fue aprobada. Usa el siguiente código para activar tu cuenta:
+
+{{code}}
+
+El código vence en {{expiresInHours}} horas.
+
+No compartas este código con nadie. Lo necesitarás para activar tu cuenta.

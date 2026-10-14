@@ -20,7 +20,7 @@ export function BarraProgreso({ completas, total }: BarraProgresoProps) {
         <span
           key={indice}
           className={`h-2 flex-1 rounded-full transition-colors duration-300 ${
-            indice < completas ? 'bg-umss-orange' : 'bg-umss-sand'
+            indice < completas ? 'bg-burning-flame' : 'bg-oatmeal'
           }`}
         />
       ))}

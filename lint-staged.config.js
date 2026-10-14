@@ -6,13 +6,12 @@ module.exports = {
     const files = filenames.map((file) => {
       // Convierte la ruta absoluta en una ruta relativa a apps/web
       const relativePath = path.relative(path.join(process.cwd(), 'apps/web'), file);
-      return `--file ${relativePath}`;
+      return `--file "${relativePath.replace(/\\/g, '/')}"`;
     });
     return `pnpm --filter web exec next lint ${files.join(' ')}`;
   },
   
   // Configuración normal para NestJS
-  'apps/api/**/*.ts': (filenames) => {
-    return `pnpm --filter api exec eslint ${filenames.join(' ')} --fix`;
-  }
+  // lint-staged añade y escapa las rutas automáticamente, incluidos los espacios.
+  'apps/api/**/*.ts': 'pnpm --filter api exec eslint --fix'
 };

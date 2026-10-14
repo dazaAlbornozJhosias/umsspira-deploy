@@ -82,26 +82,26 @@ export function ProfileRecordsManager({ initialRecords = PROFILE_RECORDS_MOCK }:
       <header className="flex flex-col gap-2">
         <Link
           href="/profile"
-          className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-umss-navy/70 transition hover:text-umss-navy"
+          className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-blue-fantastic/70 transition hover:text-blue-fantastic"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Volver al resumen
         </Link>
-        <h1 className="text-[28px] font-semibold leading-tight text-umss-navy">
+        <h1 className="text-[28px] font-semibold leading-tight text-blue-fantastic">
           Mis registros del perfil
         </h1>
-        <p className="text-sm text-umss-navy/70">Edita o elimina tu información profesional.</p>
+        <p className="text-sm text-blue-fantastic/70">Edita o elimina tu información profesional.</p>
       </header>
 
       <Link
         href="/profile/completar"
-        className="inline-flex w-fit items-center gap-2 rounded-lg bg-umss-orange px-5 py-3 text-sm font-bold text-umss-ink transition hover:brightness-95"
+        className="inline-flex w-fit items-center gap-2 rounded-lg bg-burning-flame px-5 py-3 text-sm font-bold text-abyssal-blue transition hover:brightness-95"
       >
         <Plus className="h-4 w-4" aria-hidden="true" />
         Agregar Registros
       </Link>
 
-      <div role="tablist" aria-label="Secciones del perfil" className="flex gap-6 overflow-x-auto border-b border-umss-sand">
+      <div role="tablist" aria-label="Secciones del perfil" className="flex gap-6 overflow-x-auto border-b border-oatmeal">
         {SECTIONS.map((section) => {
           const isActive = section === activeSection;
           return (
@@ -114,8 +114,8 @@ export function ProfileRecordsManager({ initialRecords = PROFILE_RECORDS_MOCK }:
               className={cn(
                 '-mb-px whitespace-nowrap border-b-2 pb-2.5 text-sm transition',
                 isActive
-                  ? 'border-umss-terracotta font-bold text-umss-navy'
-                  : 'border-transparent font-medium text-umss-navy/60 hover:text-umss-navy',
+                  ? 'border-truffle-trouble font-bold text-blue-fantastic'
+                  : 'border-transparent font-medium text-blue-fantastic/60 hover:text-blue-fantastic',
               )}
             >
               {SECTION_LABELS[section]}
@@ -140,9 +140,9 @@ export function ProfileRecordsManager({ initialRecords = PROFILE_RECORDS_MOCK }:
       {isToastVisible && (
         <div
           role="status"
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg bg-umss-ink px-4 py-3 text-sm font-semibold text-white shadow-lg"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg bg-abyssal-blue px-4 py-3 text-sm font-semibold text-white shadow-lg"
         >
-          <Check className="h-4 w-4 text-umss-orange" aria-hidden="true" />
+          <Check className="h-4 w-4 text-burning-flame" aria-hidden="true" />
           Registro eliminado
         </div>
       )}

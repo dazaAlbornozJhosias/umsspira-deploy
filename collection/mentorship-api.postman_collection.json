@@ -1,0 +1,702 @@
+{
+  "info": {
+    "_postman_id": "3f0c8b12-5e4a-4f91-8f57-9d8fef551b42",
+    "name": "UMSSPIRA - Mentorship API",
+    "description": "Solicitudes locales para consultar perfiles y probar la API de mentorship.\n\nLos endpoints del mentor autenticado (mi perfil, áreas, información, disponibilidad e intereses) requieren el header Authorization: Bearer {{authToken}}, válido solo con ENABLE_MENTOR_TEST_AUTH=true y NODE_ENV distinto de production.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Mentorship API",
+      "item": [
+        {
+          "name": "Consultar estado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/mentorship/status"
+          }
+        },
+        {
+          "name": "Listar perfiles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La respuesta es una lista de perfiles', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const profiles = pm.response.json();",
+                  "  pm.expect(profiles).to.be.an('array');",
+                  "  if (profiles.length > 0) pm.environment.set('userId', profiles[0].userId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/mentorship/profiles"
+          }
+        },
+        {
+          "name": "Evaluar perfil elegible",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('El perfil completo es elegible', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().eligible).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": {\n    \"userId\": \"30000000-0000-4000-8000-000000000001\",\n    \"isMentorActive\": true,\n    \"isGraduate\": true,\n    \"isVerified\": true,\n    \"isApproved\": true,\n    \"hasParticipationRestriction\": false,\n    \"personalInfo\": {\n      \"firstName\": \"Lucia\",\n      \"lastName\": \"Rojas\",\n      \"email\": \"lucia.rojas@example.test\",\n      \"phone\": \"+591 70000001\"\n    },\n    \"academicInfo\": {\n      \"career\": \"Ingenieria de Sistemas\",\n      \"degree\": \"Licenciatura\",\n      \"graduationYear\": 2021\n    },\n    \"professionalInfo\": {\n      \"summary\": \"Desarrolladora backend con experiencia en APIs.\",\n      \"yearsExperience\": 4\n    },\n    \"description\": \"Mentora de sistemas distribuidos.\",\n    \"experienceDescription\": \"Experiencia en APIs, PostgreSQL y servicios en la nube.\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mentorship/eligibility"
+          }
+        },
+        {
+          "name": "Evaluar perfil incompleto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('El perfil incompleto no es elegible', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const result = pm.response.json();",
+                  "  pm.expect(result.eligible).to.eql(false);",
+                  "  pm.expect(result.issues.some(issue => issue.code === 'profile_incomplete')).to.eql(true);",
+                  "  const invalid = result.issues.find(issue => issue.code === 'invalid_profile_data');",
+                  "  pm.expect(invalid.invalidFields).to.include('Correo electrónico válido');",
+                  "  pm.expect(invalid.invalidFields).to.include('Año de egreso');",
+                  "  pm.expect(invalid.invalidFields).to.include('Años de experiencia');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": {\n    \"userId\": \"30000000-0000-4000-8000-000000000002\",\n    \"isMentorActive\": true,\n    \"isGraduate\": true,\n    \"isVerified\": true,\n    \"isApproved\": true,\n    \"hasParticipationRestriction\": false,\n    \"personalInfo\": {\n      \"firstName\": \"Mario\",\n      \"lastName\": \"\",\n      \"email\": \"mario.invalid\",\n      \"phone\": \"\"\n    },\n    \"academicInfo\": {\n      \"career\": \"Diseno Grafico\",\n      \"degree\": \"\",\n      \"graduationYear\": 0\n    },\n    \"professionalInfo\": {\n      \"summary\": \"\",\n      \"yearsExperience\": -1\n    },\n    \"description\": \"\",\n    \"experienceDescription\": \"\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mentorship/eligibility"
+          }
+        },
+        {
+          "name": "Evaluar perfil con restricciones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('El perfil con restricciones no es elegible', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const result = pm.response.json();",
+                  "  pm.expect(result.eligible).to.eql(false);",
+                  "  pm.expect(result.issues.some(issue => issue.code === 'participation_restricted')).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": {\n    \"userId\": \"30000000-0000-4000-8000-000000000003\",\n    \"isMentorActive\": true,\n    \"isGraduate\": true,\n    \"isVerified\": false,\n    \"isApproved\": false,\n    \"hasParticipationRestriction\": true,\n    \"personalInfo\": {\n      \"firstName\": \"Andrea\",\n      \"lastName\": \"Vargas\",\n      \"email\": \"andrea.vargas@example.test\",\n      \"phone\": \"+591 70000003\"\n    },\n    \"academicInfo\": {\n      \"career\": \"Ingenieria Industrial\",\n      \"degree\": \"Licenciatura\",\n      \"graduationYear\": 2018\n    },\n    \"professionalInfo\": {\n      \"summary\": \"Lider de proyectos.\",\n      \"yearsExperience\": 7\n    },\n    \"description\": \"Mentora de gestion de proyectos.\",\n    \"experienceDescription\": \"Experiencia liderando equipos multidisciplinarios.\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mentorship/eligibility"
+          }
+        },
+        {
+          "name": "Evaluar mentor inactivo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Un mentor inactivo no es elegible', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const result = pm.response.json();",
+                  "  pm.expect(result.eligible).to.eql(false);",
+                  "  pm.expect(result.issues.some(issue => issue.code === 'mentor_inactive')).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": {\n    \"userId\": \"30000000-0000-4000-8000-000000000001\",\n    \"isMentorActive\": false,\n    \"isGraduate\": true,\n    \"isVerified\": true,\n    \"isApproved\": true,\n    \"hasParticipationRestriction\": false,\n    \"personalInfo\": {\n      \"firstName\": \"Lucia\",\n      \"lastName\": \"Rojas\",\n      \"email\": \"lucia.rojas@example.test\",\n      \"phone\": \"+591 70000001\"\n    },\n    \"academicInfo\": {\n      \"career\": \"Ingenieria de Sistemas\",\n      \"degree\": \"Licenciatura\",\n      \"graduationYear\": 2021\n    },\n    \"professionalInfo\": {\n      \"summary\": \"Desarrolladora backend con experiencia en APIs.\",\n      \"yearsExperience\": 4\n    },\n    \"description\": \"Mentora de sistemas distribuidos.\",\n    \"experienceDescription\": \"Experiencia en APIs, PostgreSQL y servicios en la nube.\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mentorship/eligibility"
+          }
+        },
+        {
+          "name": "Evaluar perfil vacío e inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Se informan todos los datos faltantes e inválidos', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  const result = pm.response.json();",
+                  "  pm.expect(result.eligible).to.eql(false);",
+                  "  const incomplete = result.issues.find(issue => issue.code === 'profile_incomplete');",
+                  "  const invalid = result.issues.find(issue => issue.code === 'invalid_profile_data');",
+                  "  pm.expect(incomplete.missingFields).to.include('Nombre');",
+                  "  pm.expect(incomplete.missingFields).to.include('Carrera');",
+                  "  pm.expect(invalid.invalidFields).to.include('Estado activo del mentor');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mentorship/eligibility"
+          }
+        },
+        {
+          "name": "Desactivar mentor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Prueba desde Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mentorship/deactivate/{{userId}}"
+          }
+        },
+        {
+          "name": "Restablecer perfiles demo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/mentorship/profiles/reset"
+          }
+        },
+        {
+          "name": "Consultar mi perfil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La respuesta incluye el estado del mentor', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('esta_activo');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "description": "Devuelve la fila mentor del usuario autenticado (id, experiencia, esta_activo, anios_exp y fechas). Si el mentor aún no existe, devuelve 404.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/mentorship/my-profile"
+          }
+        },
+        {
+          "name": "Configurar participación del mentor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La participación del mentor se actualiza', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('esta_activo');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "description": "Activa o desactiva la participación como mentor (HU 6.1). esta_activo es obligatorio; experiencia y anios_exp son opcionales. anios_exp acepta valores de 0 a 80.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"esta_activo\": true,\n  \"experiencia\": \"Apoyo en backend con Node.js y buenas prácticas de código.\",\n  \"anios_exp\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mentorship/my-profile/participation"
+          }
+        },
+        {
+          "name": "Consultar áreas técnicas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La respuesta incluye las áreas seleccionadas', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('selectedIds');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "description": "Devuelve las áreas raíz activas, las seleccionadas por el mentor (selectedIds) y, si el backend ya las informa, los intereses dependientes.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/mentorship/my-profile/areas"
+          }
+        },
+        {
+          "name": "Configurar áreas técnicas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Las áreas del mentor se actualizan', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('selectedIds');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "description": "Reemplaza la selección de áreas técnicas del mentor (HU 6.2). areaIds debe contener UUIDs reales de la tabla area (áreas raíz activas); reemplace los valores de ejemplo por los que devuelve Consultar áreas técnicas.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"areaIds\": [\n    \"20000000-0000-4000-8000-000000000001\",\n    \"20000000-0000-4000-8000-000000000002\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mentorship/my-profile/areas"
+          }
+        },
+        {
+          "name": "Consultar información del perfil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La respuesta incluye la información del perfil', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('experiencia');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "description": "Devuelve la información pública del perfil de mentor (HU 6.5): descripcion, experiencia, informacion_relevante, foto_perfil y anios_exp. Solo lectura: no crea el perfil.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/mentorship/my-profile/information"
+          }
+        },
+        {
+          "name": "Actualizar información del perfil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La información del perfil se actualiza', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('experiencia');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "description": "Actualiza la información del perfil de mentor (HU 6.5). experiencia es obligatoria (hasta 800 caracteres); descripcion e informacion_relevante son opcionales (hasta 500) y anios_exp acepta de 0 a 80.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Mentora de sistemas distribuidos.\",\n  \"experiencia\": \"Experiencia en APIs, PostgreSQL y servicios en la nube.\",\n  \"informacion_relevante\": \"Disponible para sesiones de orientación quincenales.\",\n  \"anios_exp\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mentorship/my-profile/information"
+          }
+        },
+        {
+          "name": "Eliminar información del perfil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La información del perfil se elimina', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('experiencia');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "description": "Elimina la información del perfil de mentor (HU 6.5) y devuelve el estado resultante.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/mentorship/my-profile/information"
+          }
+        },
+        {
+          "name": "Consultar disponibilidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La respuesta incluye el estado de disponibilidad', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('availabilityStatus');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "description": "Devuelve el estado de disponibilidad del mentor (HU 6.4) y la fecha de actualización. Si el mentor aún no tiene fila en disponibilidad_mentor, availabilityStatus viene en null.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/mentorship/availability"
+          }
+        },
+        {
+          "name": "Configurar disponibilidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La disponibilidad del mentor se actualiza', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('availabilityStatus');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "description": "Actualiza el estado de disponibilidad del mentor (HU 6.4). Valores válidos: AVAILABLE, PAUSED o UNAVAILABLE.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"availabilityStatus\": \"AVAILABLE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mentorship/availability"
+          }
+        },
+        {
+          "name": "Consultar catálogo de intereses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La respuesta es el catálogo agrupado por área', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "description": "Devuelve los intereses disponibles (HU 6.3) agrupados por su área técnica raíz, marcados con seleccionado según la configuración actual del mentor.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/mentorship/interests/catalog"
+          }
+        },
+        {
+          "name": "Consultar mis intereses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La respuesta es la lista de intereses del mentor', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "description": "Devuelve los intereses ya seleccionados por el mentor autenticado (HU 6.3).",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/mentorship/interests/mine"
+          }
+        },
+        {
+          "name": "Agregar intereses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Los intereses se registran', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "description": "Registra intereses del mentor (HU 6.3). El catálogo es controlado: solo se aceptan UUIDs de la tabla area (intereses, es decir áreas con padre_id no nulo); no se acepta texto libre. Reemplace los valores de ejemplo por los que devuelve Consultar catálogo de intereses.",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\n    \"11111111-1111-4111-8111-111111111111\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/mentorship/interests"
+          }
+        },
+        {
+          "name": "Quitar interés",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('El interés se elimina', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.have.property('eliminado');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "description": "Elimina un interés del mentor (HU 6.3). El parámetro interestId es el UUID del área que representa el interés (no del área raíz).",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/mentorship/interests/{{interestId}}"
+          }
+        }
+      ]
+    }
+  ]
+}

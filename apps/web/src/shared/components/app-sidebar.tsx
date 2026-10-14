@@ -39,7 +39,7 @@ export function BrandMark() {
       <Image src="/umsspira-logo.png" alt="" width={44} height={44} className="h-11 w-11 shrink-0" priority />
       <span className="flex flex-col">
         <span className="text-base font-extrabold leading-5 text-white">UMSSPIRA</span>
-        <span className="text-[10px] font-bold uppercase text-umss-orange">Red de Egresados</span>
+        <span className="text-[10px] font-bold uppercase text-burning-flame">Red de Egresados</span>
       </span>
     </div>
   );
@@ -50,7 +50,7 @@ export function AppSidebar({ activeHref, isOpen }: AppSidebarProps) {
   return (
     <aside
       className={cn(
-        'fixed inset-y-0 left-0 z-40 w-[260px] flex-col justify-between bg-umss-navy px-5 py-6 lg:flex',
+        'fixed inset-y-0 left-0 z-40 w-[260px] flex-col justify-between bg-blue-fantastic px-5 py-6 lg:flex',
         isOpen ? 'flex' : 'hidden',
       )}
     >
@@ -70,7 +70,7 @@ export function AppSidebar({ activeHref, isOpen }: AppSidebarProps) {
                     aria-current={isActive ? 'page' : undefined}
                     className={cn(
                       'flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-white/85 transition hover:bg-white/10',
-                      isActive && 'border border-umss-orange text-white',
+                      isActive && 'border border-burning-flame text-white',
                     )}
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />
@@ -85,7 +85,7 @@ export function AppSidebar({ activeHref, isOpen }: AppSidebarProps) {
 
       <div className="flex flex-col gap-1 border-t border-white/20 pt-4">
         <span className="text-xs font-bold text-white">Ingeniería de Sistemas</span>
-        <span className="text-xs text-umss-sand">FCyT - UMSS</span>
+        <span className="text-xs text-oatmeal">FCyT - UMSS</span>
       </div>
     </aside>
   );

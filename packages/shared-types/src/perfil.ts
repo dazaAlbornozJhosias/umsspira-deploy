@@ -1,6 +1,7 @@
 export interface CrearFormacionAcademicaDto {
   institucion: string;
   titulo: string;
+  grado: string;
   anioEgreso: number;
 }
 

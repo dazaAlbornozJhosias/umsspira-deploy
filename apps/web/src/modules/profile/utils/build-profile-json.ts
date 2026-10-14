@@ -1,4 +1,10 @@
-import type { ProfileHeader, TimelineSection } from '@/modules/profile/data/profile-data';
+import type { ProfileHeader } from '@/modules/profile/data/profile-data';
+import type {
+  CertificationRecord,
+  EducationRecord,
+  ExperienceRecord,
+  ProfileRecords,
+} from '@/modules/profile/types/profile-record';
 import { formatExportDate } from '@/modules/profile/utils/profile-file-name';
 
 export type ProfileJson = {
@@ -7,59 +13,49 @@ export type ProfileJson = {
   nombre: string;
   carrera: string;
   promocion: number;
-  educacion: { institucion: string; titulo: string; anio: number | null }[];
-  experienciaLaboral: { empresa: string; cargo: string; periodo: string }[];
+  // respaldo: nombre del archivo adjunto, null si no tiene
+  educacion: { institucion: string; titulo: string; grado: string; anio: number | null; respaldo: string | null }[];
+  // Fechas AAAA-MM-DD; fechaFin null = trabajo actual
+  experienciaLaboral: { empresa: string; cargo: string; fechaInicio: string; fechaFin: string | null }[];
   certificaciones: { nombre: string; entidad: string; anio: number | null; grado: string }[];
 };
-
-const SECTION_EDUCATION = 'EDUCACIÓN';
-const SECTION_EXPERIENCE = 'EXPERIENCIA LABORAL';
-const SECTION_CERTIFICATIONS = 'CERTIFICACIONES';
 
 function toYear(value: string | undefined): number | null {
   const match = value?.match(/\d{4}/);
   return match ? Number(match[0]) : null;
 }
 
-function itemsOf(sections: TimelineSection[], title: string) {
-  return sections.find((section) => section.title === title)?.items ?? [];
+/** El perfil se puede exportar si al menos una sección tiene registros. */
+export function hasProfileBlocks(records: ProfileRecords): boolean {
+  return Object.values(records).some((section) => section.length > 0);
 }
 
-/** El perfil se puede exportar si al menos un bloque tiene registros. */
-export function hasProfileBlocks(sections: TimelineSection[]): boolean {
-  return sections.some((section) => section.items.length > 0);
-}
-
-export function buildProfileJson(
-  header: ProfileHeader,
-  sections: TimelineSection[],
-  date: Date,
-): ProfileJson {
+// Se arma desde los registros del perfil y no desde la línea de tiempo, que no trae todos los datos
+export function buildProfileJson(header: ProfileHeader, records: ProfileRecords, date: Date): ProfileJson {
   return {
     idEgresado: header.id,
     fechaDescarga: formatExportDate(date),
     nombre: header.name,
     carrera: header.career,
     promocion: header.graduationYear,
-    educacion: itemsOf(sections, SECTION_EDUCATION).map((item) => ({
-      institucion: item.title,
-      titulo: item.subtitle,
-      anio: toYear(item.date),
+    educacion: (records.education as EducationRecord[]).map((record) => ({
+      institucion: record.institution,
+      titulo: record.title,
+      grado: record.degree,
+      anio: toYear(record.graduationYear),
+      respaldo: record.backupFile ?? null,
     })),
-    experienciaLaboral: itemsOf(sections, SECTION_EXPERIENCE).map((item) => ({
-      empresa: item.title,
-      cargo: item.subtitle,
-      periodo: item.date ?? '',
+    experienciaLaboral: (records.experience as ExperienceRecord[]).map((record) => ({
+      empresa: record.company,
+      cargo: record.position,
+      fechaInicio: record.startDate,
+      fechaFin: record.endDate || null,
     })),
-    certificaciones: itemsOf(sections, SECTION_CERTIFICATIONS).map((item) => {
-      // El subtítulo viene como "Entidad · Año"
-      const [entidad = '', anio] = item.subtitle.split('·').map((part) => part.trim());
-      return {
-        nombre: item.title,
-        entidad,
-        anio: toYear(anio),
-        grado: item.detail?.replace(/^Grado:\s*/, '') ?? '',
-      };
-    }),
+    certificaciones: (records.certification as CertificationRecord[]).map((record) => ({
+      nombre: record.name,
+      entidad: record.issuer,
+      anio: toYear(record.issueYear),
+      grado: record.degree,
+    })),
   };
 }

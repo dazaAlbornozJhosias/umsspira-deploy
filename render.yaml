@@ -1,0 +1,53 @@
+# ============================================================
+# Infraestructura del API de UMSSPIRA en Render.
+#
+# Validar antes de commitear:
+#   render blueprints validate render.yaml
+#
+# Los SECRETOS no se escriben aqui: van con `sync: false`, que hace que Render
+# los pida en el dashboard la primera vez. Asi el repo queda commiteable.
+# ============================================================
+
+services:
+  - type: web
+    name: umsspira-api
+    runtime: node
+
+    # Render NO ofrece Sao Paulo (solo oregon, ohio, virginia, frankfurt,
+    # singapore). virginia es lo mas cercano a la BD (Supabase sa-east-1)
+    # y a Bolivia. OJO: la region no se puede cambiar despues de crear.
+    region: virginia
+
+    # 0.1 CPU / 512 MB. Plan gratuito: se duerme tras ~15 min sin trafico y el
+    # primer request tarda ~50 s. Subir de plan si eso molesta a los QAs.
+    plan: free
+
+    # Rama de integracion: aqui se mergean todas las epicas.
+    branch: dev
+
+    # Monorepo: los workspaces se instalan desde la raiz, porque apps/web
+    # consume packages/shared-types como TypeScript crudo.
+    rootDir: .
+
+    buildCommand: pnpm install && pnpm --filter api build
+    startCommand: pnpm --filter api start
+
+    # Devuelve 200 cuando la API puede leer la BD. Render lo usa de health check.
+    healthCheckPath: /mentorship/status
+
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+
+      # --- Secretos: Render los pide en el dashboard ---
+      # Ver apps/api/.env.example para el contenido.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+      # URL publica del frontend en Vercel. Se aceptan varias separadas por
+      # coma (la API las usa como lista de origenes permitidos por CORS):
+      #   WEB_ORIGIN=https://umsspira.vercel.app,https://umsspira-git-dev.vercel.app
+      - key: WEB_ORIGIN
+        sync: false

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Solicitud aprobada</title>
+  </head>
+  <body style="margin:0;padding:24px;background-color:#f4f4f5;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="480" cellspacing="0" cellpadding="0" style="max-width:480px;background-color:#ffffff;border-radius:8px;padding:32px;">
+            <tr>
+              <td>
+                <h1 style="margin:0 0 16px;font-size:20px;">{{platformName}}</h1>
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">{{greeting}}</p>
+                <p style="margin:0 0 16px;font-size:15px;line-height:1.5;">
+                  Tu solicitud fue aprobada. Usa el siguiente código para activar tu cuenta:
+                </p>
+                <p style="margin:0 0 16px;font-size:32px;font-weight:bold;letter-spacing:8px;text-align:center;color:#0f766e;">
+                  {{code}}
+                </p>
+                <p style="margin:0 0 16px;font-size:14px;line-height:1.5;">
+                  El código vence en {{expiresInHours}} horas.
+                </p>
+                <p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">
+                  No compartas este código con nadie. Lo necesitarás para activar tu cuenta.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

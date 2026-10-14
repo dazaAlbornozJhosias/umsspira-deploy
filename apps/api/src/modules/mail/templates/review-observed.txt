@@ -1,0 +1,9 @@
+{{platformName}}
+
+{{greeting}}
+
+Revisamos tu solicitud y tiene observaciones que debes corregir:
+
+{{observation}}
+
+Corrige lo indicado y vuelve a enviar tu solicitud.

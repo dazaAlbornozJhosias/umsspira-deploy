@@ -1,0 +1,403 @@
+{
+  "info": {
+    "name": "email-verification",
+    "description": "Verificación de correo (HU-02). Requiere un borrador de registro en Redis y copiar el código recibido en Mailpit a la variable code.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "registrationId", "value": "11111111-1111-4111-8111-111111111111" },
+    { "key": "code", "value": "" },
+    { "key": "expiredRegistrationId", "value": "" },
+    { "key": "expiredCode", "value": "" },
+    { "key": "attemptRegistrationId", "value": "" },
+    { "key": "invalidCode", "value": "999999" }
+  ],
+  "item": [
+    {
+      "name": "1. Emitir código (primer envío)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('responde 201', () => pm.response.to.have.status(201));",
+              "const data = pm.response.json().data;",
+              "pm.test('incluye correo enmascarado', () => pm.expect(data.maskedEmail).to.be.a('string'));",
+              "pm.test('vigencia de 300 segundos', () => pm.expect(data.expiresInSeconds).to.eql(300));",
+              "pm.test('espera de reenvio de 30 segundos', () => pm.expect(data.resendAvailableInSeconds).to.eql(30));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"registrationId\": \"{{registrationId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/email-verification/resend",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "email-verification", "resend"]
+        }
+      }
+    },
+    {
+      "name": "2. Reenviar dentro de la espera de 30s (429)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('responde 429', () => pm.response.to.have.status(429));",
+              "pm.test('devuelve mensaje de error', () => pm.expect(pm.response.json().error).to.be.a('string'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"registrationId\": \"{{registrationId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/email-verification/resend",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "email-verification", "resend"]
+        }
+      }
+    },
+    {
+      "name": "3. Verificar con código incorrecto (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('responde 400', () => pm.response.to.have.status(400));",
+              "pm.test('mensaje sin revelar intentos restantes', () => pm.expect(pm.response.json().error).to.eql('El código ingresado no es correcto. Intenta nuevamente'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"registrationId\": \"{{registrationId}}\",\n  \"code\": \"000000\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/email-verification/verify",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "email-verification", "verify"]
+        }
+      }
+    },
+    {
+      "name": "4. Verificar con formato inválido (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('responde 400', () => pm.response.to.have.status(400));",
+              "pm.test('error por validacion de dto', () => pm.expect(pm.response.json().error).to.include('dígitos'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"registrationId\": \"{{registrationId}}\",\n  \"code\": \"12ab\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/email-verification/verify",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "email-verification", "verify"]
+        }
+      }
+    },
+    {
+      "name": "5. Verificar con código correcto (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('responde 200', () => pm.response.to.have.status(200));",
+              "pm.test('correo verificado correctamente', () => pm.expect(pm.response.json().data.verified).to.eql(true));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"registrationId\": \"{{registrationId}}\",\n  \"code\": \"{{code}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/email-verification/verify",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "email-verification", "verify"]
+        }
+      }
+    },
+    {
+      "name": "6. Registro inexistente o expirado (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('responde 404', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"registrationId\": \"99999999-9999-4999-8999-999999999999\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/email-verification/resend",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "email-verification", "resend"]
+        }
+      }
+    }    ,{
+      "name": "HU-02 - Casos negativos",
+      "description": "Casos negativos de HU-02: OTP expirado y límite de 5 intentos.",
+      "item": [
+      {
+        "name": "1. OTP expirado (410)",
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 410', () => pm.response.to.have.status(410));",
+                "const body = pm.response.json();",
+                "pm.test('mensaje esperado', () => pm.expect(body.error).to.eql(\"El código expiró. Solicita uno nuevo\"));"
+              ]
+            }
+          }
+        ],
+        "request": {
+          "method": "POST",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"registrationId\": \"{{expiredRegistrationId}}\",\n  \"code\": \"{{expiredCode}}\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/email-verification/verify",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "email-verification", "verify"]
+          },
+        "description": "Precondición: el OTP de expiredRegistrationId debe haber expirado realmente (TTL de 5 minutos) o la clave debe haber sido eliminada de Redis. Un código simplemente incorrecto devuelve 400."
+        }
+      },
+      {
+        "name": "2. Intento incorrecto 1 (400)",
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 400', () => pm.response.to.have.status(400));",
+                "const body = pm.response.json();",
+                "pm.test('mensaje esperado', () => pm.expect(body.error).to.eql(\"El código ingresado no es correcto. Intenta nuevamente\"));"
+              ]
+            }
+          }
+        ],
+        "request": {
+          "method": "POST",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"registrationId\": \"{{attemptRegistrationId}}\",\n  \"code\": \"{{invalidCode}}\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/email-verification/verify",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "email-verification", "verify"]
+          },
+        "description": "Precondición: usar el mismo attemptRegistrationId con un OTP activo y el mismo invalidCode durante los cinco primeros intentos."
+        }
+      },
+      {
+        "name": "3. Intento incorrecto 2 (400)",
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 400', () => pm.response.to.have.status(400));",
+                "const body = pm.response.json();",
+                "pm.test('mensaje esperado', () => pm.expect(body.error).to.eql(\"El código ingresado no es correcto. Intenta nuevamente\"));"
+              ]
+            }
+          }
+        ],
+        "request": {
+          "method": "POST",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"registrationId\": \"{{attemptRegistrationId}}\",\n  \"code\": \"{{invalidCode}}\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/email-verification/verify",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "email-verification", "verify"]
+          },
+        "description": "Precondición: usar el mismo attemptRegistrationId con un OTP activo y el mismo invalidCode durante los cinco primeros intentos."
+        }
+      },
+      {
+        "name": "4. Intento incorrecto 3 (400)",
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 400', () => pm.response.to.have.status(400));",
+                "const body = pm.response.json();",
+                "pm.test('mensaje esperado', () => pm.expect(body.error).to.eql(\"El código ingresado no es correcto. Intenta nuevamente\"));"
+              ]
+            }
+          }
+        ],
+        "request": {
+          "method": "POST",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"registrationId\": \"{{attemptRegistrationId}}\",\n  \"code\": \"{{invalidCode}}\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/email-verification/verify",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "email-verification", "verify"]
+          },
+        "description": "Precondición: usar el mismo attemptRegistrationId con un OTP activo y el mismo invalidCode durante los cinco primeros intentos."
+        }
+      },
+      {
+        "name": "5. Intento incorrecto 4 (400)",
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 400', () => pm.response.to.have.status(400));",
+                "const body = pm.response.json();",
+                "pm.test('mensaje esperado', () => pm.expect(body.error).to.eql(\"El código ingresado no es correcto. Intenta nuevamente\"));"
+              ]
+            }
+          }
+        ],
+        "request": {
+          "method": "POST",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"registrationId\": \"{{attemptRegistrationId}}\",\n  \"code\": \"{{invalidCode}}\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/email-verification/verify",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "email-verification", "verify"]
+          },
+        "description": "Precondición: usar el mismo attemptRegistrationId con un OTP activo y el mismo invalidCode durante los cinco primeros intentos."
+        }
+      },
+      {
+        "name": "6. Intento incorrecto 5 (400)",
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 400', () => pm.response.to.have.status(400));",
+                "const body = pm.response.json();",
+                "pm.test('mensaje esperado', () => pm.expect(body.error).to.eql(\"El código ingresado no es correcto. Intenta nuevamente\"));"
+              ]
+            }
+          }
+        ],
+        "request": {
+          "method": "POST",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"registrationId\": \"{{attemptRegistrationId}}\",\n  \"code\": \"{{invalidCode}}\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/email-verification/verify",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "email-verification", "verify"]
+          },
+        "description": "Precondición: usar el mismo attemptRegistrationId con un OTP activo y el mismo invalidCode durante los cinco primeros intentos."
+        }
+      },
+      {
+        "name": "7. Intento incorrecto 6 - límite superado (429)",
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('responde 429', () => pm.response.to.have.status(429));",
+                "const body = pm.response.json();",
+                "pm.test('mensaje esperado', () => pm.expect(body.error).to.eql(\"Superaste el número de intentos permitidos. Solicita un código nuevo\"));"
+              ]
+            }
+          }
+        ],
+        "request": {
+          "method": "POST",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"registrationId\": \"{{attemptRegistrationId}}\",\n  \"code\": \"{{invalidCode}}\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/api/email-verification/verify",
+            "host": ["{{baseUrl}}"],
+            "path": ["api", "email-verification", "verify"]
+          },
+        "description": "Debe ejecutarse después de los cinco intentos incorrectos anteriores, usando el mismo attemptRegistrationId y el mismo invalidCode."
+        }
+      }
+      ]
+    }
+  ]
+}

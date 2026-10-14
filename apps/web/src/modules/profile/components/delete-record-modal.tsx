@@ -25,9 +25,9 @@ const ERROR_CONTENT: Record<DeleteRecordErrorCode, { title: string; description:
 };
 
 const secondaryButtonClassName =
-  'rounded-lg border border-umss-terracotta bg-white px-5 py-2.5 text-sm font-bold text-umss-terracotta transition hover:bg-umss-cream disabled:opacity-50';
+  'rounded-lg border border-truffle-trouble bg-white px-5 py-2.5 text-sm font-bold text-truffle-trouble transition hover:bg-palladian disabled:opacity-50';
 const primaryButtonClassName =
-  'rounded-lg bg-umss-terracotta px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-60';
+  'rounded-lg bg-truffle-trouble px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-60';
 
 export function DeleteRecordModal({
   section,
@@ -42,33 +42,33 @@ export function DeleteRecordModal({
   const Icon = errorCode === 'network' ? WifiOff : errorCode === 'forbidden' ? Lock : Trash2;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-umss-ink/50 px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-abyssal-blue/50 px-4">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-record-title"
         className="w-full max-w-[460px] rounded-2xl bg-white p-6 shadow-xl"
       >
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-umss-terracotta/10 text-umss-terracotta">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-truffle-trouble/10 text-truffle-trouble">
           <Icon className="h-5 w-5" aria-hidden="true" />
         </span>
 
-        <h2 id="delete-record-title" className="mt-4 text-lg font-bold leading-snug text-umss-navy">
+        <h2 id="delete-record-title" className="mt-4 text-lg font-bold leading-snug text-blue-fantastic">
           {error ? error.title : '¿Estás seguro de que deseas eliminar este registro?'}
         </h2>
 
         {/* Registro seleccionado */}
-        <div className="mt-4 rounded-lg border border-umss-sand bg-umss-cream/60 px-4 py-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-umss-navy/60">
+        <div className="mt-4 rounded-lg border border-oatmeal bg-palladian/60 px-4 py-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-blue-fantastic/60">
             {SECTION_LABELS[section]}
           </p>
-          <p className="text-sm font-bold text-umss-navy">{primary.getValue(record)}</p>
-          <p className="text-xs text-umss-navy/70">
+          <p className="text-sm font-bold text-blue-fantastic">{primary.getValue(record)}</p>
+          <p className="text-xs text-blue-fantastic/70">
             {[secondary, ...rest].map((column) => column.getValue(record)).join(' · ')}
           </p>
         </div>
 
-        <p role={error ? 'alert' : undefined} className="mt-3 text-xs text-umss-navy/70">
+        <p role={error ? 'alert' : undefined} className="mt-3 text-xs text-blue-fantastic/70">
           {error ? error.description : 'Solo se quitará este registro. Tus demás registros no cambian.'}
         </p>
 

@@ -1,0 +1,38 @@
+[
+  {
+    "graduateId": "00000000-0000-0000-0000-000000000001",
+    "calculatedAt": "2026-09-28T12:00:00.000Z",
+    "areas": [
+      { "area": "software-development", "affinity": 88 },
+      { "area": "cloud-devops", "affinity": 62 },
+      { "area": "data-ai", "affinity": 74 },
+      { "area": "quality-assurance", "affinity": 45 },
+      { "area": "cybersecurity-networks", "affinity": 31 },
+      { "area": "it-management", "affinity": 53 }
+    ]
+  },
+  {
+    "graduateId": "00000000-0000-0000-0000-000000000001",
+    "calculatedAt": "2026-09-29T12:00:00.000Z",
+    "areas": [
+      { "area": "software-development", "affinity": 79 },
+      { "area": "cloud-devops", "affinity": 71 },
+      { "area": "data-ai", "affinity": 58 },
+      { "area": "quality-assurance", "affinity": 52 },
+      { "area": "cybersecurity-networks", "affinity": 36 },
+      { "area": "it-management", "affinity": 44 }
+    ]
+  },
+  {
+    "graduateId": "00000000-0000-0000-0000-000000000001",
+    "calculatedAt": "2026-09-30T12:00:00.000Z",
+    "areas": [
+      { "area": "software-development", "affinity": 65 },
+      { "area": "cloud-devops", "affinity": 57 },
+      { "area": "data-ai", "affinity": 83 },
+      { "area": "quality-assurance", "affinity": 40 },
+      { "area": "cybersecurity-networks", "affinity": 29 },
+      { "area": "it-management", "affinity": 61 }
+    ]
+  }
+]

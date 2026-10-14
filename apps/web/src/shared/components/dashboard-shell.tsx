@@ -17,7 +17,7 @@ export function DashboardShell({ activeHref, userName, userRole, children }: Das
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-umss-cream text-umss-navy">
+    <div className="min-h-screen bg-palladian text-blue-fantastic">
       <AppSidebar activeHref={activeHref} isOpen={isMenuOpen} />
 
       {isMenuOpen && (
@@ -25,7 +25,7 @@ export function DashboardShell({ activeHref, userName, userRole, children }: Das
           type="button"
           aria-label="Cerrar menú"
           onClick={() => setIsMenuOpen(false)}
-          className="fixed inset-0 z-30 bg-umss-ink/40 lg:hidden"
+          className="fixed inset-0 z-30 bg-abyssal-blue/40 lg:hidden"
         />
       )}
 

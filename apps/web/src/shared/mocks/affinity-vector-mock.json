@@ -1,0 +1,81 @@
+{
+  "graduateId": "00000000-0000-0000-0000-000000000001",
+  "calculatedAt": "2026-09-28T12:00:00.000Z",
+  "hasLaborHistory": true,
+  "areas": [
+    {
+      "area": "software-development",
+      "affinity": 82.5,
+      "keywords": [
+        "React",
+        "TypeScript",
+        "Node.js"
+      ],
+      "evidence": [
+        {
+          "type": "project",
+          "title": "Plataforma E-Commerce Web",
+          "detail": "Desarrollo full-stack con React y Node."
+        },
+        {
+          "type": "certification",
+          "title": "Certificación Avanzada de React",
+          "detail": "Emitido por Meta."
+        }
+      ]
+    },
+    {
+      "area": "cloud-devops",
+      "affinity": 64,
+      "keywords": [
+        "AWS",
+        "Docker",
+        "CI/CD"
+      ],
+      "evidence": [
+        {
+          "type": "certification",
+          "title": "AWS Certified Cloud Practitioner",
+          "detail": "Amazon Web Services"
+        }
+      ]
+    },
+    {
+      "area": "data-ai",
+      "affinity": 71.25,
+      "keywords": [
+        "Python",
+        "Pandas",
+        "Machine Learning"
+      ],
+      "evidence": []
+    },
+    {
+      "area": "quality-assurance",
+      "affinity": 38,
+      "keywords": [
+        "Jest",
+        "Cypress"
+      ],
+      "evidence": []
+    },
+    {
+      "area": "cybersecurity-networks",
+      "affinity": 27.5,
+      "keywords": [
+        "SecOps",
+        "Firewalls"
+      ],
+      "evidence": []
+    },
+    {
+      "area": "it-management",
+      "affinity": 45,
+      "keywords": [
+        "Scrum",
+        "Agile"
+      ],
+      "evidence": []
+    }
+  ]
+}

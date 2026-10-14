@@ -2,6 +2,8 @@
 
 import { useRef, useState } from 'react';
 import { Award, Camera, CloudUpload, FileText, Plus } from 'lucide-react';
+import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
+import { validarRespaldo } from '@/modules/profile/validation/reglas-perfil';
 
 const GRADOS = ['Fundamentos', 'Asociado', 'Profesional', 'Especialista', 'Experto'];
 
@@ -31,6 +33,8 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
   const [datos, setDatos] = useState<Certificacion>(VACIO);
   const fotoRef = useRef<HTMLInputElement>(null);
   const documentoRef = useRef<HTMLInputElement>(null);
+  // Archivo rechazado (no es JPG o supera 5 MB): no se adjunta y se explica junto al campo
+  const [errorRespaldo, setErrorRespaldo] = useState<string>();
 
   function cambiar(campo: 'nombre' | 'entidadEmisora' | 'anioEmision' | 'grado', valor: string) {
     setDatos({ ...datos, [campo]: valor });
@@ -38,8 +42,12 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
 
   function elegirRespaldo(evento: React.ChangeEvent<HTMLInputElement>) {
     const archivo = evento.target.files?.[0];
-    if (archivo) setDatos({ ...datos, respaldo: archivo });
     evento.target.value = '';
+    if (!archivo) return;
+    // El atributo accept se puede saltar eligiendo "Todos los archivos"
+    const error = validarRespaldo(archivo);
+    setErrorRespaldo(error);
+    if (!error) setDatos({ ...datos, respaldo: archivo });
   }
 
   function agregar(evento: React.FormEvent<HTMLFormElement>) {
@@ -50,6 +58,7 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
       entidadEmisora: datos.entidadEmisora.trim(),
     });
     setDatos(VACIO);
+    setErrorRespaldo(undefined);
   }
 
   return (
@@ -148,7 +157,12 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
 
         <div>
           <span className={labelClase}>Respaldo de certificación</span>
-          <div className="mt-1.5 flex flex-col items-center gap-3 rounded-md border-2 border-dashed border-[#C9C1B1] bg-[#EEE9DF] px-4 py-6 text-center">
+          <div
+            className={claseCampo(
+              'mt-1.5 flex flex-col items-center gap-3 rounded-md border-2 border-dashed border-[#C9C1B1] bg-[#EEE9DF] px-4 py-6 text-center',
+              errorRespaldo,
+            )}
+          >
             {datos.respaldo ? (
               <p className="flex max-w-full items-center gap-2 text-sm font-medium text-[#2C3B4D]">
                 <FileText className="h-4 w-4 shrink-0 text-[#A35139]" />
@@ -171,11 +185,12 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
               </button>
             </div>
           </div>
+          <MensajeError id="error-respaldo" mensaje={errorRespaldo} />
 
           <input
             ref={fotoRef}
             type="file"
-            accept="image/png,image/jpeg"
+            accept="image/jpeg"
             aria-label="Subir foto"
             className="hidden"
             onChange={elegirRespaldo}
@@ -183,7 +198,7 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
           <input
             ref={documentoRef}
             type="file"
-            accept="application/pdf"
+            accept="image/jpeg"
             aria-label="Subir documento"
             className="hidden"
             onChange={elegirRespaldo}

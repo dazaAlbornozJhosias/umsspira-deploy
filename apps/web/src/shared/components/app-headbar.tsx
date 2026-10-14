@@ -25,7 +25,7 @@ export function AppHeadbar({ userName, userRole, isMenuOpen, onToggleMenu }: App
   return (
     <>
       {/* Cabecera móvil */}
-      <header className="flex items-center justify-between bg-umss-navy px-4 py-3 lg:hidden">
+      <header className="flex items-center justify-between bg-blue-fantastic px-4 py-3 lg:hidden">
         <BrandMark />
         <div className="flex items-center gap-2">
           <button
@@ -49,12 +49,12 @@ export function AppHeadbar({ userName, userRole, isMenuOpen, onToggleMenu }: App
 
       {/* Cabecera de escritorio */}
       <header className="hidden items-center justify-between gap-6 lg:flex">
-        <label className="flex h-11 w-full max-w-[480px] items-center gap-3 rounded-full border border-umss-ink/15 bg-white px-4">
-          <Search className="h-4 w-4 text-umss-navy" aria-hidden="true" />
+        <label className="flex h-11 w-full max-w-[480px] items-center gap-3 rounded-full border border-abyssal-blue/15 bg-white px-4">
+          <Search className="h-4 w-4 text-blue-fantastic" aria-hidden="true" />
           <input
             type="search"
             placeholder="Buscar en la plataforma..."
-            className="w-full bg-transparent text-sm text-umss-navy placeholder:text-umss-navy/70 focus:outline-none"
+            className="w-full bg-transparent text-sm text-blue-fantastic placeholder:text-blue-fantastic/70 focus:outline-none"
           />
         </label>
 
@@ -62,17 +62,17 @@ export function AppHeadbar({ userName, userRole, isMenuOpen, onToggleMenu }: App
           <button
             type="button"
             aria-label="Notificaciones"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-umss-ink/15 bg-white text-umss-navy"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-abyssal-blue/15 bg-white text-blue-fantastic"
           >
             <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
           </button>
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-umss-navy text-sm font-bold text-white">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-fantastic text-sm font-bold text-white">
               {initials}
             </span>
             <span className="flex flex-col">
-              <span className="text-sm font-bold text-umss-navy">{userName}</span>
-              <span className="text-xs text-umss-navy/70">{userRole}</span>
+              <span className="text-sm font-bold text-blue-fantastic">{userName}</span>
+              <span className="text-xs text-blue-fantastic/70">{userRole}</span>
             </span>
           </div>
         </div>

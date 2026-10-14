@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { profileHeader, profileTimeline } from '@/modules/profile/data/profile-data';
-import type { TimelineSection } from '@/modules/profile/data/profile-data';
+import { profileHeader } from '@/modules/profile/data/profile-data';
+import { PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
 
 import DownloadProfileButton from './download-profile-button';
 
@@ -29,7 +29,7 @@ describe('DownloadProfileButton', () => {
       expect(this.href).toBe('blob:perfil');
     });
 
-    render(<DownloadProfileButton header={profileHeader} sections={profileTimeline} />);
+    render(<DownloadProfileButton header={profileHeader} records={PROFILE_RECORDS_MOCK} />);
     fireEvent.click(screen.getByRole('button', { name: 'Descargar' }));
 
     expect(click).toHaveBeenCalledTimes(1);
@@ -38,13 +38,9 @@ describe('DownloadProfileButton', () => {
   });
 
   it('se desactiva cuando el perfil no tiene bloques', () => {
-    const empty: TimelineSection[] = [
-      { title: 'EDUCACIÓN', items: [] },
-      { title: 'EXPERIENCIA LABORAL', items: [] },
-      { title: 'CERTIFICACIONES', items: [] },
-    ];
-
-    render(<DownloadProfileButton header={profileHeader} sections={empty} />);
+    render(
+      <DownloadProfileButton header={profileHeader} records={{ education: [], experience: [], certification: [] }} />,
+    );
 
     expect(screen.getByRole('button', { name: 'Descargar' })).toBeDisabled();
   });

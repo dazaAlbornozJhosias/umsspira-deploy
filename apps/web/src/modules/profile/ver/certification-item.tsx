@@ -15,10 +15,10 @@ type CertificationItemProps = {
 function Field({ label, value }: { label: string; value?: string }) {
   return (
     <div className="space-y-1">
-      <dt className="text-[10px] font-bold uppercase tracking-[0.05em] text-umss-navy/60">
+      <dt className="text-[10px] font-bold uppercase tracking-[0.05em] text-blue-fantastic/60">
         {label}
       </dt>
-      <dd className="text-sm font-medium text-umss-navy">{value || '—'}</dd>
+      <dd className="text-sm font-medium text-blue-fantastic">{value || '—'}</dd>
     </div>
   );
 }
@@ -51,15 +51,15 @@ export default function CertificationItem({
       >
         {/* Información principal */}
         <span className="min-w-0 space-y-1">
-          <span className="block text-xl font-bold leading-6 text-umss-navy">{item.title}</span>
-          <span className="block text-sm font-medium text-umss-navy/80">{item.subtitle}</span>
-          {item.detail && <span className="block text-xs text-umss-navy/60">{item.detail}</span>}
+          <span className="block text-xl font-bold leading-6 text-blue-fantastic">{item.title}</span>
+          <span className="block text-sm font-medium text-blue-fantastic/80">{item.subtitle}</span>
+          {item.detail && <span className="block text-xs text-blue-fantastic/60">{item.detail}</span>}
         </span>
 
         <span className="flex shrink-0 items-center gap-3">
           {status}
           <ChevronDown
-            className={`h-4 w-4 text-umss-navy/60 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            className={`h-4 w-4 text-blue-fantastic/60 transition-transform ${isOpen ? 'rotate-180' : ''}`}
             aria-hidden="true"
           />
         </span>
@@ -71,15 +71,15 @@ export default function CertificationItem({
           href={SAMPLE_BACKUP_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-umss-sand bg-white px-2 py-1.5 text-[11px] font-semibold text-umss-navy transition hover:bg-umss-cream"
+          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-oatmeal bg-white px-2 py-1.5 text-[11px] font-semibold text-blue-fantastic transition hover:bg-palladian"
         >
-          <FileText className="h-3.5 w-3.5 text-umss-terracotta" aria-hidden="true" />
+          <FileText className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
           {item.document}
         </a>
       )}
 
       {isOpen && (
-        <div id={detailId} className="space-y-3 rounded-[10px] bg-umss-cream px-[14px] py-3">
+        <div id={detailId} className="space-y-3 rounded-[10px] bg-palladian px-[14px] py-3">
           <dl className="flex flex-wrap gap-x-12 gap-y-3">
             <Field label="Entidad emisora" value={item.issuer} />
             <Field label="Año" value={item.year} />
@@ -87,9 +87,9 @@ export default function CertificationItem({
           </dl>
 
           {item.document ? (
-            <div className="flex items-center gap-2.5 rounded-lg border border-umss-sand bg-white px-3 py-2.5">
-              <FileText className="h-4 w-4 shrink-0 text-umss-terracotta" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-umss-navy">
+            <div className="flex items-center gap-2.5 rounded-lg border border-oatmeal bg-white px-3 py-2.5">
+              <FileText className="h-4 w-4 shrink-0 text-truffle-trouble" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-blue-fantastic">
                 {item.document}
               </span>
               {/* Por ahora abre el PDF de ejemplo; se enlaza al archivo real cuando exista el backend */}
@@ -98,13 +98,13 @@ export default function CertificationItem({
           target="_blank"
           rel="noopener noreferrer"
                 aria-label={`Descargar ${item.document}`}
-                className="shrink-0 rounded p-1 text-umss-navy transition hover:bg-umss-cream"
+                className="shrink-0 rounded p-1 text-blue-fantastic transition hover:bg-palladian"
               >
                 <Download className="h-4 w-4" aria-hidden="true" />
               </a>
             </div>
           ) : (
-            <p className="text-sm text-umss-navy/60">
+            <p className="text-sm text-blue-fantastic/60">
               Esta certificación no tiene un documento adjunto.
             </p>
           )}

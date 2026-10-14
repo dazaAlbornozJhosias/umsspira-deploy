@@ -1,0 +1,106 @@
+carrera;estado;apellido;nombre;cod_sis;telefono;email;fecha_ingreso;fecha_titulacion;fecha_verificacion_u_observacion
+Ingeniería Informática;observado;Kantuta Choque;Rosa Elena;201707846;+591 70892153;rosa.kantuta@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-08
+Ingeniería Informática;observado;López Arnez;Miguel Ángel;201503367;+591 76409285;miguel.lopez@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-10
+Ingeniería Informática;observado;Montaño Vidal;Gabriela Inés;202004215;+591 79586430;gabriela.montano@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-15
+Ingeniería Informática;observado;Nogales Cruz;Hugo Rafael;201806640;+591 73201768;hugo.nogales@est.umss.edu.bo;2018-02-12;2025-03-14;2026-09-17
+Ingeniería Informática;observado;Orosco Fuentes;Valeria Isabel;201604972;+591 71478502;valeria.orosco@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-21
+Ingeniería Informática;verificado;Alcócer Vargas;Daniela Sofía;201703125;+591 71830264;daniela.alcocer@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-08
+Ingeniería Informática;verificado;Bustillos Rojas;Marco Antonio;201802376;+591 72419058;marco.bustillos@est.umss.edu.bo;2018-02-12;2025-03-14;2026-09-09
+Ingeniería Informática;verificado;Calle Mamani;Ana Lucía;201604418;+591 76250913;ana.calle@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-10
+Ingeniería Informática;verificado;Duarte Pozo;Javier Ernesto;201905632;+591 70347185;javier.duarte@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-11
+Ingeniería Informática;verificado;Encinas Torrico;Paola Andrea;201502849;+591 79112640;paola.encinas@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-14
+Ingeniería Informática;verificado;Flores Ayala;Rodrigo Martín;202001957;+591 73586402;rodrigo.flores@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-15
+Ingeniería Informática;verificado;Guardia Salinas;Carla Beatriz;201706731;+591 77024319;carla.guardia@est.umss.edu.bo;2017-02-13;2025-03-14;2026-09-16
+Ingeniería Informática;verificado;Huanca Quispe;Luis Fernando;201804284;+591 71965827;luis.huanca@est.umss.edu.bo;2018-02-12;2024-07-18;2026-09-17
+Ingeniería Informática;verificado;Inturias Pérez;Sofía Alejandra;201605093;+591 72673041;sofia.inturias@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-18
+Ingeniería Informática;verificado;Jaldín Rocha;Diego Andrés;201902518;+591 78150396;diego.jaldin@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-21
+Ingeniería de Sistemas;observado;Aguilar Rocha;Marcelo Andrés;201705532;+591 71456023;marcelo.aguilar@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-07
+Ingeniería de Sistemas;observado;Balderrama Vega;Lucía Fernanda;201802217;+591 72308841;lucia.balderrama@est.umss.edu.bo;2018-02-12;2025-03-14;2026-09-07
+Ingeniería de Sistemas;observado;Cardozo Pinto;Jorge Luis;201604675;+591 76120459;jorge.cardozo@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-08
+Ingeniería de Sistemas;observado;Delgadillo Ríos;Paola Andrea;201903918;+591 79354102;paola.delgadillo@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-08
+Ingeniería de Sistemas;observado;Escóbar Luna;Rodrigo Iván;201506244;+591 70782316;rodrigo.escobar@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-09
+Ingeniería de Sistemas;observado;Fernández Soto;Carla Daniela;202001873;+591 75219604;carla.fernandez@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-09
+Ingeniería de Sistemas;observado;Gutiérrez Paz;Luis Alberto;201707140;+591 73664027;luis.gutierrez@est.umss.edu.bo;2017-02-13;2025-03-14;2026-09-10
+Ingeniería de Sistemas;observado;Herrera Vidal;Natalia Sofía;201805396;+591 71893350;natalia.herrera@est.umss.edu.bo;2018-02-12;2024-07-18;2026-09-10
+Ingeniería de Sistemas;observado;Iriarte Molina;Andrés Felipe;201602981;+591 77405128;andres.iriarte@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-11
+Ingeniería de Sistemas;observado;Jiménez Arce;Valeria Beatriz;201904157;+591 78562903;valeria.jimenez@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-11
+Ingeniería de Sistemas;observado;Lazarte Cruz;Miguel Ángel;201503620;+591 72147786;miguel.lazarte@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-14
+Ingeniería de Sistemas;observado;Medrano Paz;Susana Elizabeth;201708829;+591 79630214;susana.medrano@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-14
+Ingeniería de Sistemas;observado;Navia Salinas;Óscar Eduardo;202005461;+591 70258837;oscar.navia@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-15
+Ingeniería de Sistemas;observado;Orellana Vargas;Mónica Isabel;201806713;+591 76941052;monica.orellana@est.umss.edu.bo;2018-02-12;2025-03-14;2026-09-15
+Ingeniería de Sistemas;observado;Paredes Luna;Gonzalo Martín;201605308;+591 71725493;gonzalo.paredes@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-16
+Ingeniería de Sistemas;observado;Quiroga Soto;Teresa Alejandra;201902764;+591 77318640;teresa.quiroga@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-16
+Ingeniería de Sistemas;observado;Rivero Antezana;Hugo Daniel;201504095;+591 73086215;hugo.rivero@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-17
+Ingeniería de Sistemas;observado;Salazar Mendoza;Rocío Gabriela;201709352;+591 78473169;rocio.salazar@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-18
+Ingeniería de Sistemas;verificado;Camacho Rojas;Laura Andrea;201604233;+591 72845190;laura.camacho@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-08
+Ingeniería de Sistemas;verificado;Quispe Mamani;María Elena;201804512;+591 71234567;maria.quispe@est.umss.edu.bo;2018-02-12;2024-07-18;2026-09-08
+Ingeniería de Sistemas;verificado;Flores Sejas;Diego Armando;201903344;+591 70045512;diego.flores@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-09
+Ingeniería de Sistemas;verificado;Mamani Choque;Rosa Beatriz;201805871;+591 76612034;rosa.mamani@est.umss.edu.bo;2018-02-12;2025-03-14;2026-09-09
+Ingeniería de Sistemas;verificado;Terceros Vargas;Carlos Alberto;201501778;+591 71190228;carlos.terceros@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-10
+Ingeniería de Sistemas;verificado;Villarroel Antezana;Ana Gabriela;201702290;+591 79923845;ana.villarroel@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-10
+Ingeniería de Sistemas;verificado;Claros Montaño;Mario Fernando;201604910;+591 73320087;mario.claros@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-11
+Ingeniería de Sistemas;verificado;Rojas Peredo;Silvia Marcela;202006655;+591 75534901;silvia.rojas@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-11
+Ingeniería de Sistemas;verificado;Guzmán Arispe;Pablo Andrés;201703487;+591 71708294;pablo.guzman@est.umss.edu.bo;2017-02-13;2025-03-14;2026-09-14
+Ingeniería de Sistemas;verificado;Vargas Ledezma;Elena Sofía;201901126;+591 78845613;elena.vargas@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-14
+Ingeniería de Sistemas;verificado;Céspedes Arce;Ronald Javier;201605742;+591 72214960;ronald.cespedes@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-15
+Ingeniería de Sistemas;verificado;Soria Bustamante;Gabriela Inés;201502019;+591 76650338;gabriela.soria@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-15
+Ingeniería de Sistemas;verificado;Montaño Ríos;Iván Sebastián;201706118;+591 70983127;ivan.montano@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-16
+Ingeniería de Sistemas;verificado;Peña Salazar;Verónica Alejandra;201902255;+591 79017743;veronica.pena@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-16
+Ingeniería de Sistemas;verificado;Arce Ondarza;Daniela Patricia;202007390;+591 77742015;daniela.arce@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-17
+Ingeniería de Sistemas;verificado;Ríos Zeballos;Fernando Gabriel;201503864;+591 71356208;fernando.rios@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-17
+Ingeniería de Sistemas;verificado;Mejía Torrico;Patricia Carolina;201607205;+591 74428830;patricia.mejia@est.umss.edu.bo;2016-02-05;2025-03-14;2026-09-18
+Ingeniería de Sistemas;verificado;Zeballos Núñez;Álvaro Ignacio;201904471;+591 78190562;alvaro.zeballos@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-18
+Ingeniería de Sistemas;verificado;Aguilar Ramos;Andrea Paola;201864813;+591 73793371;andrea.aguilar@est.umss.edu.bo;2018-02-12;2024-07-18;2026-09-19
+Ingeniería de Sistemas;verificado;Alanoca Vidal;Bruno Iván;201623084;+591 73229132;bruno.alanoca@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-19
+Ingeniería de Sistemas;verificado;Apaza Luna;Carla Inés;201971355;+591 72664893;carla.apaza@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-19
+Ingeniería de Sistemas;verificado;Ayala Soto;Daniel José;201729626;+591 72100654;daniel.ayala@est.umss.edu.bo;2017-02-13;2025-03-14;2026-09-19
+Ingeniería de Sistemas;verificado;Bravo Mena;Erika Luz;202077897;+591 71536415;erika.bravo@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-19
+Ingeniería de Sistemas;verificado;Calle Tapia;Gisela Ana;201884439;+591 79407937;gisela.calle@est.umss.edu.bo;2018-02-12;2024-07-18;2026-09-19
+Ingeniería de Sistemas;verificado;Condori Cruz;Hugo Raúl;201642710;+591 78843698;hugo.condori@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-19
+Ingeniería de Sistemas;verificado;Cáceres Rivas;Franco Abel;201536168;+591 79972176;franco.caceres@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-19
+Ingeniería de Sistemas;verificado;Durán Ramos;Andrea Paola;201990981;+591 78279459;andrea.duran@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-20
+Ingeniería de Sistemas;verificado;Espinoza Vidal;Bruno Iván;201749252;+591 77715220;bruno.espinoza@est.umss.edu.bo;2017-02-13;2025-03-14;2026-09-20
+Ingeniería de Sistemas;verificado;Fernández Luna;Carla Inés;202097523;+591 77150981;carla.fernandez@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-20
+Ingeniería de Sistemas;verificado;Gutiérrez Soto;Daniel José;201555794;+591 76586742;daniel.gutierrez@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-20
+Ingeniería de Sistemas;verificado;Huanca Mena;Erika Luz;201814065;+591 76022503;erika.huanca@est.umss.edu.bo;2018-02-12;2024-07-18;2026-09-20
+Ingeniería de Sistemas;verificado;Jiménez Rivas;Franco Abel;201662336;+591 75458264;franco.jimenez@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-20
+Ingeniería de Sistemas;verificado;López Tapia;Gisela Ana;201920607;+591 74894025;gisela.lopez@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-20
+Ingeniería de Sistemas;verificado;Mercado Cruz;Hugo Raúl;201768878;+591 74329786;hugo.mercado@est.umss.edu.bo;2017-02-13;2025-03-14;2026-09-20
+Ingeniería de Sistemas;verificado;Nina Ramos;Andrea Paola;202027149;+591 73765547;andrea.nina@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-21
+Ingeniería de Sistemas;verificado;Orellana Vidal;Bruno Iván;201575420;+591 73201308;bruno.orellana@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-21
+Ingeniería de Sistemas;verificado;Paredes Luna;Carla Inés;201833691;+591 72637069;carla.paredes@est.umss.edu.bo;2018-02-12;2024-07-18;2026-09-21
+Ingeniería de Sistemas;verificado;Quiroga Soto;Daniel José;201681962;+591 72072830;daniel.quiroga@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-21
+Ingeniería de Sistemas;verificado;Rocha Mena;Erika Luz;201940233;+591 71508591;erika.rocha@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-21
+Ingeniería de Sistemas;verificado;Salinas Rivas;Franco Abel;201788504;+591 79944352;franco.salinas@est.umss.edu.bo;2017-02-13;2025-03-14;2026-09-21
+Ingeniería de Sistemas;verificado;Ticona Tapia;Gisela Ana;202046775;+591 79380113;gisela.ticona@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-21
+Ingeniería de Sistemas;verificado;Urquidi Cruz;Hugo Raúl;201595046;+591 78815874;hugo.urquidi@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-21
+Ingeniería de Sistemas;verificado;Benavides Quiroga;Tatiana Elizabeth;201501497;+591 74923439;tatiana.benavides@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-22
+Ingeniería de Sistemas;verificado;Dávila Echeverría;Gabriela Sofía;201702484;+591 79121570;gabriela.davila@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-22
+Ingeniería de Sistemas;verificado;Fuentes Quiroga;Álvaro Gonzalo;201804308;+591 70483043;alvaro.fuentes@est.umss.edu.bo;2018-02-12;2025-03-14;2026-09-22
+Ingeniería de Sistemas;verificado;Galarza Escalera;Elena Patricia;201909989;+591 70750759;elena.galarza@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-22
+Ingeniería de Sistemas;verificado;Iriarte Lazo;Bruno Sebastián;202009236;+591 72879263;bruno.iriarte@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-22
+Ingeniería de Sistemas;verificado;Nava Dávila;Isabel Cristina;201607296;+591 77181704;isabel.nava@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-22
+Ingeniería de Sistemas;verificado;Nava Ortuño;Nicolás Esteban;201909913;+591 70952229;nicolas.nava@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-22
+Ingeniería de Sistemas;verificado;Paz Heredia;Renata Beatriz;201501125;+591 77790183;renata.paz@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-22
+Ingeniería de Sistemas;verificado;Pinto Jiménez;Elena Patricia;201608916;+591 76520970;elena.pinto@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-22
+Ingeniería de Sistemas;verificado;Rivera Valdivia;Karen Daniela;202007937;+591 77247949;karen.rivera@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-22
+Ingeniería de Sistemas;verificado;Antezana Orellana;Pablo Ernesto;201907390;+591 70541831;pablo.antezana@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-23
+Ingeniería de Sistemas;verificado;Cabrera Jiménez;Tatiana Elizabeth;201509564;+591 71871305;tatiana.cabrera@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-23
+Ingeniería de Sistemas;verificado;Ferrufino Iriarte;Yerko Andrés;201706700;+591 77319125;yerko.ferrufino@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-23
+Ingeniería de Sistemas;verificado;Fuentes Dávila;Jorge Alberto;201803685;+591 71073935;jorge.fuentes@est.umss.edu.bo;2018-02-12;2025-03-14;2026-09-23
+Ingeniería de Sistemas;verificado;Fuentes Paz;Adriana Lucía;201709037;+591 75396447;adriana.fuentes@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-23
+Ingeniería de Sistemas;verificado;Lazo Cabrera;Tatiana Elizabeth;201601558;+591 70321281;tatiana.lazo@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-23
+Ingeniería de Sistemas;verificado;Rivera Delgado;Adriana Lucía;201502816;+591 73471021;adriana.rivera@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-23
+Ingeniería de Sistemas;verificado;Tapia Escalera;Bruno Sebastián;201702577;+591 74021083;bruno.tapia@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-23
+Ingeniería de Sistemas;verificado;Terrazas Lafuente;Daniel Ignacio;201501541;+591 70344122;daniel.terrazas@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-23
+Ingeniería de Sistemas;verificado;Valdivia Galarza;Nicolás Esteban;201507889;+591 77673486;nicolas.valdivia@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-23
+Ingeniería de Sistemas;verificado;Bejarano Ortuño;Gabriela Sofía;201503338;+591 79316854;gabriela.bejarano@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-24
+Ingeniería de Sistemas;verificado;Gamboa Quiroga;Jorge Alberto;201603383;+591 79995603;jorge.gamboa@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-24
+Ingeniería de Sistemas;verificado;Iriarte Cabrera;Víctor Hugo;202009870;+591 72771930;victor.iriarte@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-24
+Ingeniería de Sistemas;verificado;Jiménez Delgado;Héctor Raúl;201702102;+591 73362773;hector.jimenez@est.umss.edu.bo;2017-02-13;2024-07-18;2026-09-24
+Ingeniería de Sistemas;verificado;Lafuente Orellana;Bruno Sebastián;201507359;+591 78129716;bruno.lafuente@est.umss.edu.bo;2015-02-09;2022-12-05;2026-09-24
+Ingeniería de Sistemas;verificado;Navarro Camargo;María Fernanda;201906182;+591 71367046;maria.navarro@est.umss.edu.bo;2019-02-11;2025-08-29;2026-09-24
+Ingeniería de Sistemas;verificado;Navarro Escalera;Álvaro Gonzalo;201601723;+591 70397564;alvaro.navarro@est.umss.edu.bo;2016-02-05;2023-11-22;2026-09-24
+Ingeniería de Sistemas;verificado;Paz Heredia;Nicolás Esteban;202004373;+591 75742712;nicolas.paz@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-24
+Ingeniería de Sistemas;verificado;Quiroga Arandia;Renata Beatriz;202002642;+591 71738353;renata.quiroga@est.umss.edu.bo;2020-02-10;2025-12-19;2026-09-24
+Ingeniería de Sistemas;verificado;Siles Valdivia;Nicolás Esteban;201804577;+591 78379156;nicolas.siles@est.umss.edu.bo;2018-02-12;2025-03-14;2026-09-24

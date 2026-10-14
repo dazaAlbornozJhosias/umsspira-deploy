@@ -1,0 +1,1791 @@
+{
+  "info": {
+    "name": "UMSSPIRA - Registro público (HU-01)",
+    "description": "Pruebas del módulo /registrations. Correr 'Listar carreras' primero. CA-01.4 y CA-01.5 usan las variables existing* y rejected*: pon valores de solicitudes que YA existan en la BD (una no rechazada y una rechazada). El duplicado de C.I. se compara por C.I. + complemento. El último request de CA-01.6 es manual.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Datos únicos en cada request para que los casos válidos no choquen entre sí",
+          "const rnd = (n) => Array.from({ length: n }, () => Math.floor(Math.random() * 10)).join('');",
+          "pm.collectionVariables.set('ci', '9' + rnd(7));",
+          "pm.collectionVariables.set('codigoSis', '9' + rnd(8));",
+          "pm.collectionVariables.set('telefono', '7' + rnd(7));",
+          "pm.collectionVariables.set('correo', 'test.' + Date.now() + rnd(3) + '@example.com');",
+          "if (!pm.collectionVariables.get('unknownToken')) pm.collectionVariables.set('unknownToken', '11111111-2222-4333-8444-555555555555');"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "carreraId",
+      "value": ""
+    },
+    {
+      "key": "sessionToken",
+      "value": ""
+    },
+    {
+      "key": "existingCi",
+      "value": "1234567"
+    },
+    {
+      "key": "existingComplemento",
+      "value": ""
+    },
+    {
+      "key": "existingExpedido",
+      "value": "CB"
+    },
+    {
+      "key": "existingCorreo",
+      "value": "existente@example.com"
+    },
+    {
+      "key": "existingSis",
+      "value": "201900001"
+    },
+    {
+      "key": "rejectedCi",
+      "value": "7654321"
+    },
+    {
+      "key": "rejectedComplemento",
+      "value": ""
+    },
+    {
+      "key": "rejectedExpedido",
+      "value": "SC"
+    },
+    {
+      "key": "rejectedCorreo",
+      "value": "rechazado@example.com"
+    },
+    {
+      "key": "rejectedSis",
+      "value": "201900002"
+    },
+    {
+      "key": "verifiedSessionToken",
+      "value": ""
+    },
+    {
+      "key": "duplicateSessionToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Preparación",
+      "item": [
+        {
+          "name": "Listar carreras",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/careers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "careers"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve al menos una carrera con id y nombre', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d).to.be.an('array').that.is.not.empty;",
+                  "  pm.expect(d[0]).to.have.keys('id', 'nombre');",
+                  "  pm.collectionVariables.set('carreraId', d[0].id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CA-01.1 - Registro válido",
+      "item": [
+        {
+          "name": "Registro válido SIN complemento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Devuelve sessionToken y 2 horas de vigencia', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.sessionToken).to.match(/^[0-9a-f-]{36}$/);",
+                  "  pm.expect(d.expiresInSeconds).to.eql(7200);",
+                  "  pm.collectionVariables.set('sessionToken', d.sessionToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registro válido CON complemento (1a -> 1A)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"1a\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Devuelve sessionToken y 2 horas de vigencia', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.sessionToken).to.match(/^[0-9a-f-]{36}$/);",
+                  "  pm.expect(d.expiresInSeconds).to.eql(7200);",
+                  "  pm.collectionVariables.set('sessionToken', d.sessionToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registro válido con correo en mayúsculas (se normaliza)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correoMayus}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('correoMayus', pm.collectionVariables.get('correo').toUpperCase());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Devuelve sessionToken y 2 horas de vigencia', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.sessionToken).to.match(/^[0-9a-f-]{36}$/);",
+                  "  pm.expect(d.expiresInSeconds).to.eql(7200);",
+                  "  pm.collectionVariables.set('sessionToken', d.sessionToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sesión recién creada sigue vigente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions/{{sessionToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions",
+                "{{sessionToken}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Quedan entre 1 y 7200 segundos', () => {",
+                  "  const s = pm.response.json().data.expiresInSeconds;",
+                  "  pm.expect(s).to.be.within(1, 7200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CA-01.3 - Validaciones (400)",
+      "item": [
+        {
+          "name": "Correo sin @",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"juan.mail.com\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"correo\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('correo');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C.I. con letras",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"12ab567\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"ci\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('ci');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C.I. con símbolos (puntos/guion)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"1.234-567\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"ci\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('ci');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C.I. muy corto (4 dígitos)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"1234\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"ci\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('ci');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Complemento de 3 caracteres",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"ABC\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"complementoCi\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('complementoCi');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Código SIS no numérico",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"abc12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"codigoSis\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('codigoSis');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Código SIS de 5 dígitos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"codigoSis\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('codigoSis');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Teléfono de 7 dígitos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"7123456\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"telefono\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('telefono');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Teléfono de 9 dígitos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"712345678\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"telefono\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('telefono');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Falta Nombres",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"nombres\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('nombres');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Nombres con números",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan2\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"nombres\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('nombres');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Falta Apellidos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"apellidos\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('apellidos');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Falta Expedido en",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"expedidoEn\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('expedidoEn');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Expedido en inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"XX\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"expedidoEn\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('expedidoEn');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Carrera con id no válido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"sistemas\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"carreraId\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('carreraId');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Carrera inexistente (UUID válido)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"00000000-0000-4000-8000-000000000000\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"carreraId\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('carreraId');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Año de egreso 1969",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 1969,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"anioEgreso\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('anioEgreso');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Año de egreso en el futuro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2999,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Marca el campo \"anioEgreso\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.errors.map(e => e.field)).to.include('anioEgreso');",
+                  "  b.errors.forEach(e => pm.expect(e.message).to.be.a('string').and.not.empty);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Los datos ingresados no se pierden: varios errores a la vez",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"abc\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"sin-arroba\",\n  \"telefono\": \"123\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Reporta todos los campos con error', () => {",
+                  "  const fields = pm.response.json().errors.map(e => e.field);",
+                  "  pm.expect(fields).to.include.members(['correo', 'ci', 'telefono']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CA-01.4 - Duplicados (409)",
+      "item": [
+        {
+          "name": "Duplicado por C.I. + complemento + expedido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{existingCi}}\",\n  \"complementoCi\": \"{{existingComplemento}}\",\n  \"expedidoEn\": \"{{existingExpedido}}\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Indica el campo duplicado \"ci\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.field).to.eql('ci');",
+                  "  pm.expect(b.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicado por correo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{existingCorreo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Indica el campo duplicado \"correo\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.field).to.eql('correo');",
+                  "  pm.expect(b.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicado por correo (mayúsculas)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{existingCorreoMayus}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{codigoSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('existingCorreoMayus', pm.collectionVariables.get('existingCorreo').toUpperCase());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Indica el campo duplicado \"correo\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.field).to.eql('correo');",
+                  "  pm.expect(b.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicado por Código SIS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{ci}}\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{correo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{existingSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Indica el campo duplicado \"codigoSis\"', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.field).to.eql('codigoSis');",
+                  "  pm.expect(b.message).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CA-01.5 - Solicitud rechazada permite re-registro",
+      "item": [
+        {
+          "name": "Mismos datos de una solicitud rechazada -> 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez Mamani\",\n  \"ci\": \"{{rejectedCi}}\",\n  \"complementoCi\": \"{{rejectedComplemento}}\",\n  \"expedidoEn\": \"{{rejectedExpedido}}\",\n  \"correo\": \"{{rejectedCorreo}}\",\n  \"telefono\": \"{{telefono}}\",\n  \"carreraId\": \"{{carreraId}}\",\n  \"anioEgreso\": 2024,\n  \"codigoSis\": \"{{rejectedSis}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Devuelve sessionToken y 2 horas de vigencia', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.sessionToken).to.match(/^[0-9a-f-]{36}$/);",
+                  "  pm.expect(d.expiresInSeconds).to.eql(7200);",
+                  "  pm.collectionVariables.set('sessionToken', d.sessionToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CA-01.6 - Sesión vencida (410)",
+      "item": [
+        {
+          "name": "Token inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions/{{unknownToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions",
+                "{{unknownToken}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('410 Gone', () => pm.response.to.have.status(410));",
+                  "pm.test('Avisa que debe llenar el formulario desde el inicio', () => {",
+                  "  pm.expect(pm.response.json().message).to.include('desde el inicio');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Token mal formado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions",
+                "abc"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('410 Gone', () => pm.response.to.have.status(410));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Token expirado de verdad (manual)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/registrations/sessions/{{sessionToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "sessions",
+                "{{sessionToken}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Antes de correr: en redis-cli ejecuta  DEL registration-session:<sessionToken>  (o EXPIRE ... 1)",
+                  "pm.test('410 Gone tras vencer el TTL', () => pm.response.to.have.status(410));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+  {
+  "name": "CA-03 - Envío de solicitud",
+  "item": [
+    {
+      "name": "Submit válido - 201 Created",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/registrations/submit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "registrations",
+            "submit"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionToken\": \"{{verifiedSessionToken}}\",\n  \"deseaMentor\": true,\n  \"tipoDocumento\": \"titulo_provision_nacional\",\n  \"rutaStorage\": \"documents/{{verifiedSessionToken}}/titulo.pdf\",\n  \"sizeBytes\": 1048576\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "pm.test('Devuelve datos de la solicitud registrada', () => {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.have.property('data');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submit con payload inválido - 400 Bad Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/registrations/submit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "registrations",
+            "submit"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionToken\": \"{{verifiedSessionToken}}\",\n  \"deseaMentor\": true,\n  \"tipoDocumento\": \"titulo_provision_nacional\",\n  \"rutaStorage\": \"documents/test/titulo.pdf\",\n  \"sizeBytes\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submit con sesión inexistente - 410 Gone",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/registrations/submit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "registrations",
+            "submit"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionToken\": \"{{unknownToken}}\",\n  \"deseaMentor\": true,\n  \"tipoDocumento\": \"titulo_provision_nacional\",\n  \"rutaStorage\": \"documents/test/titulo.pdf\",\n  \"sizeBytes\": 1048576\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('410 Gone', () => pm.response.to.have.status(410));",
+              "pm.test('Indica que el registro venció', () => {",
+              "  pm.expect(pm.response.json().message).to.include('desde el inicio');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submit con tipo de documento inválido - 400 Bad Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/registrations/submit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "registrations",
+            "submit"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionToken\": \"{{verifiedSessionToken}}\",\n  \"deseaMentor\": true,\n  \"tipoDocumento\": \"documento_inexistente\",\n  \"rutaStorage\": \"documents/test/titulo.pdf\",\n  \"sizeBytes\": 1048576\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "javascript",
+            "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('Indica tipo de documento inválido', () => {",
+              "  pm.expect(pm.response.json().message).to.include('tipo de archivo');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submit duplicado al finalizar - 409 Conflict",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/registrations/submit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "registrations",
+            "submit"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionToken\": \"{{duplicateSessionToken}}\",\n  \"deseaMentor\": false,\n  \"tipoDocumento\": \"titulo_provision_nacional\",\n  \"rutaStorage\": \"documents/test/titulo.pdf\",\n  \"sizeBytes\": 1048576\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
+              ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

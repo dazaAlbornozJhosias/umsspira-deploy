@@ -1,0 +1,9 @@
+{{platformName}}
+
+Usa el siguiente código para verificar tu correo electrónico:
+
+{{code}}
+
+El código vence en {{expiresInMinutes}} minutos.
+
+Si no solicitaste este código, puedes ignorar este mensaje.

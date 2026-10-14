@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { Briefcase } from 'lucide-react';
+import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
+import { validarRangoFechas } from '@/modules/profile/validation/reglas-perfil';
+import { ApiError } from '@/shared/services/api-client';
 
 export type Experiencia = {
   empresa: string;
@@ -11,7 +14,8 @@ export type Experiencia = {
 };
 type FormularioExperienciaProps = {
   experiencias:Experiencia[];
-  onAgregar: (experiencia: Experiencia) => void;
+  // Si la promesa falla con ApiError (400...), se muestra su mensaje y no se limpia el formulario
+  onAgregar: (experiencia: Experiencia) => void | Promise<void>;
 };
 
 type Datos = {
@@ -38,22 +42,45 @@ function mostrarFecha(fecha: string) {
 export function FormularioExperiencia({experiencias, onAgregar }: FormularioExperienciaProps) {
   const [datos, setDatos] = useState<Datos>(VACIO);
   const [trabajoActual, setTrabajoActual] = useState(false);
+  // Error de la fecha fin ('Hasta' anterior a 'Desde'); una vez mostrado se recalcula mientras se corrige
+  const [errorFechaFin, setErrorFechaFin] = useState<string>();
+  // Mensaje del backend al guardar, tal como lo envía; se quita al cambiar cualquier campo
+  const [errorGuardar, setErrorGuardar] = useState<string>();
+  const [guardando, setGuardando] = useState(false);
   const completo = CAMPOS.every((campo) => (campo.nombre === 'fechaFin' && trabajoActual) || datos[campo.nombre].trim() !== '',
   );
 
   const ordenadas = [...experiencias].sort((a, b) => b.fechaInicio.localeCompare(a.fechaInicio));
 
-  function agregar(evento: React.FormEvent<HTMLFormElement>) {
+  async function agregar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    if (!completo) return;
-    onAgregar({
-      empresa: datos.empresa.trim(),
-      cargo: datos.cargo.trim(),
-      fechaInicio: datos.fechaInicio,
-      fechaFin: trabajoActual ? undefined : datos.fechaFin,
-    });
-    setDatos(VACIO);
-    setTrabajoActual(false);
+    if (!completo || guardando) return;
+    const error = trabajoActual ? undefined : validarRangoFechas(datos.fechaInicio, datos.fechaFin);
+    setErrorFechaFin(error);
+    if (error) return;
+    setGuardando(true);
+    try {
+      await onAgregar({
+        empresa: datos.empresa.trim(),
+        cargo: datos.cargo.trim(),
+        fechaInicio: datos.fechaInicio,
+        fechaFin: trabajoActual ? undefined : datos.fechaFin,
+      });
+      setDatos(VACIO);
+      setTrabajoActual(false);
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error;
+      setErrorGuardar(error.message);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  function cambiar(campo: keyof Datos, valor: string) {
+    const nuevos = { ...datos, [campo]: valor };
+    setDatos(nuevos);
+    setErrorGuardar(undefined);
+    if (errorFechaFin) setErrorFechaFin(validarRangoFechas(nuevos.fechaInicio, nuevos.fechaFin));
   }
   return (
     <div className="flex flex-col gap-5">
@@ -93,11 +120,17 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
             <input
               type={campo.tipo}
               value={datos[campo.nombre]}
-              onChange={(e) => setDatos({ ...datos, [campo.nombre]: e.target.value })}
+              onChange={(e) => cambiar(campo.nombre, e.target.value)}
               placeholder={campo.ejemplo}
               disabled={deshabilitado}
-              className="h-11 rounded-lg border border-[#C9C1B1] bg-[#EEE9DF] px-3 text-sm text-[#1B2632] outline-none placeholder:text-[#2C3B4D]/40 focus:border-2 focus:border-[#2C3B4D] focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+              aria-invalid={esFin ? Boolean(errorFechaFin) : undefined}
+              aria-describedby={esFin ? 'error-fechaFin' : undefined}
+              className={claseCampo(
+                'h-11 rounded-lg border border-[#C9C1B1] bg-[#EEE9DF] px-3 text-sm text-[#1B2632] outline-none placeholder:text-[#2C3B4D]/40 focus:border-2 focus:border-[#2C3B4D] focus:bg-white disabled:cursor-not-allowed disabled:opacity-50',
+                esFin ? errorFechaFin : undefined,
+              )}
             />
+            {esFin && <MensajeError id="error-fechaFin" mensaje={errorFechaFin} />}
           </label>
         );
       })}
@@ -109,16 +142,20 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
             onChange={(e) => {
               setTrabajoActual(e.target.checked);
               setDatos({ ...datos, fechaFin: '' });
+              setErrorFechaFin(undefined);
+              setErrorGuardar(undefined);
             }}
             className="h-4 w-4 accent-[#A35139]"
           />
           Actualmente trabajo aquí
         </label>
 
+      <MensajeError id="error-experiencia-guardar" mensaje={errorGuardar} />
+
       <div className="flex justify-end">
           <button
             type="submit"
-            disabled={!completo}
+            disabled={!completo || guardando}
             className="h-11 rounded-lg bg-[#FFB162] px-6 text-sm font-semibold text-[#1B2632] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Agregar experiencia

@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { GraduationCap, Plus } from 'lucide-react';
+import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
+import { validarAnioEgreso, validarFormacionDuplicada } from '@/modules/profile/validation/reglas-perfil';
+import { ApiError } from '@/shared/services/api-client';
 
 const GRADOS = ['Técnico superior', 'Licenciatura', 'Maestría', 'Doctorado'];
 
@@ -14,7 +17,8 @@ export type FormacionAcademica = {
 
 type FormacionAcademicaFormProps = {
   formaciones: FormacionAcademica[];
-  onAgregar: (formacion: FormacionAcademica) => void;
+  // Si la promesa falla con ApiError (409, 400...), se muestra su mensaje y no se limpia el formulario
+  onAgregar: (formacion: FormacionAcademica) => void | Promise<void>;
 };
 
 const VACIO: FormacionAcademica = { institucion: '', titulo: '', anioEgreso: '', grado: '' };
@@ -26,20 +30,45 @@ const inputClase =
 
 export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcademicaFormProps) {
   const [datos, setDatos] = useState<FormacionAcademica>(VACIO);
+  // Error del año de egreso; una vez mostrado se recalcula mientras se corrige
+  const [errorAnio, setErrorAnio] = useState<string>();
+  // Formación ya registrada (Institución + Título + Año); se quita al cambiar cualquier campo
+  const [errorDuplicada, setErrorDuplicada] = useState<string>();
+  // Mensaje del backend al guardar, tal como lo envía; se quita al cambiar cualquier campo
+  const [errorGuardar, setErrorGuardar] = useState<string>();
+  const [guardando, setGuardando] = useState(false);
 
   function cambiar(campo: keyof FormacionAcademica, valor: string) {
     setDatos({ ...datos, [campo]: valor });
+    setErrorDuplicada(undefined);
+    setErrorGuardar(undefined);
+    if (campo === 'anioEgreso' && errorAnio) setErrorAnio(validarAnioEgreso(valor));
   }
 
-  function agregar(evento: React.FormEvent<HTMLFormElement>) {
+  async function agregar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    onAgregar({
-      institucion: datos.institucion.trim(),
-      titulo: datos.titulo.trim(),
-      anioEgreso: datos.anioEgreso,
-      grado: datos.grado,
-    });
-    setDatos(VACIO);
+    if (guardando) return;
+    const error = validarAnioEgreso(datos.anioEgreso);
+    setErrorAnio(error);
+    if (error) return;
+    const duplicada = validarFormacionDuplicada(datos, formaciones);
+    setErrorDuplicada(duplicada);
+    if (duplicada) return;
+    setGuardando(true);
+    try {
+      await onAgregar({
+        institucion: datos.institucion.trim(),
+        titulo: datos.titulo.trim(),
+        anioEgreso: datos.anioEgreso,
+        grado: datos.grado,
+      });
+      setDatos(VACIO);
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error;
+      setErrorGuardar(error.message);
+    } finally {
+      setGuardando(false);
+    }
   }
 
   return (
@@ -114,8 +143,11 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
               placeholder="AAAA"
               value={datos.anioEgreso}
               onChange={(e) => cambiar('anioEgreso', e.target.value.replace(/\D/g, ''))}
-              className={inputClase}
+              aria-invalid={Boolean(errorAnio)}
+              aria-describedby="error-anioEgreso"
+              className={claseCampo(inputClase, errorAnio)}
             />
+            <MensajeError id="error-anioEgreso" mensaje={errorAnio} />
           </div>
 
           <div>
@@ -135,9 +167,13 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
           </div>
         </div>
 
+        <MensajeError id="error-formacion-duplicada" mensaje={errorDuplicada} />
+        <MensajeError id="error-formacion-guardar" mensaje={errorGuardar} />
+
         <button
           type="submit"
-          className="inline-flex h-10 items-center gap-2 rounded-md border border-[#2C3B4D] bg-white px-4 text-sm font-medium text-[#2C3B4D] hover:bg-[#EEE9DF]"
+          disabled={guardando}
+          className="inline-flex h-10 items-center gap-2 rounded-md border border-[#2C3B4D] bg-white px-4 text-sm font-medium text-[#2C3B4D] hover:bg-[#EEE9DF] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus className="h-4 w-4" />
           Agregar formación

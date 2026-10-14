@@ -16,13 +16,13 @@ export function SeccionAcordeon({ numero, titulo, descripcion, cantidad, childre
   const completa = cantidad > 0;
 
   let indicador = (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-umss-sand text-sm font-bold text-umss-navy">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-oatmeal text-sm font-bold text-blue-fantastic">
       {numero}
     </span>
   );
   if (abierta) {
     indicador = (
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-umss-terracotta text-sm font-bold text-white">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-truffle-trouble text-sm font-bold text-white">
         {numero}
       </span>
     );
@@ -37,7 +37,7 @@ export function SeccionAcordeon({ numero, titulo, descripcion, cantidad, childre
   return (
     <section
       className={`rounded-2xl border bg-white transition-colors ${
-        abierta ? 'border-umss-terracotta' : 'border-umss-ink/10'
+        abierta ? 'border-truffle-trouble' : 'border-abyssal-blue/10'
       }`}
     >
       <button
@@ -50,23 +50,23 @@ export function SeccionAcordeon({ numero, titulo, descripcion, cantidad, childre
         <span className="flex min-w-0 items-center gap-3">
           {indicador}
           <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-            <span className="text-base font-bold uppercase text-umss-navy">
+            <span className="text-base font-bold uppercase text-blue-fantastic">
               {abierta ? titulo : `${numero}. ${titulo}`}
             </span>
-            <span className={`text-[13px] ${completa ? 'font-medium text-[#0F5132]' : 'text-umss-navy/60'}`}>
+            <span className={`text-[13px] ${completa ? 'font-medium text-[#0F5132]' : 'text-blue-fantastic/60'}`}>
               {completa ? `(Completado · ${cantidad} ${cantidad === 1 ? 'registro' : 'registros'})` : '(Sin iniciar)'}
             </span>
           </span>
         </span>
 
         {abierta ? (
-          <ChevronUp className="h-5 w-5 shrink-0 text-umss-navy" aria-hidden="true" />
+          <ChevronUp className="h-5 w-5 shrink-0 text-blue-fantastic" aria-hidden="true" />
         ) : (
-          <ChevronDown className="h-5 w-5 shrink-0 text-umss-navy" aria-hidden="true" />
+          <ChevronDown className="h-5 w-5 shrink-0 text-blue-fantastic" aria-hidden="true" />
         )}
       </button>
 
-      {abierta && <div className="border-t border-umss-sand/70 px-4 py-4 md:px-6 md:py-5">{children}</div>}
+      {abierta && <div className="border-t border-oatmeal/70 px-4 py-4 md:px-6 md:py-5">{children}</div>}
     </section>
   );
 }

@@ -1,12 +1,13 @@
-import React from 'react';
+import { ProgressSteps } from '@/shared/components/progress-steps';
+import { RegistrationForm } from '@/modules/registration/frontend/components/registration-form';
 
 export default function RegisterPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-4">
-        <h1 className="text-2xl font-bold">Registro</h1>
-        <p className="text-sm text-gray-500">Página de registro en construcción.</p>
-      </div>
-    </main>
+    <div className="min-h-screen bg-palladian px-4 py-10 sm:px-6">
+      <main className="mx-auto max-w-3xl">
+        <ProgressSteps currentStep="data" />
+        <RegistrationForm />
+      </main>
+    </div>
   );
 }

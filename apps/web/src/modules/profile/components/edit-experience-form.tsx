@@ -9,8 +9,12 @@ import {
   INPUT_CLASS,
   RecordNotFound,
 } from '@/modules/profile/components/edit-record-layout';
+import { actualizarExperiencia } from '@/modules/profile/services/perfil-api';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { ExperienceRecord } from '@/modules/profile/types/profile-record';
+import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
+import { validarRangoFechas } from '@/modules/profile/validation/reglas-perfil';
+import { ApiError } from '@/shared/services/api-client';
 
 type ExperienceFormData = {
   company: string;
@@ -42,30 +46,52 @@ function EditExperienceFields({ experience }: { experience: ExperienceRecord }) 
   // Sin fecha de fin = trabajo actual (igual que en "Completar perfil")
   const [isCurrentJob, setIsCurrentJob] = useState(!experience.endDate);
   const [isSaved, setIsSaved] = useState(false);
+  // 'Hasta' anterior a 'Desde' (misma regla que al crear); una vez mostrado se recalcula mientras se corrige
+  const [endDateError, setEndDateError] = useState<string>();
+  // Mensaje del backend al guardar (400...), tal como lo envía
+  const [saveError, setSaveError] = useState<string>();
+  const [isSaving, setIsSaving] = useState(false);
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
+    const next = { ...formData, [name]: value };
+    setFormData(next);
     setIsSaved(false);
+    setSaveError(undefined);
+    if (endDateError) setEndDateError(validarRangoFechas(next.startDate, next.endDate));
   }
 
   function handleCurrentJobChange(event: React.ChangeEvent<HTMLInputElement>) {
     setIsCurrentJob(event.target.checked);
     if (event.target.checked) setFormData((current) => ({ ...current, endDate: '' }));
     setIsSaved(false);
+    setEndDateError(undefined);
+    setSaveError(undefined);
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    // Frontend solamente: actualiza el estado compartido del perfil. El backend se conectará posteriormente.
-    updateRecord('experience', {
-      ...experience,
-      company: formData.company.trim(),
-      position: formData.position.trim(),
-      startDate: formData.startDate,
-      endDate: isCurrentJob ? '' : formData.endDate,
-    });
-    setIsSaved(true);
+    if (isSaving) return;
+    const error = isCurrentJob ? undefined : validarRangoFechas(formData.startDate, formData.endDate);
+    setEndDateError(error);
+    if (error) return;
+
+    setIsSaving(true);
+    try {
+      const actualizada = await actualizarExperiencia(experience.id, {
+        empresa: formData.company,
+        cargo: formData.position,
+        fechaInicio: formData.startDate,
+        fechaFin: isCurrentJob ? undefined : formData.endDate,
+      });
+      updateRecord('experience', actualizada);
+      setIsSaved(true);
+    } catch (apiError) {
+      if (!(apiError instanceof ApiError)) throw apiError;
+      setSaveError(apiError.message);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -92,7 +118,6 @@ function EditExperienceFields({ experience }: { experience: ExperienceRecord }) 
             name="startDate"
             type="date"
             value={formData.startDate}
-            max={formData.endDate || undefined}
             onChange={handleChange}
             required
             className={INPUT_CLASS}
@@ -104,24 +129,28 @@ function EditExperienceFields({ experience }: { experience: ExperienceRecord }) 
             name="endDate"
             type="date"
             value={formData.endDate}
-            min={formData.startDate || undefined}
             onChange={handleChange}
             required={!isCurrentJob}
             disabled={isCurrentJob}
-            className={INPUT_CLASS}
+            aria-invalid={Boolean(endDateError)}
+            aria-describedby="error-endDate"
+            className={claseCampo(INPUT_CLASS, endDateError)}
           />
+          <MensajeError id="error-endDate" mensaje={endDateError} />
         </FormField>
       </div>
 
-      <label className="flex w-fit items-center gap-2 text-[13px] text-umss-navy">
+      <label className="flex w-fit items-center gap-2 text-[13px] text-blue-fantastic">
         <input
           type="checkbox"
           checked={isCurrentJob}
           onChange={handleCurrentJobChange}
-          className="h-4 w-4 accent-umss-terracotta"
+          className="h-4 w-4 accent-truffle-trouble"
         />
         Actualmente trabajo aquí
       </label>
+
+      <MensajeError id="error-experience-save" mensaje={saveError} />
     </EditRecordLayout>
   );
 }

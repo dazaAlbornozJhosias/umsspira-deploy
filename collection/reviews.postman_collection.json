@@ -1,0 +1,299 @@
+{
+  "info": {
+    "name": "UMSSPIRA - Reviews (HU-04)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "applicationId", "value": "app-001" },
+    { "key": "adminToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "CA-04.4 - Aprobar",
+      "item": [
+        {
+          "name": "Aprobar expediente -> 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "{{applicationId}}", "review"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"APPROVED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Estado APPROVED y auditoria', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.status).to.eql('APPROVED');",
+                  "  pm.expect(d.reviewedBy).to.be.a('string').and.not.empty;",
+                  "  pm.expect(d.reviewedAt).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Repetir dictamen sobre el mismo expediente -> 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "{{applicationId}}", "review"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"APPROVED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Correr justo despues de 'Aprobar expediente'",
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CA-04.5 - Observar / Rechazar",
+      "item": [
+        {
+          "name": "Observar expediente -> 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/app-observar/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "app-observar", "review"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"OBSERVED\",\n  \"category\": \"Documento ilegible\",\n  \"note\": \"El escaneo del titulo no es legible, vuelva a subirlo.\",\n  \"notifyDean\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Estado OBSERVED con categoria y nota', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d.status).to.eql('OBSERVED');",
+                  "  pm.expect(d.category).to.eql('Documento ilegible');",
+                  "  pm.expect(d.note).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar expediente -> 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/app-rechazar/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "app-rechazar", "review"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"REJECTED\",\n  \"category\": \"Documentacion falsa o adulterada\",\n  \"note\": \"Se detecto adulteracion en el titulo presentado.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Estado REJECTED', () => {",
+                  "  pm.expect(pm.response.json().data.status).to.eql('REJECTED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CA-04.6 - Validacion (400)",
+      "item": [
+        {
+          "name": "Observar sin categoria",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/app-val-1/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "app-val-1", "review"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"OBSERVED\",\n  \"note\": \"Nota suficientemente larga\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Menciona la categoria', () => {",
+                  "  pm.expect(pm.response.text()).to.include('categor');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar con justificacion corta (menos de 10)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/app-val-2/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "app-val-2", "review"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"REJECTED\",\n  \"category\": \"Tramite duplicado\",\n  \"note\": \"corta\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Menciona los 10 caracteres', () => {",
+                  "  pm.expect(pm.response.text()).to.include('10 caracteres');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Decision invalida",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/app-val-3/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "app-val-3", "review"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"TALVEZ\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Seguridad (401)",
+      "item": [
+        {
+          "name": "Sin token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{applicationId}}/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "{{applicationId}}", "review"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"APPROVED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

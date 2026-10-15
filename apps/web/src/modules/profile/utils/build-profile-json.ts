@@ -14,16 +14,17 @@ export type ProfileJson = {
   carrera: string;
   promocion: number;
   // respaldo: nombre del archivo adjunto, null si no tiene
-  educacion: { institucion: string; titulo: string; grado: string; anio: number | null; respaldo: string | null }[];
+  // Claves de las secciones con los nombres del Sprint Backlog (HU5-05)
+  'Formación académica': { institucion: string; titulo: string; grado: string; anio: number | null; respaldo: string | null }[];
   // periodo: texto del resumen; fechas AAAA-MM-DD, fechaFin null = trabajo actual
-  experienciaLaboral: {
+  'Experiencia laboral': {
     empresa: string;
     cargo: string;
     periodo: string;
     fechaInicio: string;
     fechaFin: string | null;
   }[];
-  certificaciones: { nombre: string; entidad: string; anio: number | null; grado: string }[];
+  Certificaciones: { nombre: string; entidad: string; anio: number | null; grado: string }[];
 };
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -53,21 +54,21 @@ export function buildProfileJson(header: ProfileHeader, records: ProfileRecords,
     nombre: header.name,
     carrera: header.career,
     promocion: header.graduationYear,
-    educacion: (records.education as EducationRecord[]).map((record) => ({
+    'Formación académica': (records.education as EducationRecord[]).map((record) => ({
       institucion: record.institution,
       titulo: record.title,
       grado: record.degree,
       anio: toYear(record.graduationYear),
       respaldo: record.backupFile ?? null,
     })),
-    experienciaLaboral: (records.experience as ExperienceRecord[]).map((record) => ({
+    'Experiencia laboral': (records.experience as ExperienceRecord[]).map((record) => ({
       empresa: record.company,
       cargo: record.position,
       periodo: `${formatMonthYear(record.startDate)} – ${formatMonthYear(record.endDate)}`,
       fechaInicio: record.startDate,
       fechaFin: record.endDate || null,
     })),
-    certificaciones: (records.certification as CertificationRecord[]).map((record) => ({
+    Certificaciones: (records.certification as CertificationRecord[]).map((record) => ({
       nombre: record.name,
       entidad: record.issuer,
       anio: toYear(record.issueYear),

@@ -17,29 +17,29 @@ describe('build-profile-json', () => {
       carrera: 'Ingeniería de Sistemas',
       promocion: 2018,
     });
-    expect(json.educacion[0]).toEqual({
+    expect(json['Formación académica'][0]).toEqual({
       institucion: 'Universidad Mayor de San Simón',
       titulo: 'Licenciatura en Ingeniería de Sistemas',
       grado: 'Licenciatura',
       anio: 2018,
       respaldo: 'respaldo.pdf',
     });
-    expect(json.experienciaLaboral).toHaveLength(3);
-    expect(json.experienciaLaboral[0]).toEqual({
+    expect(json['Experiencia laboral']).toHaveLength(3);
+    expect(json['Experiencia laboral'][0]).toEqual({
       empresa: 'NTT DATA',
       cargo: 'Tech Lead',
       periodo: 'Jul 2023 – Presente',
       fechaInicio: '2023-07-01',
       fechaFin: null,
     });
-    expect(json.experienciaLaboral[1]).toEqual({
+    expect(json['Experiencia laboral'][1]).toEqual({
       empresa: 'Jalasoft',
       cargo: 'Desarrollador Senior',
       periodo: 'Ene 2021 – Jun 2023',
       fechaInicio: '2021-01-04',
       fechaFin: '2023-06-30',
     });
-    expect(json.certificaciones[0]).toEqual({
+    expect(json.Certificaciones[0]).toEqual({
       nombre: 'AWS Solutions Architect',
       entidad: 'Amazon Web Services',
       anio: 2022,
@@ -55,15 +55,15 @@ describe('build-profile-json', () => {
       education: [{ ...PROFILE_RECORDS_MOCK.education[0], backupFile: undefined }],
     };
 
-    expect(buildProfileJson(profileHeader, records, date).educacion[0].respaldo).toBeNull();
+    expect(buildProfileJson(profileHeader, records, date)['Formación académica'][0].respaldo).toBeNull();
   });
 
   it('devuelve listas vacías cuando las secciones no tienen registros', () => {
     const json = buildProfileJson(profileHeader, empty, date);
 
-    expect(json.educacion).toEqual([]);
-    expect(json.experienciaLaboral).toEqual([]);
-    expect(json.certificaciones).toEqual([]);
+    expect(json['Formación académica']).toEqual([]);
+    expect(json['Experiencia laboral']).toEqual([]);
+    expect(json.Certificaciones).toEqual([]);
   });
 
   it('detecta si el perfil tiene al menos un bloque con registros', () => {

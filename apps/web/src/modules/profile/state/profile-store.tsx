@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { CURRENT_GRADUATE_ID, PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
 import { obtenerPerfil } from '@/modules/profile/services/perfil-api';
@@ -27,6 +27,18 @@ type ProfileStore = {
 
 const ProfileStoreContext = createContext<ProfileStore | null>(null);
 
+// Demo sin backend: los cambios se guardan en el navegador para que se conserven al recargar
+const STORAGE_KEY = 'umsspira-perfil-demo';
+
+function leerGuardado(): ProfileRecords | null {
+  try {
+    const guardado = localStorage.getItem(STORAGE_KEY);
+    return guardado ? (JSON.parse(guardado) as ProfileRecords) : null;
+  } catch {
+    return null;
+  }
+}
+
 let nextId = 0;
 function createId(section: RecordSection): string {
   nextId += 1;
@@ -47,9 +59,13 @@ export function ProfileStoreProvider({
 }) {
   const [records, setRecords] = useState<ProfileRecords>(initialRecords ?? PROFILE_RECORDS_MOCK);
   const cargarDesdeApi = initialRecords === undefined;
+  const restaurado = useRef(false);
 
   useEffect(() => {
     if (!cargarDesdeApi) return;
+    const guardado = leerGuardado();
+    if (guardado) setRecords(guardado);
+    restaurado.current = true;
     let vigente = true;
     obtenerPerfil()
       .then((perfil) => {
@@ -62,6 +78,15 @@ export function ProfileStoreProvider({
       vigente = false;
     };
   }, [cargarDesdeApi]);
+
+  useEffect(() => {
+    if (!cargarDesdeApi || !restaurado.current) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    } catch {
+      // Sin acceso al almacenamiento: los cambios duran hasta recargar
+    }
+  }, [cargarDesdeApi, records]);
 
   const addRecord = useCallback((section: RecordSection, record: NewRecord<ProfileRecord>) => {
     const created = { ...record, id: record.id ?? createId(section), ownerId: CURRENT_GRADUATE_ID } as ProfileRecord;

@@ -21,6 +21,9 @@ function AddEducationButton() {
   );
 }
 
+// El store de la demo guarda los registros en localStorage: cada prueba empieza sin datos guardados
+beforeEach(() => localStorage.clear());
+
 describe('ProfileStoreProvider', () => {
   it('lo agregado en el estado compartido aparece en el resumen del perfil', () => {
     render(

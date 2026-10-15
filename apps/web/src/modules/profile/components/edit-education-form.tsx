@@ -14,7 +14,11 @@ import { actualizarFormacion } from '@/modules/profile/services/perfil-api';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { EducationRecord } from '@/modules/profile/types/profile-record';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
-import { validarAnioEgreso, validarFormacionDuplicada } from '@/modules/profile/validation/reglas-perfil';
+import {
+  LARGO_MAXIMO_FORMACION,
+  validarAnioEgreso,
+  validarFormacionDuplicada,
+} from '@/modules/profile/validation/reglas-perfil';
 import { ApiError } from '@/shared/services/api-client';
 
 type EducationFormData = {
@@ -122,10 +126,28 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
     >
       <div className="grid gap-4 md:grid-cols-2">
         <FormField id="institution" label="Institución">
-          <input id="institution" name="institution" type="text" value={formData.institution} onChange={handleChange} required className={INPUT_CLASS} />
+          <input
+            id="institution"
+            name="institution"
+            type="text"
+            value={formData.institution}
+            onChange={handleChange}
+            required
+            maxLength={LARGO_MAXIMO_FORMACION}
+            className={INPUT_CLASS}
+          />
         </FormField>
         <FormField id="title" label="Título">
-          <input id="title" name="title" type="text" value={formData.title} onChange={handleChange} required className={INPUT_CLASS} />
+          <input
+            id="title"
+            name="title"
+            type="text"
+            value={formData.title}
+            onChange={handleChange}
+            required
+            maxLength={LARGO_MAXIMO_FORMACION}
+            className={INPUT_CLASS}
+          />
         </FormField>
         <FormField id="graduationYear" label="Año de egreso">
           <input

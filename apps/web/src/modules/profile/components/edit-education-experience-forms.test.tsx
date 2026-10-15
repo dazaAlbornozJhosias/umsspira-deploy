@@ -61,6 +61,13 @@ describe('EditEducationForm', () => {
     push.mockClear();
   });
 
+  it('limita institución y título a 150 caracteres (HU5-01)', () => {
+    renderWith(<EditEducationForm />);
+
+    expect(screen.getByLabelText('Institución')).toHaveAttribute('maxLength', '150');
+    expect(screen.getByLabelText('Título')).toHaveAttribute('maxLength', '150');
+  });
+
   it('carga la formación elegida y guarda los cambios con PUT en la API y en el estado compartido', async () => {
     responder(200, {
       id: 'edu-1',

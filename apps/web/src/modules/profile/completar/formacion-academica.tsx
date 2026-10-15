@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import { GraduationCap, Plus } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
-import { validarAnioEgreso, validarFormacionDuplicada } from '@/modules/profile/validation/reglas-perfil';
+import {
+  LARGO_MAXIMO_FORMACION,
+  validarAnioEgreso,
+  validarFormacionDuplicada,
+} from '@/modules/profile/validation/reglas-perfil';
 import { ApiError } from '@/shared/services/api-client';
 
 const GRADOS = ['Técnico superior', 'Licenciatura', 'Maestría', 'Doctorado'];
@@ -108,6 +112,7 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
             id="institucion"
             type="text"
             required
+            maxLength={LARGO_MAXIMO_FORMACION}
             placeholder="Ej. Universidad Mayor de San Simón"
             value={datos.institucion}
             onChange={(e) => cambiar('institucion', e.target.value)}
@@ -121,6 +126,7 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
             id="titulo"
             type="text"
             required
+            maxLength={LARGO_MAXIMO_FORMACION}
             placeholder="Ej. Ingeniería de Sistemas"
             value={datos.titulo}
             onChange={(e) => cambiar('titulo', e.target.value)}

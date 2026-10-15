@@ -11,6 +11,8 @@ export const MENSAJE_FORMACION_DUPLICADA = 'La formación académica ya se encue
 const TIPO_RESPALDO = 'image/jpeg';
 const EXTENSIONES_RESPALDO = ['.jpg', '.jpeg'];
 export const TAMANIO_MAXIMO_RESPALDO = 5 * 1024 * 1024;
+// Largo máximo de institución y título: el mismo que valida el DTO de formación del backend (T2.1)
+export const LARGO_MAXIMO_FORMACION = 150;
 
 // Año de egreso (AAAA): no puede ser mayor al año actual
 export function validarAnioEgreso(anio: string): string | undefined {

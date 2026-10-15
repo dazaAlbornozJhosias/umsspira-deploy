@@ -23,6 +23,13 @@ describe('FormacionAcademicaForm', () => {
     }
   });
 
+  it('limita institución y título a 150 caracteres (HU5-01)', () => {
+    render(<FormacionAcademicaForm formaciones={[]} onAgregar={jest.fn()} />);
+
+    expect(screen.getByLabelText('Institución')).toHaveAttribute('maxLength', '150');
+    expect(screen.getByLabelText('Título')).toHaveAttribute('maxLength', '150');
+  });
+
   it('acepta solo numeros en el año de egreso', () => {
     render(<FormacionAcademicaForm formaciones={[]} onAgregar={jest.fn()} />);
     llenarFormulario();

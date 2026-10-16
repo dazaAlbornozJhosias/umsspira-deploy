@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 
 import { profileHeader } from '@/modules/profile/data/profile-data';
 import { PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
@@ -35,6 +35,24 @@ describe('DownloadProfileButton', () => {
     expect(click).toHaveBeenCalledTimes(1);
     expect(createObjectURL).toHaveBeenCalledTimes(1);
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:perfil');
+  });
+
+  it('bloquea los clics repetidos mientras descarga (HU5-03)', () => {
+    jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    render(<DownloadProfileButton header={profileHeader} records={PROFILE_RECORDS_MOCK} />);
+    const button = screen.getByRole('button', { name: 'Descargar' });
+
+    fireEvent.click(button);
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect(button).toBeDisabled();
+
+    act(() => {
+      jest.advanceTimersByTime(1500);
+    });
+    expect(button).toBeEnabled();
   });
 
   it('se desactiva cuando el perfil no tiene bloques', () => {

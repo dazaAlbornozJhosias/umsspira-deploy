@@ -254,12 +254,12 @@ describe('EditExperienceForm', () => {
     fireEvent.change(fin, { target: { value: '2020-03-01' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
-    expect(screen.getByText("La fecha 'Hasta' no puede ser anterior a 'Desde'")).toHaveAttribute('id', 'error-endDate');
+    expect(screen.getByText('La fecha fin no puede ser anterior a la fecha inicio')).toHaveAttribute('id', 'error-endDate');
     expect(fin).toHaveAttribute('aria-invalid', 'true');
     expect(fetchMock).not.toHaveBeenCalled();
 
     fireEvent.change(fin, { target: { value: '2023-06-30' } });
-    expect(screen.queryByText("La fecha 'Hasta' no puede ser anterior a 'Desde'")).not.toBeInTheDocument();
+    expect(screen.queryByText('La fecha fin no puede ser anterior a la fecha inicio')).not.toBeInTheDocument();
   });
 
   it('Cancelar vuelve a Gestionar registros', () => {

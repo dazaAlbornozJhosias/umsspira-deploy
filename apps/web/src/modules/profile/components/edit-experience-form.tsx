@@ -47,7 +47,7 @@ function EditExperienceFields({ experience }: { experience: ExperienceRecord }) 
   // Sin fecha de fin = trabajo actual (igual que en "Completar perfil")
   const [isCurrentJob, setIsCurrentJob] = useState(!experience.endDate);
   const [isSaved, setIsSaved] = useState(false);
-  // 'Hasta' anterior a 'Desde' (misma regla que al crear); una vez mostrado se recalcula mientras se corrige
+  // Fecha fin anterior a la fecha inicio (misma regla que al crear); una vez mostrado se recalcula mientras se corrige
   const [endDateError, setEndDateError] = useState<string>();
   // Mensaje del backend al guardar (400...), tal como lo envía
   const [saveError, setSaveError] = useState<string>();

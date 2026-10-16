@@ -72,7 +72,7 @@ describe('validarFormacionDuplicada', () => {
 
 describe('validarRangoFechas', () => {
   it('usa el texto del criterio', () => {
-    expect(MENSAJE_HASTA_ANTERIOR_A_DESDE).toBe("La fecha 'Hasta' no puede ser anterior a 'Desde'");
+    expect(MENSAJE_HASTA_ANTERIOR_A_DESDE).toBe('La fecha fin no puede ser anterior a la fecha inicio');
   });
 
   it('rechaza una fecha Hasta anterior a Desde (caso de QA)', () => {

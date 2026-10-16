@@ -4,7 +4,7 @@ import { ApiError } from '@/shared/services/api-client';
 
 import { FormularioExperiencia } from './experiencia-laboral';
 
-const MENSAJE = "La fecha 'Hasta' no puede ser anterior a 'Desde'";
+const MENSAJE = 'La fecha fin no puede ser anterior a la fecha inicio';
 
 // Los inputs de fecha no tienen etiqueta propia: se toman en orden (inicio, fin)
 function llenarFormulario(container: HTMLElement, fechaInicio: string, fechaFin: string) {

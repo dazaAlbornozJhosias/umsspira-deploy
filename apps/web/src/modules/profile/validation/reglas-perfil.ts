@@ -2,7 +2,7 @@
 // del criterio o undefined si el valor es válido, para mostrarlo junto al campo antes de agregar el registro.
 
 export const MENSAJE_ANIO_EGRESO_FUTURO = 'El año de egreso no puede ser posterior al año actual';
-export const MENSAJE_HASTA_ANTERIOR_A_DESDE = "La fecha 'Hasta' no puede ser anterior a 'Desde'";
+export const MENSAJE_HASTA_ANTERIOR_A_DESDE = 'La fecha fin no puede ser anterior a la fecha inicio';
 export const MENSAJE_RESPALDO_FORMATO = 'Formato no permitido. Solo JPG';
 export const MENSAJE_RESPALDO_TAMANIO = 'El archivo no puede superar 5 MB';
 export const MENSAJE_FORMACION_DUPLICADA = 'La formación académica ya se encuentra registrada';
@@ -40,7 +40,7 @@ export function validarFormacionDuplicada(
   return duplicada ? MENSAJE_FORMACION_DUPLICADA : undefined;
 }
 
-// Fechas AAAA-MM-DD de experiencia laboral: 'Hasta' puede ser igual a 'Desde', pero no anterior.
+// Fechas AAAA-MM-DD de experiencia laboral: la fecha fin puede ser igual a la de inicio, pero no anterior.
 // Sin alguna de las dos (por ejemplo, trabajo actual) no hay rango que validar.
 export function validarRangoFechas(desde: string, hasta: string): string | undefined {
   if (!desde || !hasta) return undefined;

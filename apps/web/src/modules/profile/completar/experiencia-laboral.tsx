@@ -42,7 +42,7 @@ function mostrarFecha(fecha: string) {
 export function FormularioExperiencia({experiencias, onAgregar }: FormularioExperienciaProps) {
   const [datos, setDatos] = useState<Datos>(VACIO);
   const [trabajoActual, setTrabajoActual] = useState(false);
-  // Error de la fecha fin ('Hasta' anterior a 'Desde'); una vez mostrado se recalcula mientras se corrige
+  // Error de la fecha fin (anterior a la fecha inicio); una vez mostrado se recalcula mientras se corrige
   const [errorFechaFin, setErrorFechaFin] = useState<string>();
   // Mensaje del backend al guardar, tal como lo envía; se quita al cambiar cualquier campo
   const [errorGuardar, setErrorGuardar] = useState<string>();

@@ -1,15 +1,13 @@
-import { profileHeader } from '@/modules/profile/data/profile-data';
 import { ProfileStoreProvider } from '@/modules/profile/state/profile-store';
-import { DashboardShell } from '@/shared/components/dashboard-shell';
 
-// Todas las pantallas del perfil comparten la barra lateral, la barra superior (formato Epic 8)
-// y el mismo estado de datos de prueba
+// La navegación global la monta el layout del dashboard (navbar compartida de Epic 8);
+// aquí solo van el estado compartido del perfil y el ancho del contenido
 export default function ProfileLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-palladian font-sans text-blue-fantastic">
-      <DashboardShell activeHref="/profile" userName={profileHeader.name} userRole="Egresado">
+    <div className="min-h-screen bg-palladian font-sans text-blue-fantastic">
+      <main className="mx-auto w-full max-w-[1180px] px-4 pb-8 pt-6 lg:px-10">
         <ProfileStoreProvider>{children}</ProfileStoreProvider>
-      </DashboardShell>
+      </main>
     </div>
   );
 }

@@ -6,9 +6,6 @@ import {
   MessageSquare, Briefcase, Calendar, Star, ChevronRight 
 } from 'lucide-react';
 
-// Importamos el Navbar público independiente
-import PublicNavbar from '@/shared/components/publicnavbar';
-
 // Importamos la imagen de fondo principal y el sello institucional
 import umssBg from '@/shared/assets/images/14sept.webp';
 import selloImg from '@/shared/assets/images/sello.png';
@@ -17,9 +14,6 @@ export default function PublicLandingPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-slate-900 flex flex-col font-sans antialiased selection:bg-amber-500 selection:text-white">
       
-      {/* 🧭 Navbar Superior Público Modular */}
-      <PublicNavbar />
-
       {/* 🌟 Banner Principal Institucional */}
       <section className="relative w-full bg-[#0F172A] text-white overflow-hidden">
         

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Briefcase } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
-import { validarRangoFechas } from '@/modules/profile/validation/reglas-perfil';
+import { FECHA_MINIMA_EXPERIENCIA, validarRangoFechas } from '@/modules/profile/validation/reglas-perfil';
 import { ApiError } from '@/shared/services/api-client';
 
 export type Experiencia = {
@@ -119,6 +119,7 @@ export function FormularioExperiencia({experiencias, onAgregar }: FormularioExpe
             </span>
             <input
               type={campo.tipo}
+              min={campo.tipo === 'date' ? FECHA_MINIMA_EXPERIENCIA : undefined}
               value={datos[campo.nombre]}
               onChange={(e) => cambiar(campo.nombre, e.target.value)}
               placeholder={campo.ejemplo}

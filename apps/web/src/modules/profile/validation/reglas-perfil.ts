@@ -11,6 +11,8 @@ export const MENSAJE_FORMACION_DUPLICADA = 'La formación académica ya se encue
 const TIPO_RESPALDO = 'image/jpeg';
 const EXTENSIONES_RESPALDO = ['.jpg', '.jpeg'];
 export const TAMANIO_MAXIMO_RESPALDO = 5 * 1024 * 1024;
+// Fecha mínima de inicio y fin de una experiencia laboral (BUG-HU2-008); cambiar aquí si se acuerda otra
+export const FECHA_MINIMA_EXPERIENCIA = '1950-01-01';
 // Largo máximo de institución y título: el mismo que valida el DTO de formación del backend (T2.1)
 export const LARGO_MAXIMO_FORMACION = 150;
 

@@ -14,7 +14,7 @@ import { actualizarExperiencia } from '@/modules/profile/services/perfil-api';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { ExperienceRecord } from '@/modules/profile/types/profile-record';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
-import { validarRangoFechas } from '@/modules/profile/validation/reglas-perfil';
+import { FECHA_MINIMA_EXPERIENCIA, validarRangoFechas } from '@/modules/profile/validation/reglas-perfil';
 import { ApiError } from '@/shared/services/api-client';
 
 type ExperienceFormData = {
@@ -118,6 +118,7 @@ function EditExperienceFields({ experience }: { experience: ExperienceRecord }) 
             id="startDate"
             name="startDate"
             type="date"
+            min={FECHA_MINIMA_EXPERIENCIA}
             value={formData.startDate}
             onChange={handleChange}
             required
@@ -129,6 +130,7 @@ function EditExperienceFields({ experience }: { experience: ExperienceRecord }) 
             id="endDate"
             name="endDate"
             type="date"
+            min={FECHA_MINIMA_EXPERIENCIA}
             value={formData.endDate}
             onChange={handleChange}
             required={!isCurrentJob}

@@ -34,6 +34,14 @@ describe('FormularioExperiencia · rango de fechas (BUG-HU2-003)', () => {
     expect(onAgregar).not.toHaveBeenCalled();
   });
 
+  it('no acepta fechas anteriores a 1950 (BUG-HU2-008)', () => {
+    const { container } = render(<FormularioExperiencia experiencias={[]} onAgregar={jest.fn()} />);
+
+    for (const fecha of Array.from(container.querySelectorAll('input[type="date"]'))) {
+      expect(fecha).toHaveAttribute('min', '1950-01-01');
+    }
+  });
+
   it('agrega si la fecha fin es igual o posterior a la fecha inicio', () => {
     const onAgregar = jest.fn();
     const { container } = render(<FormularioExperiencia experiencias={[]} onAgregar={onAgregar} />);

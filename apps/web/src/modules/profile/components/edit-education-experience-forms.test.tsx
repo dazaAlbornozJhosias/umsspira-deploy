@@ -178,6 +178,16 @@ describe('EditEducationForm', () => {
   });
 });
 
+describe('EditExperienceForm · fecha mínima (BUG-HU2-008)', () => {
+  it('no acepta fechas anteriores a 1950 en fecha inicio ni fecha fin', () => {
+    routeId = 'exp-2';
+    renderWith(<EditExperienceForm />);
+
+    expect(screen.getByLabelText('Fecha inicio')).toHaveAttribute('min', '1950-01-01');
+    expect(screen.getByLabelText('Fecha fin')).toHaveAttribute('min', '1950-01-01');
+  });
+});
+
 describe('EditExperienceForm', () => {
   beforeEach(() => {
     routeId = 'exp-2';

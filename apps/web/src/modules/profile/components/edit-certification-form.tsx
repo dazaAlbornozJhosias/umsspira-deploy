@@ -10,6 +10,7 @@ import {
   INPUT_CLASS,
   RecordNotFound,
 } from '@/modules/profile/components/edit-record-layout';
+import { urlDeArchivo } from '@/modules/profile/utils/backup-url';
 import { recordsHref } from '@/modules/profile/data/profile-records-data';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { CertificationRecord } from '@/modules/profile/types/profile-record';
@@ -45,6 +46,7 @@ function EditCertificationFields({ certification }: { certification: Certificati
     degree: certification.degree,
   });
   const [documentName, setDocumentName] = useState(certification.backupFile ?? '');
+  const [documentUrl, setDocumentUrl] = useState(certification.backupUrl);
   const [isNewDocument, setIsNewDocument] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -58,6 +60,7 @@ function EditCertificationFields({ certification }: { certification: Certificati
     const file = event.target.files?.[0];
     if (file) {
       setDocumentName(file.name);
+      setDocumentUrl(urlDeArchivo(file));
       setIsNewDocument(true);
       setIsSaved(false);
     }
@@ -73,6 +76,7 @@ function EditCertificationFields({ certification }: { certification: Certificati
       issueYear: formData.year,
       degree: formData.degree,
       backupFile: documentName || undefined,
+      backupUrl: documentName ? documentUrl : undefined,
       // Un respaldo nuevo vuelve a quedar en revisión
       backupVerified: isNewDocument ? false : certification.backupVerified,
     });
@@ -124,6 +128,7 @@ function EditCertificationFields({ certification }: { certification: Certificati
 
       <BackupField
         documentName={documentName}
+        documentUrl={documentUrl}
         isVerified={Boolean(documentName) && !isNewDocument && Boolean(certification.backupVerified)}
         onDocumentChange={handleDocumentChange}
       />

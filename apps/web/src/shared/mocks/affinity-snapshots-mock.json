@@ -1,38 +1,252 @@
+
 [
   {
     "graduateId": "00000000-0000-0000-0000-000000000001",
     "calculatedAt": "2026-09-28T12:00:00.000Z",
+    "hasLaborHistory": true,
     "areas": [
-      { "area": "software-development", "affinity": 88 },
-      { "area": "cloud-devops", "affinity": 62 },
-      { "area": "data-ai", "affinity": 74 },
-      { "area": "quality-assurance", "affinity": 45 },
-      { "area": "cybersecurity-networks", "affinity": 31 },
-      { "area": "it-management", "affinity": 53 }
+      {
+        "area": "software-development",
+        "affinity": 88,
+        "keywords": ["React", "TypeScript", "Node.js", "JavaScript", "Backend"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "Certificación Avanzada de React",
+            "detail": "Emitido por Meta."
+          },
+          {
+            "type": "project",
+            "title": "Plataforma E-Commerce Web",
+            "detail": "Desarrollo full-stack con React y Node."
+          }
+        ]
+      },
+      {
+        "area": "cloud-devops",
+        "affinity": 62,
+        "keywords": ["AWS", "Docker", "CI/CD", "Git"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "AWS Certified Cloud Practitioner",
+            "detail": "Amazon Web Services."
+          }
+        ]
+      },
+      {
+        "area": "data-ai",
+        "affinity": 74,
+        "keywords": ["Python", "Pandas", "Machine Learning", "SQL", "Scikit-learn"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "Certificación Profesional de Machine Learning",
+            "detail": "Emitido por Coursera."
+          },
+          {
+            "type": "project",
+            "title": "Modelo de predicción de ventas con Python",
+            "detail": "Análisis de datos con Pandas y Scikit-learn."
+          }
+        ]
+      },
+      {
+        "area": "quality-assurance",
+        "affinity": 45,
+        "keywords": ["ISTQB", "Cypress", "Jest", "Pruebas E2E"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "ISTQB Foundation Level",
+            "detail": "Certified Tester."
+          }
+        ]
+      },
+      {
+        "area": "cybersecurity-networks",
+        "affinity": 0,
+        "keywords": [],
+        "evidence": []
+      },
+      {
+        "area": "it-management",
+        "affinity": 53,
+        "keywords": ["Scrum", "Agile", "PSM I", "Gestión de proyectos"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "Professional Scrum Master (PSM I)",
+            "detail": "Scrum.org - Metodologías Ágiles."
+          }
+        ]
+      }
     ]
   },
   {
     "graduateId": "00000000-0000-0000-0000-000000000001",
     "calculatedAt": "2026-09-29T12:00:00.000Z",
+    "hasLaborHistory": true,
     "areas": [
-      { "area": "software-development", "affinity": 79 },
-      { "area": "cloud-devops", "affinity": 71 },
-      { "area": "data-ai", "affinity": 58 },
-      { "area": "quality-assurance", "affinity": 52 },
-      { "area": "cybersecurity-networks", "affinity": 36 },
-      { "area": "it-management", "affinity": 44 }
+      {
+        "area": "software-development",
+        "affinity": 79,
+        "keywords": ["React", "TypeScript", "Node.js", "JavaScript"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "Certificación Avanzada de React",
+            "detail": "Emitido por Meta."
+          }
+        ]
+      },
+      {
+        "area": "cloud-devops",
+        "affinity": 71,
+        "keywords": ["AWS", "Docker", "CI/CD", "Git"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "AWS Certified Cloud Practitioner",
+            "detail": "Amazon Web Services."
+          },
+          {
+            "type": "project",
+            "title": "Pipeline CI/CD con Git y Despliegue Automatizado",
+            "detail": "Integración continua en la nube."
+          }
+        ]
+      },
+      {
+        "area": "data-ai",
+        "affinity": 58,
+        "keywords": ["Python", "Pandas", "Machine Learning", "SQL"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "Certificación Profesional de Machine Learning",
+            "detail": "Emitido por Coursera."
+          }
+        ]
+      },
+      {
+        "area": "quality-assurance",
+        "affinity": 52,
+        "keywords": ["ISTQB", "Cypress", "Jest"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "ISTQB Foundation Level",
+            "detail": "Certified Tester."
+          },
+          {
+            "type": "project",
+            "title": "Suite de pruebas E2E para plataforma e-commerce",
+            "detail": "Automatización con Cypress y Jest."
+          }
+        ]
+      },
+      {
+        "area": "cybersecurity-networks",
+        "affinity": 0,
+        "keywords": [],
+        "evidence": []
+      },
+      {
+        "area": "it-management",
+        "affinity": 44,
+        "keywords": ["Scrum", "Agile", "PSM I"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "Professional Scrum Master (PSM I)",
+            "detail": "Scrum.org - Metodologías Ágiles."
+          }
+        ]
+      }
     ]
   },
   {
     "graduateId": "00000000-0000-0000-0000-000000000001",
     "calculatedAt": "2026-09-30T12:00:00.000Z",
+    "hasLaborHistory": true,
     "areas": [
-      { "area": "software-development", "affinity": 65 },
-      { "area": "cloud-devops", "affinity": 57 },
-      { "area": "data-ai", "affinity": 83 },
-      { "area": "quality-assurance", "affinity": 40 },
-      { "area": "cybersecurity-networks", "affinity": 29 },
-      { "area": "it-management", "affinity": 61 }
+      {
+        "area": "software-development",
+        "affinity": 65,
+        "keywords": ["React", "TypeScript", "Node.js"],
+        "evidence": [
+          {
+            "type": "project",
+            "title": "Plataforma E-Commerce Web",
+            "detail": "Desarrollo full-stack con React y Node."
+          }
+        ]
+      },
+      {
+        "area": "cloud-devops",
+        "affinity": 57,
+        "keywords": ["AWS", "Docker", "CI/CD"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "AWS Certified Cloud Practitioner",
+            "detail": "Amazon Web Services."
+          }
+        ]
+      },
+      {
+        "area": "data-ai",
+        "affinity": 83,
+        "keywords": ["Python", "Pandas", "Machine Learning", "SQL", "Scikit-learn"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "Certificación Profesional de Machine Learning",
+            "detail": "Emitido por Coursera."
+          },
+          {
+            "type": "project",
+            "title": "Modelo de predicción de ventas con Python",
+            "detail": "Análisis de datos con Pandas y Scikit-learn."
+          }
+        ]
+      },
+      {
+        "area": "quality-assurance",
+        "affinity": 40,
+        "keywords": ["ISTQB", "Cypress", "Jest"],
+        "evidence": [
+          {
+            "type": "project",
+            "title": "Suite de pruebas E2E para plataforma e-commerce",
+            "detail": "Automatización con Cypress y Jest."
+          }
+        ]
+      },
+      {
+        "area": "cybersecurity-networks",
+        "affinity": 0,
+        "keywords": [],
+        "evidence": []
+      },
+      {
+        "area": "it-management",
+        "affinity": 61,
+        "keywords": ["Scrum", "Agile", "PSM I", "Gestión de proyectos"],
+        "evidence": [
+          {
+            "type": "certification",
+            "title": "Professional Scrum Master (PSM I)",
+            "detail": "Scrum.org - Metodologías Ágiles."
+          },
+          {
+            "type": "project",
+            "title": "Gestión de Proyectos de Software con Scrum y Agile",
+            "detail": "Coordinación de sprint backlog y entregables."
+          }
+        ]
+      }
     ]
   }
 ]

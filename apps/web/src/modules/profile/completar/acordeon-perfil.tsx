@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Briefcase, Check, Eye, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Briefcase, Check, Eye, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BarraProgreso } from './barra-progreso';
@@ -11,13 +11,15 @@ import { FormacionAcademicaForm, type FormacionAcademica } from './formacion-aca
 import { FormularioCertificaciones, type Certificacion } from './certificaciones';
 import { crearExperiencia, crearFormacion } from '@/modules/profile/services/perfil-api';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
+import { urlDeArchivo } from '@/modules/profile/utils/backup-url';
 import type {
   CertificationRecord,
   EducationRecord,
   ExperienceRecord,
 } from '@/modules/profile/types/profile-record';
 
-export function AcordeonPerfil() {
+// returnTo: ruta interna desde la que se llegó (por ejemplo /afinidad); al terminar se vuelve ahí (E2.3)
+export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
   // Los registros vienen del estado compartido del perfil, así lo agregado aquí aparece en el resumen
   const { records, addEducation, addExperience, addCertification } = useProfileStore();
   const router = useRouter();
@@ -76,6 +78,15 @@ export function AcordeonPerfil() {
             <span className="text-sm font-semibold text-truffle-trouble">
               {completas} de 3 secciones completas
             </span>
+            {returnTo && (
+              <Link
+                href={returnTo}
+                className="inline-flex items-center gap-2 rounded-lg border border-blue-fantastic px-3 py-1.5 text-sm font-semibold text-blue-fantastic transition hover:bg-palladian"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Volver
+              </Link>
+            )}
             <Link
               href="/profile"
               className="inline-flex items-center gap-2 rounded-lg border border-blue-fantastic px-3 py-1.5 text-sm font-semibold text-blue-fantastic transition hover:bg-palladian"
@@ -155,6 +166,7 @@ export function AcordeonPerfil() {
               degree: certificacion.grado,
               // Un respaldo recién subido queda en revisión hasta que la administración lo valide
               backupFile: certificacion.respaldo?.name,
+              backupUrl: urlDeArchivo(certificacion.respaldo),
               backupVerified: false,
             })
           }
@@ -165,7 +177,7 @@ export function AcordeonPerfil() {
           <div className="flex flex-col gap-3 pt-2 sm:flex-row">
             <button
               type="button"
-              onClick={() => router.push('/profile')}
+              onClick={() => router.push(returnTo ?? '/profile')}
               className="h-12 flex-1 rounded-lg bg-burning-flame text-base font-bold text-abyssal-blue transition hover:brightness-95"
             >
               Guardar perfil profesional

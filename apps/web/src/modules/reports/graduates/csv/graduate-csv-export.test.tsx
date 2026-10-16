@@ -6,6 +6,29 @@ const createObjectUrlMock = jest.fn(() => 'blob:graduate-csv');
 const revokeObjectUrlMock = jest.fn();
 const anchorClickMock = jest.fn();
 
+function successfulResponse(
+  filename = 'nomina-egresados-observados-07102026.csv',
+) {
+  return {
+    ok: true,
+    blob: jest.fn().mockResolvedValue(new Blob(['csv'], { type: 'text/csv' })),
+    body: null,
+    headers: {
+      get: jest.fn((name: string) => {
+        if (name.toLowerCase() === 'content-disposition') {
+          return `attachment; filename="${filename}"`;
+        }
+
+        if (name.toLowerCase() === 'content-type') {
+          return 'text/csv';
+        }
+
+        return null;
+      }),
+    },
+  };
+}
+
 beforeAll(() => {
   Object.defineProperty(global, 'fetch', {
     writable: true,
@@ -38,7 +61,7 @@ afterAll(() => {
 test('muestra la cantidad de titulados verificados cuando ese filtro está activo', () => {
   render(
     <GraduateCsvExport
-      totalRecords={15}
+      totalRecords={72}
       filters={{ status: 'VERIFICADO' }}
       onPdfExport={jest.fn()}
     />,
@@ -49,43 +72,15 @@ test('muestra la cantidad de titulados verificados cuando ese filtro está activ
   expect(screen.getByRole('menuitem', { name: /csv/i })).toBeInTheDocument();
   expect(screen.getByRole('menuitem', { name: /pdf/i })).toBeInTheDocument();
   expect(
-    screen.getByText('15 titulados verificados serán exportados.'),
+    screen.getByText('72 titulados verificados serán exportados.'),
   ).toBeInTheDocument();
 });
 
-test('muestra la cantidad de titulados observados cuando ese filtro está activo', () => {
+test('muestra nombre de archivo y botón Confirmar .csv en el modal', () => {
   render(
     <GraduateCsvExport
-      totalRecords={15}
+      totalRecords={18}
       filters={{ status: 'OBSERVADO' }}
-    />,
-  );
-
-  fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
-
-  expect(
-    screen.getByText('15 titulados observados serán exportados.'),
-  ).toBeInTheDocument();
-});
-
-test('confirma, conserva estado y búsqueda y descarga el CSV', async () => {
-  fetchMock.mockResolvedValue({
-    ok: true,
-    blob: jest.fn().mockResolvedValue(new Blob(['csv'], { type: 'text/csv' })),
-    headers: {
-      get: jest.fn((name: string) =>
-        name.toLowerCase() === 'content-disposition'
-          ? 'attachment; filename="nomina-egresados-observados-07102026.csv"'
-          : null,
-      ),
-    },
-  });
-
-  render(
-    <GraduateCsvExport
-      totalRecords={1}
-      filters={{ status: 'OBSERVADO', search: 'gomez' }}
-      apiBaseUrl="http://localhost:3000"
     />,
   );
 
@@ -95,15 +90,122 @@ test('confirma, conserva estado y búsqueda y descarga el CSV', async () => {
   expect(screen.getByRole('dialog')).toBeInTheDocument();
   expect(
     screen.getByText(
-      'Se exportarán 1 titulados observados con los filtros activos.',
+      'Se exportarán 18 titulados observados con los filtros activos.',
     ),
   ).toBeInTheDocument();
+  expect(
+    screen.getByText(/^nomina-egresados-observados-\d{8}\.csv$/),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: /confirmar \.csv/i }),
+  ).toBeInTheDocument();
+});
 
-  fireEvent.click(screen.getByRole('button', { name: /descargar csv/i }));
+test('muestra barra y porcentaje mientras se procesa la descarga', async () => {
+  let resolveFetch: (value: unknown) => void = () => undefined;
+
+  fetchMock.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      }),
+  );
+
+  render(
+    <GraduateCsvExport
+      totalRecords={1}
+      filters={{ status: 'VERIFICADO' }}
+      apiBaseUrl="http://localhost:3000"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
+  fireEvent.click(screen.getByRole('menuitem', { name: /csv/i }));
+  fireEvent.click(screen.getByRole('button', { name: /confirmar \.csv/i }));
+
+  const progressbar = await screen.findByRole('progressbar', {
+    name: /progreso de descarga csv/i,
+  });
+
+  expect(progressbar).toHaveAttribute('aria-valuenow', '0');
+  expect(screen.getByText('0%')).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: /confirmar \.csv/i }),
+  ).toBeDisabled();
+  expect(
+    screen.getByRole('button', { name: /confirmar \.csv/i }),
+  ).toHaveTextContent('Confirmar .csv');
+  expect(screen.queryByText('Generando...')).not.toBeInTheDocument();
+  expect(fetchMock).not.toHaveBeenCalled();
+
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  resolveFetch(
+    successfulResponse('nomina-egresados-verificados-07102026.csv'),
+  );
+
+  expect(
+    await screen.findByText('Archivo CSV descargado'),
+  ).toBeInTheDocument();
+});
+
+test('mantiene visible la barra aun cuando el CSV responde inmediatamente', async () => {
+  fetchMock.mockResolvedValue(
+    successfulResponse('nomina-egresados-verificados-07102026.csv'),
+  );
+
+  render(
+    <GraduateCsvExport
+      totalRecords={72}
+      filters={{ status: 'VERIFICADO' }}
+      apiBaseUrl="http://localhost:3000"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
+  fireEvent.click(screen.getByRole('menuitem', { name: /csv/i }));
+  fireEvent.click(screen.getByRole('button', { name: /confirmar \.csv/i }));
+
+  expect(
+    screen.getByRole('progressbar', {
+      name: /progreso de descarga csv/i,
+    }),
+  ).toHaveAttribute('aria-valuenow', '0');
+  expect(screen.getByText('0%')).toBeInTheDocument();
+  expect(fetchMock).not.toHaveBeenCalled();
+
+  await waitFor(() => {
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  expect(
+    await screen.findByText('Archivo CSV descargado'),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText('nomina-egresados-verificados-07102026.csv'),
+  ).toBeInTheDocument();
+});
+
+test('conserva estado y búsqueda, descarga el CSV y notifica el nombre final', async () => {
+  fetchMock.mockResolvedValue(successfulResponse());
+
+  render(
+    <GraduateCsvExport
+      totalRecords={1}
+      filters={{ status: 'OBSERVADO', search: 'quispe' }}
+      apiBaseUrl="http://localhost:3000"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
+  fireEvent.click(screen.getByRole('menuitem', { name: /csv/i }));
+  fireEvent.click(screen.getByRole('button', { name: /confirmar \.csv/i }));
 
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3000/graduates-report/csv?status=OBSERVADO&search=gomez',
+      'http://localhost:3000/graduates-report/csv?status=OBSERVADO&search=quispe',
       { method: 'GET' },
     );
   });
@@ -112,20 +214,27 @@ test('confirma, conserva estado y búsqueda y descarga el CSV', async () => {
   expect(anchorClickMock).toHaveBeenCalledTimes(1);
   expect(revokeObjectUrlMock).toHaveBeenCalledWith('blob:graduate-csv');
   expect(
-    await screen.findByText('La nómina CSV fue generada correctamente.'),
+    await screen.findByText('Archivo CSV descargado'),
   ).toBeInTheDocument();
+  expect(
+    screen.getByText('nomina-egresados-observados-07102026.csv'),
+  ).toBeInTheDocument();
+
+  const successNotification = screen.getByRole('status');
+  expect(successNotification).toHaveClass('fixed', 'right-4', 'top-4');
+  expect(
+    screen.queryByText('La nómina CSV fue generada correctamente.'),
+  ).not.toBeInTheDocument();
 });
 
 test('TODOS se envía al backend para exportar la misma vista sin filtro de estado', async () => {
-  fetchMock.mockResolvedValue({
-    ok: true,
-    blob: jest.fn().mockResolvedValue(new Blob(['csv'], { type: 'text/csv' })),
-    headers: { get: jest.fn(() => null) },
-  });
+  fetchMock.mockResolvedValue(
+    successfulResponse('nomina-egresados-07102026.csv'),
+  );
 
   render(
     <GraduateCsvExport
-      totalRecords={30}
+      totalRecords={90}
       filters={{ status: 'TODOS' }}
       apiBaseUrl="http://localhost:3000"
     />,
@@ -133,7 +242,7 @@ test('TODOS se envía al backend para exportar la misma vista sin filtro de esta
 
   fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
   fireEvent.click(screen.getByRole('menuitem', { name: /csv/i }));
-  fireEvent.click(screen.getByRole('button', { name: /descargar csv/i }));
+  fireEvent.click(screen.getByRole('button', { name: /confirmar \.csv/i }));
 
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledWith(
@@ -143,7 +252,24 @@ test('TODOS se envía al backend para exportar la misma vista sin filtro de esta
   });
 });
 
-test('no llama al backend cuando no existen titulados observados', () => {
+test('criterio 19 muestra el mensaje exacto si no hay egresados verificados', () => {
+  render(
+    <GraduateCsvExport
+      totalRecords={0}
+      filters={{ status: 'VERIFICADO', search: 'QA-SIN-RESULTADOS-999' }}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
+  fireEvent.click(screen.getByRole('menuitem', { name: /csv/i }));
+
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'No hay egresados verificados para exportar',
+  );
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
+test('no llama al backend cuando no existen egresados observados', () => {
   render(
     <GraduateCsvExport
       totalRecords={0}
@@ -155,40 +281,45 @@ test('no llama al backend cuando no existen titulados observados', () => {
   fireEvent.click(screen.getByRole('menuitem', { name: /csv/i }));
 
   expect(screen.getByRole('alert')).toHaveTextContent(
-    'No hay titulados observados para exportar',
+    'No hay egresados observados para exportar',
   );
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
-test('muestra el error de generación devuelto por la API y vuelve a habilitar la interfaz', async () => {
-  fetchMock.mockResolvedValue({
-    ok: false,
-    json: jest.fn().mockResolvedValue({
-      message: 'No se pudo generar el archivo CSV. Intente nuevamente.',
-    }),
-    headers: { get: jest.fn(() => null) },
-  });
+test('un fallo de red no expone Failed to fetch y muestra el mensaje esperado', async () => {
+  fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
 
   render(
     <GraduateCsvExport
-      totalRecords={10}
+      totalRecords={72}
       filters={{ status: 'VERIFICADO' }}
     />,
   );
 
   fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
   fireEvent.click(screen.getByRole('menuitem', { name: /csv/i }));
-  fireEvent.click(screen.getByRole('button', { name: /descargar csv/i }));
+  fireEvent.click(screen.getByRole('button', { name: /confirmar \.csv/i }));
 
   expect(
     await screen.findByText(
       'No se pudo generar el archivo CSV. Intente nuevamente.',
     ),
   ).toBeInTheDocument();
+  expect(screen.queryByText('Failed to fetch')).not.toBeInTheDocument();
+  expect(screen.getByText('No se descargó ningún archivo.')).toBeInTheDocument();
+
+  const errorNotification = screen.getByRole('alert');
+  expect(errorNotification).toHaveClass(
+    'fixed',
+    'right-4',
+    'top-4',
+    'bg-[#FFF4F0]',
+  );
+  expect(anchorClickMock).not.toHaveBeenCalled();
 
   await waitFor(() => {
     expect(
-      screen.getByRole('button', { name: /descargar csv/i }),
+      screen.getByRole('button', { name: /confirmar \.csv/i }),
     ).not.toBeDisabled();
   });
 });
@@ -197,7 +328,7 @@ test('delega la opción PDF al flujo de HU4 cuando está disponible', () => {
   const onPdfExport = jest.fn();
   render(
     <GraduateCsvExport
-      totalRecords={12}
+      totalRecords={72}
       filters={{ status: 'VERIFICADO' }}
       onPdfExport={onPdfExport}
     />,
@@ -207,4 +338,28 @@ test('delega la opción PDF al flujo de HU4 cuando está disponible', () => {
   fireEvent.click(screen.getByRole('menuitem', { name: /pdf/i }));
 
   expect(onPdfExport).toHaveBeenCalledTimes(1);
+});
+
+test('mientras se genera el PDF muestra «Generando...» y deshabilita el botón Exportar', () => {
+  render(
+    <GraduateCsvExport
+      totalRecords={12}
+      filters={{ status: 'VERIFICADO' }}
+      onPdfExport={jest.fn()}
+      isPdfGenerating
+    />,
+  );
+
+  const button = screen.getByRole('button', { name: /generando/i });
+  expect(button).toBeDisabled();
+  expect(screen.queryByRole('button', { name: /^exportar/i })).not.toBeInTheDocument();
+});
+
+test('sin estado seleccionado (TODOS) la opción PDF queda deshabilitada', () => {
+  render(<GraduateCsvExport totalRecords={90} filters={{ status: 'TODOS' }} />);
+
+  fireEvent.click(screen.getByRole('button', { name: /exportar/i }));
+
+  expect(screen.getByRole('menuitem', { name: /pdf/i })).toBeDisabled();
+  expect(screen.getByText('Seleccione Verificados u Observados')).toBeInTheDocument();
 });

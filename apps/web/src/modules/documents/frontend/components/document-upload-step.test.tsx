@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { DocumentUploadStep, REGISTER_PATH, VERIFY_EMAIL_PATH } from './document-upload-step';
 import { useRegistrationStore } from '@/modules/registration/frontend/store';
 import { submitRegistration, uploadDocument } from '../services';
@@ -21,14 +21,29 @@ const mockedSubmit = submitRegistration as jest.Mock;
 const INVALID_FILE = 'Formato o tamaño no permitido. Adjunta un documento en PDF, PNG o JPG de máximo 5 MB';
 const SESSION_TOKEN = '22222222-2222-4222-8222-222222222222';
 
+const FILE_SIGNATURES: Record<string, number[]> = {
+  'application/pdf': [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34], // %PDF-1.4
+  'image/png': [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+  'image/jpeg': [0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46],
+};
+
 function buildFile(name: string, type: string, size = 2048) {
-  const file = new File(['contenido'], name, { type });
+  const signature = FILE_SIGNATURES[type] ?? [0x00, 0x01, 0x02, 0x03];
+  const bytes = new Uint8Array(signature);
+  const file = new File([bytes], name, { type });
   Object.defineProperty(file, 'size', { value: size });
+  Object.defineProperty(file, 'slice', {
+    value: (start = 0, end = bytes.length) => ({
+      arrayBuffer: () => Promise.resolve(bytes.slice(start, end).buffer),
+    }),
+  });
   return file;
 }
 
-function chooseFile(file: File, testId = 'document-input') {
-  fireEvent.change(screen.getByTestId(testId), { target: { files: [file] } });
+async function chooseFile(file: File, testId = 'document-input') {
+  await act(async () => {
+    fireEvent.change(screen.getByTestId(testId), { target: { files: [file] } });
+  });
 }
 
 async function renderReadyStep() {
@@ -36,9 +51,12 @@ async function renderReadyStep() {
   await screen.findByLabelText(/^Tipo de documento/);
 }
 
-function completeForm(file = buildFile('titulo.pdf', 'application/pdf'), type = 'titulo_provision_nacional') {
+async function completeForm(
+  file = buildFile('titulo.pdf', 'application/pdf'),
+  type = 'titulo_provision_nacional',
+) {
   fireEvent.change(screen.getByLabelText(/^Tipo de documento/), { target: { value: type } });
-  chooseFile(file);
+  await chooseFile(file);
   fireEvent.click(screen.getByLabelText(/Declaro bajo juramento/));
   return file;
 }
@@ -84,9 +102,9 @@ describe('DocumentUploadStep', () => {
   it('muestra la vista previa local con el botón de reemplazo al elegir un archivo (CA-03.4)', async () => {
     await renderReadyStep();
 
-    chooseFile(buildFile('diploma.png', 'image/png'));
+    await chooseFile(buildFile('diploma.png', 'image/png'));
 
-    expect(screen.getByRole('img', { name: 'Vista previa de diploma.png' })).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: 'Vista previa de diploma.png' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Reemplazar archivo/ })).toBeInTheDocument();
     expect(mockedUpload).not.toHaveBeenCalled();
   });
@@ -94,34 +112,38 @@ describe('DocumentUploadStep', () => {
   it('acepta un archivo arrastrado a la zona de carga', async () => {
     await renderReadyStep();
 
-    fireEvent.drop(screen.getByTestId('document-drop-area'), {
-      dataTransfer: { files: [buildFile('titulo.pdf', 'application/pdf')] },
+    await act(async () => {
+      fireEvent.drop(screen.getByTestId('document-drop-area'), {
+        dataTransfer: { files: [buildFile('titulo.pdf', 'application/pdf')] },
+      });
     });
 
-    expect(screen.getByText('titulo.pdf')).toBeInTheDocument();
+    expect(await screen.findByText('titulo.pdf')).toBeInTheDocument();
   });
 
   it('rechaza un archivo de más de 5 MB o con formato no permitido (CA-03.3)', async () => {
     await renderReadyStep();
 
-    chooseFile(buildFile('titulo.pdf', 'application/pdf', 5 * 1024 * 1024 + 1));
-    expect(screen.getByText(INVALID_FILE)).toBeInTheDocument();
+    await chooseFile(buildFile('titulo.pdf', 'application/pdf', 5 * 1024 * 1024 + 1));
+    expect(await screen.findByText(INVALID_FILE)).toBeInTheDocument();
 
-    chooseFile(buildFile('titulo.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'));
-    expect(screen.getByText(INVALID_FILE)).toBeInTheDocument();
+    await chooseFile(
+      buildFile('titulo.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+    );
+    expect(await screen.findByText(INVALID_FILE)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Reemplazar archivo/ })).not.toBeInTheDocument();
   });
 
   it('conserva el archivo anterior si el reemplazo no es válido y libera la vista previa al reemplazar', async () => {
     await renderReadyStep();
-    chooseFile(buildFile('diploma.png', 'image/png'));
+    await chooseFile(buildFile('diploma.png', 'image/png'));
 
-    chooseFile(buildFile('virus.exe', 'application/octet-stream'), 'replace-document-input');
-    expect(screen.getByText(INVALID_FILE)).toBeInTheDocument();
+    await chooseFile(buildFile('virus.exe', 'application/octet-stream'), 'replace-document-input');
+    expect(await screen.findByText(INVALID_FILE)).toBeInTheDocument();
     expect(screen.getByText('diploma.png')).toBeInTheDocument();
 
-    chooseFile(buildFile('titulo.pdf', 'application/pdf'), 'replace-document-input');
-    expect(screen.getByText('titulo.pdf')).toBeInTheDocument();
+    await chooseFile(buildFile('titulo.pdf', 'application/pdf'), 'replace-document-input');
+    expect(await screen.findByText('titulo.pdf')).toBeInTheDocument();
     expect(screen.queryByText(INVALID_FILE)).not.toBeInTheDocument();
     expect(URL.revokeObjectURL).toHaveBeenCalled();
   });
@@ -153,12 +175,16 @@ describe('DocumentUploadStep', () => {
     const submission = { idSolicitud: 'abcdef12-3456-4789-8123-456789abcdef', estado: 'Pendiente', mensaje: 'ok' };
     mockedSubmit.mockResolvedValue({ ok: true, submission });
     await renderReadyStep();
-    completeForm(file);
+    await completeForm(file);
 
     submit();
 
     expect(await screen.findByText('¡Solicitud enviada con éxito!')).toBeInTheDocument();
-    expect(mockedUpload).toHaveBeenCalledWith({ sessionToken: SESSION_TOKEN, tipoDocumento: 'titulo_provision_nacional', file });
+    expect(mockedUpload).toHaveBeenCalledWith({
+      sessionToken: SESSION_TOKEN,
+      tipoDocumento: 'titulo_provision_nacional',
+      file,
+    });
     expect(mockedSubmit).toHaveBeenCalledWith({
       sessionToken: SESSION_TOKEN,
       tipoDocumento: 'titulo_provision_nacional',
@@ -190,7 +216,7 @@ describe('DocumentUploadStep', () => {
       submission: { idSolicitud: 'abcdef12-3456-4789-8123-456789abcdef', estado: 'Pendiente', mensaje: 'ok' },
     });
     await renderReadyStep();
-    completeForm();
+    await completeForm();
 
     submit();
     expect(await screen.findByText('¡Solicitud enviada con éxito!')).toBeInTheDocument();
@@ -217,7 +243,7 @@ describe('DocumentUploadStep', () => {
     const expired = 'El tiempo para completar tu registro venció. Debes llenar el formulario desde el inicio.';
     mockedSubmit.mockResolvedValue({ ok: false, status: 410, message: expired, errors: [] });
     await renderReadyStep();
-    completeForm();
+    await completeForm();
 
     submit();
 
@@ -241,7 +267,7 @@ describe('DocumentUploadStep', () => {
     const message = 'Este correo electrónico ya está registrado en otra solicitud';
     mockedSubmit.mockResolvedValue({ ok: false, status: 409, message, errors: [{ field: 'correo', message }] });
     await renderReadyStep();
-    completeForm(buildFile('diploma.pdf', 'application/pdf'), 'diploma_academico');
+    await completeForm(buildFile('diploma.pdf', 'application/pdf'), 'diploma_academico');
 
     submit();
 
@@ -258,7 +284,7 @@ describe('DocumentUploadStep', () => {
       errors: [],
     });
     await renderReadyStep();
-    completeForm();
+    await completeForm();
 
     submit();
 
@@ -275,7 +301,7 @@ describe('DocumentUploadStep', () => {
       errors: [{ field: 'archivo', message: INVALID_FILE }],
     });
     await renderReadyStep();
-    completeForm(buildFile('falso.pdf', 'application/pdf'), 'diploma_academico');
+    await completeForm(buildFile('falso.pdf', 'application/pdf'), 'diploma_academico');
 
     submit();
 

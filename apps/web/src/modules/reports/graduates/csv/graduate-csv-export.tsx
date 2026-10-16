@@ -1,8 +1,18 @@
 'use client';
 
-import { ChevronDown, Download, FileText, LoaderCircle, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  Download,
+  FileText,
+  LoaderCircle,
+  X,
+} from 'lucide-react';
 import { useState } from 'react';
 import {
+  buildGraduateCsvFilename,
+  GRADUATE_CSV_ERROR_MESSAGE,
   GraduateCsvFilters,
   GraduateCsvStatus,
   requestGraduateCsv,
@@ -14,12 +24,23 @@ interface GraduateCsvExportProps {
   filters?: GraduateCsvFilters;
   apiBaseUrl?: string;
   onPdfExport?: () => void;
+  // El PDF (HU4) se está generando: el botón Exportar muestra «Generando...» y queda deshabilitado
+  isPdfGenerating?: boolean;
 }
 
 type Feedback =
-  | { type: 'error'; text: string }
-  | { type: 'success'; text: string }
+  | { type: 'error'; text: string; filename?: never }
+  | { type: 'success'; text: string; filename: string }
   | null;
+
+const INITIAL_PROGRESS_VISIBLE_MS = 120;
+const COMPLETED_PROGRESS_VISIBLE_MS = 380;
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
+}
 
 function getStatusText(status: GraduateCsvStatus): string {
   if (status === 'VERIFICADO') return 'verificados';
@@ -29,14 +50,14 @@ function getStatusText(status: GraduateCsvStatus): string {
 
 function getEmptyMessage(status: GraduateCsvStatus): string {
   if (status === 'VERIFICADO') {
-    return 'No hay titulados verificados para exportar';
+    return 'No hay egresados verificados para exportar';
   }
 
   if (status === 'OBSERVADO') {
-    return 'No hay titulados observados para exportar';
+    return 'No hay egresados observados para exportar';
   }
 
-  return 'No hay titulados para exportar';
+  return 'No hay egresados para exportar';
 }
 
 export function GraduateCsvExport({
@@ -44,17 +65,21 @@ export function GraduateCsvExport({
   filters = {},
   apiBaseUrl,
   onPdfExport,
+  isPdfGenerating = false,
 }: GraduateCsvExportProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const isBusy = isGenerating || isPdfGenerating;
 
   const status = filters.status ?? 'TODOS';
   const statusText = getStatusText(status);
   const recordsDescription = statusText
     ? `${totalRecords} titulados ${statusText}`
     : `${totalRecords} titulados`;
+  const previewFilename = buildGraduateCsvFilename(status);
 
   const handleCsvSelection = () => {
     setMenuOpen(false);
@@ -68,6 +93,7 @@ export function GraduateCsvExport({
       return;
     }
 
+    setProgress(0);
     setConfirmOpen(true);
   };
 
@@ -83,23 +109,45 @@ export function GraduateCsvExport({
 
   const handleCsvConfirmation = async () => {
     setIsGenerating(true);
+    setProgress(0);
     setFeedback(null);
 
     try {
-      const file = await requestGraduateCsv(filters, apiBaseUrl);
+      // El CSV suele pesar pocos KB. Dejamos visible el estado inicial el
+      // tiempo suficiente para que el navegador pinte la barra antes de
+      // comenzar la petición y así cumplir el criterio visual de QA.
+      await delay(INITIAL_PROGRESS_VISIBLE_MS);
+
+      const file = await requestGraduateCsv(
+        filters,
+        apiBaseUrl,
+        setProgress,
+      );
+
       triggerGraduateCsvDownload(file);
+      setProgress(100);
+
+      // Si la respuesta llega en un único chunk, 0% -> 100% puede ocurrir en
+      // milisegundos. Conservamos brevemente el 100% para que el usuario vea
+      // el porcentaje y la barra completada antes de cerrar el modal.
+      await delay(COMPLETED_PROGRESS_VISIBLE_MS);
+
       setConfirmOpen(false);
       setFeedback({
         type: 'success',
-        text: 'La nómina CSV fue generada correctamente.',
+        text: 'Archivo CSV descargado',
+        filename: file.filename,
       });
     } catch (error) {
+      const controlledMessage =
+        error instanceof Error &&
+        error.message.startsWith('No hay egresados')
+          ? error.message
+          : GRADUATE_CSV_ERROR_MESSAGE;
+
       setFeedback({
         type: 'error',
-        text:
-          error instanceof Error
-            ? error.message
-            : 'No se pudo generar el archivo CSV. Intente nuevamente.',
+        text: controlledMessage,
       });
     } finally {
       setIsGenerating(false);
@@ -115,25 +163,28 @@ export function GraduateCsvExport({
         type="button"
         aria-expanded={menuOpen}
         aria-haspopup="menu"
-        disabled={isGenerating}
+        disabled={isBusy}
         onClick={() => {
           setMenuOpen((current) => !current);
           setFeedback(null);
         }}
         className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#2C3B4D] px-5 py-3 font-semibold text-[#EEE9DF] transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isGenerating ? (
-          <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin" />
+        {isPdfGenerating ? (
+          <>
+            <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin" />
+            Generando...
+          </>
         ) : (
-          <Download aria-hidden="true" className="h-5 w-5" />
-        )}
-        {isGenerating ? 'Generando...' : 'Exportar'}
-        {!isGenerating && (
-          <ChevronDown aria-hidden="true" className="h-4 w-4" />
+          <>
+            <Download aria-hidden="true" className="h-5 w-5" />
+            Exportar
+            <ChevronDown aria-hidden="true" className="h-4 w-4" />
+          </>
         )}
       </button>
 
-      {menuOpen && !isGenerating && (
+      {menuOpen && !isBusy && (
         <div
           role="menu"
           aria-label="Formatos de exportación"
@@ -176,7 +227,7 @@ export function GraduateCsvExport({
               <span className="block text-sm text-[#2C3B4D]">
                 {onPdfExport
                   ? 'Reporte institucional'
-                  : 'Se habilitará al integrar HU4'}
+                  : 'Seleccione Verificados u Observados'}
               </span>
             </span>
           </button>
@@ -186,13 +237,56 @@ export function GraduateCsvExport({
       {feedback && (
         <div
           role={feedback.type === 'error' ? 'alert' : 'status'}
-          className={`mt-3 rounded-lg border px-4 py-3 text-sm ${
+          aria-live="polite"
+          className={`fixed right-4 top-4 z-[70] w-[calc(100%-2rem)] max-w-sm rounded-xl border p-4 shadow-xl sm:right-6 sm:top-6 ${
             feedback.type === 'error'
-              ? 'border-[#A35139] text-[#A35139]'
-              : 'border-[#2C3B4D] text-[#2C3B4D]'
+              ? 'border-[#A35139] bg-[#FFF4F0]'
+              : 'border-[#2C3B4D] bg-white'
           }`}
         >
-          {feedback.text}
+          <div className="flex items-start gap-3">
+            {feedback.type === 'error' ? (
+              <AlertTriangle
+                aria-hidden="true"
+                className="mt-0.5 h-5 w-5 shrink-0 text-[#A35139]"
+              />
+            ) : (
+              <CheckCircle2
+                aria-hidden="true"
+                className="mt-0.5 h-5 w-5 shrink-0 text-[#2C3B4D]"
+              />
+            )}
+
+            <div className="min-w-0 flex-1">
+              <p
+                className={`font-semibold ${
+                  feedback.type === 'error'
+                    ? 'text-[#A35139]'
+                    : 'text-[#1B2632]'
+                }`}
+              >
+                {feedback.text}
+              </p>
+              {feedback.type === 'success' ? (
+                <p className="mt-1 break-all text-sm text-[#2C3B4D]">
+                  {feedback.filename}
+                </p>
+              ) : (
+                <p className="mt-1 text-sm text-[#2C3B4D]">
+                  No se descargó ningún archivo.
+                </p>
+              )}
+            </div>
+
+            <button
+              type="button"
+              aria-label="Cerrar notificación"
+              onClick={() => setFeedback(null)}
+              className="rounded-md p-1 text-[#2C3B4D] hover:bg-[#EEE9DF]"
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -208,7 +302,7 @@ export function GraduateCsvExport({
             className="w-full max-w-lg rounded-xl border border-[#C9C1B1] bg-[#EEE9DF] p-6 shadow-xl"
           >
             <div className="flex items-start justify-between gap-4">
-              <div>
+              <div className="min-w-0 flex-1">
                 <h2
                   id="csv-confirmation-title"
                   className="text-2xl font-semibold text-[#1B2632]"
@@ -219,6 +313,16 @@ export function GraduateCsvExport({
                 <p className="mt-2 text-[#2C3B4D]">
                   Se exportarán {recordsDescription} con los filtros activos.
                 </p>
+
+                <div className="mt-4 flex items-center gap-3 rounded-lg border border-[#C9C1B1] bg-white px-4 py-3">
+                  <FileText
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0 text-[#2C3B4D]"
+                  />
+                  <span className="min-w-0 break-all text-sm font-semibold text-[#1B2632]">
+                    {previewFilename}
+                  </span>
+                </div>
               </div>
 
               <button
@@ -231,6 +335,32 @@ export function GraduateCsvExport({
                 <X aria-hidden="true" className="h-5 w-5" />
               </button>
             </div>
+
+            {isGenerating && (
+              <div
+                className="mt-5 rounded-lg border border-[#C9C1B1] bg-white px-4 py-3"
+                role="status"
+                aria-live="polite"
+              >
+                <div className="mb-2 flex items-center justify-between gap-4 text-sm font-semibold text-[#1B2632]">
+                  <span>Descargando archivo...</span>
+                  <span>{progress}%</span>
+                </div>
+                <div
+                  role="progressbar"
+                  aria-label="Progreso de descarga CSV"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={progress}
+                  className="h-2 overflow-hidden rounded-full bg-[#C9C1B1]"
+                >
+                  <div
+                    className="h-full rounded-full bg-[#FFB162] transition-[width] duration-150"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
@@ -253,7 +383,7 @@ export function GraduateCsvExport({
                     className="h-5 w-5 animate-spin"
                   />
                 )}
-                {isGenerating ? 'Generando...' : 'Descargar CSV'}
+                Confirmar .csv
               </button>
             </div>
           </section>

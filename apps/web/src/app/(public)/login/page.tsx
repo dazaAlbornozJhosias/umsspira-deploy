@@ -79,8 +79,8 @@ export default function LoginPage() {
               Bolivia.”
             </p>
             <p className="text-sm leading-relaxed text-white/80">
-              Facultad de Ciencias y Tecnología • Carrera de Ingeniería de Sistemas. Red alumni
-              integrada para seguimiento curricular, convenios y validación digital.
+              Facultad de Ciencias y Tecnología •<br></br>
+              Integrada para seguimiento curricular, convenios y validación digital.
             </p>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/70">
               <span className="inline-flex items-center gap-1.5">
@@ -90,12 +90,7 @@ export default function LoginPage() {
                 Cifrado SSL 256-bit
               </span>
               <span aria-hidden="true">•</span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="text-emerald-400">
-                  <ServerIcon />
-                </span>
-                Servidores DTI UMSS
-              </span>
+
             </div>
           </div>
         </div>
@@ -118,9 +113,9 @@ export default function LoginPage() {
           </header>
 
           <div className="rounded-2xl border border-oatmeal/70 bg-[#F5F2EA] p-8 shadow-xl shadow-abyssal-blue/10">
-            <h1 className="text-3xl font-bold tracking-tight text-abyssal-blue">Iniciar Sesión</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-abyssal-blue">Bienvenido de vuelta</h1>
             <p className="mt-2 text-sm text-abyssal-blue/70">
-              Ingresa a la plataforma institucional con tu cuenta universitaria
+              Ingresa a la plataforma con tu cuenta personal
             </p>
             <div className="mt-8">
               <LoginForm />
@@ -128,7 +123,7 @@ export default function LoginPage() {
           </div>
 
           <footer className="space-y-1 text-center text-[11px] text-abyssal-blue/60">
-            <p className="uppercase tracking-wider">Universidad Mayor de San Simón • DTI &amp; DPA</p>
+            <p className="uppercase tracking-wider">Universidad Mayor de San Simón</p>
           </footer>
         </div>
       </section>

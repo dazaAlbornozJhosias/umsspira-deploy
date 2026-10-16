@@ -19,7 +19,21 @@ export interface EmpresaRow {
 
 @Injectable()
 export class CompaniesService {
-  async getHeader(_empresaId: string): Promise<HeaderResponseDto> {
+  // El JWT de Supabase trae el id del usuario (auth.uid), no el de la empresa:
+  // se resuelve por la FK empresa.id_usuario.
+  private async resolveEmpresaId(authUid: string): Promise<string> {
+    const rows = await query<{ id: string }>(
+      'SELECT id FROM empresa WHERE id_usuario = $1 LIMIT 1',
+      [authUid],
+    );
+    if (rows.length === 0) {
+      throw new NotFoundException('Empresa no encontrada');
+    }
+    return rows[0].id;
+  }
+
+  async getHeader(authUid: string): Promise<HeaderResponseDto> {
+    const empresaId = await this.resolveEmpresaId(authUid);
     const sql = `
       SELECT
         razon_social as "nombre",
@@ -30,7 +44,7 @@ export class CompaniesService {
       WHERE id = $1
       LIMIT 1
     `;
-    const rows = await query<HeaderResponseDto>(sql, [_empresaId]);
+    const rows = await query<HeaderResponseDto>(sql, [empresaId]);
     if (rows.length === 0) {
       throw new NotFoundException('Empresa no encontrada');
     }
@@ -38,7 +52,7 @@ export class CompaniesService {
   }
 
   async updateProfile(
-    _empresaId: string,
+    authUid: string,
     dto: UpdateCompanyDto,
   ): Promise<EmpresaRow> {
     // TSK-4.7: Bloqueo explicito de NIT/RUC
@@ -81,8 +95,9 @@ export class CompaniesService {
       throw new BadRequestException('No se enviaron campos para actualizar');
     }
 
+    const empresaId = await this.resolveEmpresaId(authUid);
     fields.push(`fecha_actualizacion = NOW()`);
-    values.push(_empresaId);
+    values.push(empresaId);
 
     const sql = `
       UPDATE empresa
@@ -106,7 +121,7 @@ export class CompaniesService {
          )
          INSERT INTO telefono_empresa (id_empresa, numero, tipo)
          SELECT $1, $2, 'PRINCIPAL' WHERE NOT EXISTS (SELECT 1 FROM upd)`,
-        [_empresaId, dto.telefono],
+        [empresaId, dto.telefono],
       );
     }
     if (dto.direccion !== undefined) {
@@ -116,7 +131,7 @@ export class CompaniesService {
          )
          INSERT INTO direccion_empresa (id_empresa, direccion)
          SELECT $1, $2 WHERE NOT EXISTS (SELECT 1 FROM upd)`,
-        [_empresaId, dto.direccion],
+        [empresaId, dto.direccion],
       );
     }
 
@@ -128,7 +143,8 @@ export class CompaniesService {
    * Hace LEFT JOIN con direccion_empresa y telefono_empresa.
    * Devuelve null en campos que no existan (CA7).
    */
-  async getContact(_empresaId: string): Promise<ContactResponseDto> {
+  async getContact(authUid: string): Promise<ContactResponseDto> {
+    const empresaId = await this.resolveEmpresaId(authUid);
     const sql = `
       SELECT
         e.descripcion_larga as "description",
@@ -145,7 +161,7 @@ export class CompaniesService {
       LIMIT 1
     `;
 
-    const rows = await query<ContactResponseDto>(sql, [_empresaId]);
+    const rows = await query<ContactResponseDto>(sql, [empresaId]);
 
     if (rows.length === 0) {
       throw new NotFoundException('Empresa no encontrada');

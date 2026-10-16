@@ -23,12 +23,35 @@ describe('SubmissionSuccessModal', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('¡Solicitud enviada con éxito!')).toBeInTheDocument();
-    expect(screen.getByText('ABCDEF12')).toBeInTheDocument();
     expect(screen.getByText('Juan Pérez Rojas')).toBeInTheDocument();
     expect(screen.getByText('1234567')).toBeInTheDocument();
     expect(screen.getByText('ju****z@gmail.com')).toBeInTheDocument();
     expect(screen.getByText(/titulo.pdf/)).toBeInTheDocument();
     expect(screen.getByText('Pendiente')).toBeInTheDocument();
+  });
+
+  it('muestra el texto informativo completo con el código de seguimiento oficial', () => {
+    render(<SubmissionSuccessModal {...props} />);
+
+    expect(
+      screen.getByText(
+        'Su expediente ha sido ingresado al sistema institucional de validación académica bajo el código de seguimiento oficial.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('muestra N/A como código de trámite mientras no exista', () => {
+    render(<SubmissionSuccessModal {...props} />);
+
+    expect(screen.getByText('Código de trámite')).toBeInTheDocument();
+    expect(screen.getByText('N/A')).toBeInTheDocument();
+  });
+
+  it('muestra un único título de confirmación y el resumen en una sola tarjeta', () => {
+    render(<SubmissionSuccessModal {...props} />);
+
+    expect(screen.queryByText('Solicitud enviada')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('region', { name: 'Resumen de la solicitud' })).toHaveLength(1);
   });
 
   it('va al inicio con el botón principal y cierra con la X', () => {

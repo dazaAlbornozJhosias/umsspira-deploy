@@ -7,7 +7,18 @@ import { useCountdown } from '../hooks/use-countdown';
 import { OtpInput } from './otp-input';
 import { ResendCodeButton } from './resend-code-button';
 import { Button } from '@/shared/components/button';
-import { ShieldCheck, Mail, ArrowLeft, AlertCircle, Info } from 'lucide-react';
+import {
+  ShieldCheck,
+  MailCheck,
+  KeyRound,
+  Lock,
+  Timer,
+  Info,
+  ArrowRight,
+  ArrowLeft,
+  AlertCircle,
+  Mail,
+} from 'lucide-react';
 
 export interface VerifyEmailFormProps {
   onSuccess?: () => void;
@@ -69,6 +80,8 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   });
 
   const isCodeComplete = otpDigits.every((d) => d.trim() !== '');
+  const filledCount = otpDigits.filter((d) => d.trim() !== '').length;
+  const nextDigit = Math.min(filledCount + 1, 6);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,37 +111,42 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   };
 
   return (
-    <div className="mx-auto w-full max-w-xl rounded-2xl border border-oatmeal bg-white p-6 sm:p-10 shadow-sm text-abyssal">
-      {/* Header Institucional */}
-      <div className="text-center mb-8">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-palladian text-blue-fantastic">
-          <Mail className="h-7 w-7" />
+    <div className="mx-auto w-full max-w-xl rounded-2xl border border-oatmeal bg-white p-6 sm:p-10 shadow-sm text-abyssal-blue">
+      {/* Encabezado institucional */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-abyssal-blue text-white">
+            <MailCheck className="h-6 w-6" aria-hidden="true" />
+          </span>
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-burning-flame px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-abyssal-blue">
+              <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
+              Token institucional
+            </span>
+            <p className="mt-1 text-xs text-abyssal-blue/70">Protocolo de validación segura</p>
+          </div>
         </div>
-        <span className="inline-block rounded-full bg-palladian px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-truffle-trouble mb-2">
-          Paso 2 de 3 · Verificación de Identidad
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-oatmeal text-abyssal-blue/70">
+          <Lock className="h-5 w-5" aria-hidden="true" />
         </span>
-        <h1 className="text-2xl sm:text-3xl font-bold text-abyssal tracking-tight">
-          Verifica tu correo electrónico
-        </h1>
-        <p className="mt-2 text-sm text-abyssal/75 max-w-md mx-auto">
-          Hemos enviado un código numérico de 6 dígitos para validar tu identidad académica a:
-        </p>
-        <p className="mt-1 font-mono text-sm sm:text-base font-bold text-blue-fantastic">
-          {maskedEmail}
-        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <h1 className="mt-6 text-2xl sm:text-3xl font-bold tracking-tight">
+        Verifica tu correo electrónico
+      </h1>
+      <p className="mt-2 text-sm text-abyssal-blue/75">
+        Hemos enviado un código de seguridad de 6 dígitos a{' '}
+        <strong className="font-mono font-bold text-abyssal-blue">{maskedEmail}</strong>{' '}
+        para validar tu registro oficial en el padrón universitario.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {/* Entrada OTP de 6 casillas */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs text-abyssal/70 px-1">
-            <span className="font-medium">Código de 6 dígitos</span>
-            <span
-              className={`font-mono font-semibold ${
-                isExpired ? 'text-truffle-trouble' : 'text-blue-fantastic'
-              }`}
-            >
-              {isExpired ? 'Expirado' : `Expira en ${formattedTime} min`}
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <span className="font-semibold">Código de autenticación (6 dígitos):</span>
+            <span aria-live="polite" className="shrink-0 text-xs text-abyssal-blue/70">
+              Dígito {nextDigit} de 6
             </span>
           </div>
 
@@ -146,7 +164,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
             role="alert"
             className="flex items-start gap-2.5 rounded-lg border border-truffle-trouble/40 bg-truffle-trouble/10 p-3 text-xs text-truffle-trouble font-medium"
           >
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
             <span>{error}</span>
           </div>
         )}
@@ -154,63 +172,80 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         {/* Mensaje de éxito si ya está verificado */}
         {isVerified && (
           <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800 font-medium">
-            <ShieldCheck className="h-4 w-4 shrink-0" />
+            <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>¡Correo verificado exitosamente! Ya puedes continuar con la carga de respaldo.</span>
           </div>
         )}
 
-        {/* Botón Principal */}
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={!isCodeComplete || isSubmitting || isExpired || maxAttemptsReached || isVerified}
-          className="w-full text-sm font-bold shadow-sm"
-        >
-          {isSubmitting
-            ? 'Validando código...'
-            : isVerified
-            ? 'Correo Verificado'
-            : 'Verificar código y continuar'}
-        </Button>
+        {/* Temporizador de vigencia (CA-02.1, CA-02.4) */}
+        <div className="flex flex-col gap-3 rounded-xl border border-oatmeal bg-palladian/60 p-4 sm:flex-row sm:items-center">
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <Timer className="h-5 w-5 text-blue-fantastic" aria-hidden="true" />
+            El código expirará en:
+            <span className="rounded-md border border-oatmeal bg-white px-2.5 py-1 font-mono text-sm font-bold tabular-nums">
+              {isExpired ? 'Expirado' : formattedTime}
+            </span>
+          </p>
+          <p className="flex items-center gap-1.5 text-xs text-abyssal-blue/70 sm:ml-auto">
+            <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Válido solo para esta sesión
+          </p>
+        </div>
 
-        {/* Reenvío de código con Cooldown (CA-02.6) */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-oatmeal/60 text-xs text-abyssal/80">
+        {/* Ayuda si no llega el correo */}
+        <div className="flex items-start gap-2 text-xs leading-relaxed text-abyssal-blue/80">
+          <Mail className="h-4 w-4 shrink-0 mt-0.5 text-blue-fantastic" aria-hidden="true" />
+          <p>
+            <strong>¿No recibiste el correo?</strong> Revisa tu bandeja de entrada o la carpeta de{' '}
+            <strong>spam o correos no deseados</strong>.
+          </p>
+        </div>
+
+        {/* Acciones */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            type="submit"
+            disabled={!isCodeComplete || isSubmitting || isExpired || maxAttemptsReached || isVerified}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-burning-flame px-4 py-3.5 text-sm font-bold text-abyssal-blue shadow-sm transition hover:brightness-95 disabled:opacity-60"
+          >
+            {isSubmitting ? (
+              'Validando código...'
+            ) : isVerified ? (
+              'Correo Verificado'
+            ) : (
+              <>
+                Verificar correo
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </>
+            )}
+          </Button>
           <ResendCodeButton
             onResend={handleResend}
             cooldownSeconds={cooldownSeconds}
             isResending={isResending}
             disabled={isSubmitting || isVerified}
+            className="rounded-lg border border-oatmeal bg-white px-5 py-2.5 text-sm font-semibold text-abyssal-blue hover:bg-palladian"
           />
+        </div>
 
-          {onEditData && (
+        {onEditData && (
+          <div className="text-center">
             <button
               type="button"
               onClick={onEditData}
-              className="inline-flex items-center gap-1.5 text-xs text-abyssal hover:text-blue-fantastic hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs text-abyssal-blue/80 hover:text-blue-fantastic hover:underline"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Corregir mis datos</span>
             </button>
-          )}
-        </div>
-
-        {/* Caja informativa de soporte */}
-        <div className="rounded-xl bg-palladian/60 p-4 text-xs text-abyssal/80 border border-oatmeal/40 space-y-1.5">
-          <div className="flex items-center gap-1.5 font-semibold text-abyssal">
-            <Info className="h-3.5 w-3.5 text-blue-fantastic" />
-            <span>¿No recibiste el mensaje?</span>
           </div>
-          <p className="leading-relaxed">
-            Revisa tu carpeta de correo no deseado (spam) o espera a que el tiempo de expiración
-            termine para solicitar un nuevo código institucional.
-          </p>
-        </div>
+        )}
 
-        {/* Pie de seguridad cifrada */}
-        <div className="flex items-center justify-center gap-2 text-[11px] text-abyssal/60 uppercase tracking-wider pt-2">
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-          <span>Cifrado de extremo a extremo · Servidor UMSS DTI</span>
-        </div>
+        {/* Pie de seguridad */}
+        <p className="flex items-center justify-center gap-2 border-t border-oatmeal/60 pt-4 text-center text-[11px] text-abyssal-blue/60">
+          <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
+          Protegido por el Sistema Institucional UMSSPIRA.
+        </p>
       </form>
     </div>
   );

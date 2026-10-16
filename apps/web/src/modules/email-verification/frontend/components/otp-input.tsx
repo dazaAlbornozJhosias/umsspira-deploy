@@ -98,17 +98,18 @@ export const OtpInput: React.FC<OtpInputProps> = ({
             value={digitValue}
             disabled={disabled}
             aria-label={`Dígito ${index + 1} de 6`}
+            placeholder="–"
             onChange={(e) => handleChange(index, e)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
             className={cn(
-              'h-12 w-11 sm:h-14 sm:w-12 rounded-lg text-center text-xl font-bold font-mono transition-all outline-none',
-              'bg-palladian text-abyssal',
+              'h-14 w-12 sm:h-16 sm:w-[52px] rounded-xl text-center text-2xl font-bold transition-all outline-none placeholder:text-abyssal-blue/25',
+              digitValue ? 'bg-palladian text-abyssal-blue' : 'bg-palladian/50 text-abyssal-blue',
               'border focus:border-2 focus:border-blue-fantastic focus:bg-white',
               hasError
-                ? 'border-2 border-truffle-trouble bg-palladian text-truffle-trouble'
+                ? 'border-2 border-truffle-trouble text-truffle-trouble'
                 : 'border-oatmeal',
-              disabled && 'opacity-50 cursor-not-allowed bg-oatmeal/20'
+              disabled && 'opacity-50 cursor-not-allowed'
             )}
           />
         );

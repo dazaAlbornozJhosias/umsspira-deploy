@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
 import { clampPercentage, formatPercentage } from '../utils/percentage';
+import { Code, Cloud, BrainCircuit, ShieldCheck, CheckSquare, LayoutDashboard } from 'lucide-react';
 
 const AXES_ORDER = [
   'software-development',
@@ -25,13 +26,22 @@ const AREA_LABELS: Record<AreaId, string> = {
 };
 
 const AREA_SHORT_LABELS: Record<AreaId, string> = {
-  'software-development': 'Desarrollo',
-  'cloud-devops': 'Cloud',
-  'data-ai': 'Datos & IA',
-  'quality-assurance': 'QA & Testing',
-  'cybersecurity-networks': 'Ciberseg.',
-  'it-management': 'Gestión',
+  'software-development': 'Desarrollo de Software',
+  'cloud-devops': 'Cloud/Devops',
+  'data-ai': 'Ciencia de Datos/IA',
+  'quality-assurance': 'QA',
+  'cybersecurity-networks': 'Ciberseguridad',
+  'it-management': 'Gestión TI',
 };  
+
+const AREA_ICONS: Record<AreaId, React.ElementType> = {
+  'software-development': Code,
+  'cloud-devops': Cloud,
+  'data-ai': BrainCircuit,
+  'quality-assurance': CheckSquare,
+  'cybersecurity-networks': ShieldCheck,
+  'it-management': LayoutDashboard,
+};
 
 interface AffinityRadarProps {
   affinityData?: AffinityAreaScore[];
@@ -131,19 +141,22 @@ export default function AffinityRadar({
             />
           ))}
 
-          {chartData.map((_, i) => {
-            const { x, y } = getCoordinatesForValue(100, i);
-            return (
+          {chartData.map((data, i) => {
+          const { x, y } = getCoordinatesForValue(100, i);
+          return (
+            <g key={`axis-${i}`} className={isMini ? undefined : "cursor-pointer"} onClick={isMini ? undefined : () => handleSelectArea(data.id)}>
               <line
-                key={`axis-${i}`}
-                x1={center}
-                y1={center}
-                x2={x}
-                y2={y}
+                x1={center} y1={center} x2={x} y2={y}
                 className="stroke-gray-300 stroke-1"
               />
-            );
-          })}
+              {/* Línea invisible más gruesa para facilitar el clic en el eje */}
+              <line
+                x1={center} y1={center} x2={x} y2={y}
+                stroke="transparent" strokeWidth={15}
+              />
+            </g>
+          );
+        })}
 
           {!isRadarEmpty && (
             <polygon
@@ -153,7 +166,7 @@ export default function AffinityRadar({
                   ? highlighted
                     ? 'fill-red-700/20 stroke-red-700 stroke-2 transition-all duration-500'
                     : 'fill-amber-800/15 stroke-slate-800 stroke-2 transition-all duration-500'
-                  : 'fill-blue-500/30 stroke-blue-600 stroke-2 transition-all duration-500'
+                  : 'fill-red-800/10 stroke-red-800/60 stroke-2 transition-all duration-500'
               }
             />
           )}
@@ -182,30 +195,35 @@ export default function AffinityRadar({
                   key={`point-${data.id}`}
                   className="cursor-pointer"
                   onClick={() => handleSelectArea(data.id)}
-                  style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                 >
-                  <circle cx={x} cy={y} r={15} fill="transparent" />
-                  
-                  {/* Renderiza un punto ámbar diferenciado si el eje cambió; de lo contrario, un punto estándar con r=5 exacto */}
-                  {isChanged ? (
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={6}
-                      className={`transition-transform duration-200 ${
-                        isSelected ? 'fill-amber-600 scale-125' : 'fill-amber-500 hover:scale-125'
-                      }`}
-                    />
-                  ) : (
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={5}
-                      className={`transition-transform duration-200 ${
-                        isSelected ? 'fill-blue-700 scale-125' : 'fill-blue-400 hover:scale-125'
-                      }`}
+                  {/* LÍNEA PUNTEADA AL CENTRO (SOLO PARA EL VÉRTICE SELECCIONADO) */}
+                  {isSelected && (
+                    <line
+                      x1={center}
+                      y1={center}
+                      x2={x}
+                      y2={y}
+                      className="stroke-red-800/60 stroke-1"
+                      strokeDasharray="4 4"
                     />
                   )}
+
+                  {/* ÁREA INVISIBLE PARA FACILITAR EL CLIC */}
+                  <circle cx={x} cy={y} r={15} fill="transparent" />
+                  
+                  {/* VÉRTICE NEGRO CON BORDE ESTILO MOCKUP */}
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={isSelected ? 5.5 : 4}
+                    className={`transition-colors duration-200 stroke-2 ${
+                      isSelected
+                      ? 'fill-slate-900 stroke-slate-900'
+                      : isChanged
+                      ? 'fill-white stroke-amber-600 hover:stroke-amber-700'
+                      : 'fill-white stroke-slate-800 hover:stroke-slate-900'
+                    }`}
+                  />
                 </g>
               );
             })}
@@ -234,32 +252,45 @@ export default function AffinityRadar({
               );
             }
 
-            const { x, y } = getCoordinatesForValue(115, i);
-            const isChanged = changedAreaIds.includes(data.id);
+            const { x, y } = getCoordinatesForValue(130, i);
             const isSelected = selectedArea === data.id;
+            const Icon = AREA_ICONS[data.id as AreaId] || Code;
 
-            // Se combinan los estilos si el eje cambió y está seleccionado al mismo tiempo
-            let labelStyle = 'fill-gray-600 hover:fill-blue-500';
-            if (isChanged && isSelected) {
-              labelStyle = 'fill-amber-600 font-bold underline scale-105';
-            } else if (isChanged) {
-              labelStyle = 'fill-amber-600 font-bold';
-            } else if (isSelected) {
-              labelStyle = 'fill-blue-700 font-bold underline';
-            }
+            const width = 210;
+            const height = 50;
 
             return (
-              <text
+              <foreignObject
                 key={`label-${data.id}`}
-                x={x}
-                y={y}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                className={`text-xs md:text-sm font-medium cursor-pointer transition-colors ${labelStyle}`}
-                onClick={() => handleSelectArea(data.id)}
+                x={x - width / 2}
+                y={y - height / 2}
+                width={width}
+                height={height}
+                className="overflow-visible"
               >
-                {data.label}
-              </text>
+                <div
+                  onClick={() => handleSelectArea(data.id)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border cursor-pointer transition-all w-max mx-auto select-none ${
+                    isSelected
+                      ? 'bg-slate-900 border-slate-900 shadow-lg scale-105'
+                      : 'bg-white/90 backdrop-blur-sm border-slate-200 hover:border-red-800 hover:shadow-md'
+                    }`}
+                >
+                  <div className={`p-1.5 rounded-lg ${isSelected ? 'bg-white/20' : 'bg-slate-800'}`}>
+                    <Icon className="w-3.5 h-3.5 text-white" />
+                  </div>
+
+                  <div className="flex flex-col items-start leading-none justify-center">
+                    <span className={`text-[11px] font-bold ${isSelected ? 'text-white' : 'text-slate-800'}`}>
+                      {data.label} {!isRadarEmpty && (
+                        <span className={isSelected ? 'text-red-400 font-black' : 'text-red-700 font-black'}>
+                          {`(${data.displayValue})`}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </foreignObject>
             );
           })}
         </svg>

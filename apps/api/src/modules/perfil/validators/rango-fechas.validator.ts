@@ -34,3 +34,23 @@ export function FechaNoFutura(opciones?: ValidationOptions) {
     });
   };
 }
+
+// Fecha mínima de inicio y fin de una experiencia laboral (BUG-HU2-008); la misma que usa el frontend
+export const FECHA_MINIMA_EXPERIENCIA = '1950-01-01';
+
+// Valida que la fecha no sea anterior a la fecha mínima indicada (AAAA-MM-DD)
+export function FechaNoAnteriorA(fechaMinima: string, opciones?: ValidationOptions) {
+  return (objeto: object, propiedad: string) => {
+    registerDecorator({
+      name: 'fechaNoAnteriorA',
+      target: objeto.constructor,
+      propertyName: propiedad,
+      constraints: [fechaMinima],
+      options: opciones,
+      validator: {
+        validate: (valor: unknown, args: ValidationArguments) =>
+          typeof valor !== 'string' || new Date(valor) >= new Date(args.constraints[0]),
+      },
+    });
+  };
+}

@@ -11,7 +11,6 @@ interface FieldErrors {
   password?: string;
 }
 
-// Íconos en línea para no agregar dependencias nuevas
 function Icon({ children }: { children: ReactNode }) {
   return (
     <svg
@@ -30,10 +29,11 @@ function Icon({ children }: { children: ReactNode }) {
   );
 }
 
+// Bug 5: icono de sobre para el correo
 const AtIcon = () => (
   <Icon>
-    <circle cx="12" cy="12" r="4" />
-    <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" />
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="m3 7 9 6 9-6" />
   </Icon>
 );
 const KeyIcon = () => (
@@ -96,14 +96,16 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
+      {/* Bug 5: etiqueta e icono del correo */}
       <div className="space-y-2">
-        <div className="flex items-baseline justify-between gap-2">
-          <label htmlFor="email" className={labelClass}>
-            Correo electrónico <span className="text-truffle-trouble">*</span>
-          </label>
-          <span className="text-xs text-gray-500">Institucional</span>
-        </div>
-        <div className={`${fieldWrapper} ${fieldState(Boolean(fieldErrors.email))}`}>
+        <label htmlFor="email" className={labelClass}>
+          CORREO ELECTRÓNICO
+          <span className="text-truffle-trouble"> *</span>
+        </label>
+
+        <div
+          className={`${fieldWrapper} ${fieldState(Boolean(fieldErrors.email))}`}
+        >
           <AtIcon />
           <input
             id="email"
@@ -120,12 +122,18 @@ export function LoginForm() {
         {fieldErrors.email && <p className="text-xs text-truffle-trouble">{fieldErrors.email}</p>}
       </div>
 
+      {/* Bug 6: icono de candado en campo contraseña */}
       <div className="space-y-2">
         <label htmlFor="password" className={labelClass}>
-          Contraseña <span className="text-truffle-trouble">*</span>
+          CONTRASEÑA
+          <span className="text-truffle-trouble"> *</span>
         </label>
-        <div className={`${fieldWrapper} ${fieldState(Boolean(fieldErrors.password))}`}>
-          <KeyIcon />
+
+        <div
+          className={`${fieldWrapper} ${fieldState(Boolean(fieldErrors.password))}`}
+        >
+          <LockIcon />
+
           <input
             id="password"
             type={showPassword ? "text" : "password"}
@@ -137,6 +145,7 @@ export function LoginForm() {
             aria-required="true"
             className={fieldInput}
           />
+
           <button
             type="button"
             onClick={() => setShowPassword((visible) => !visible)}
@@ -146,10 +155,22 @@ export function LoginForm() {
             {showPassword ? <EyeOffIcon /> : <EyeIcon />}
           </button>
         </div>
-        {fieldErrors.password && <p className="text-xs text-truffle-trouble">{fieldErrors.password}</p>}
+        {/* BUG1 y BUG4: preferencia de sesión persistente */}
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-abyssal-blue">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(event) => setRemember(event.target.checked)}
+            className="h-4 w-4 rounded border-oatmeal accent-abyssal-blue"
+          />
+          Recordar mi sesión en este equipo
+        </label>
+        {fieldErrors.password && (
+          <p className="text-xs text-truffle-trouble">
+            {fieldErrors.password}
+          </p>
+        )}
       </div>
-
-      
 
       {error && (
         <p role="alert" className="rounded-lg bg-truffle-trouble/10 px-3 py-2 text-sm text-truffle-trouble">
@@ -157,12 +178,13 @@ export function LoginForm() {
         </p>
       )}
 
+      {/* Bug 7: texto solicitado en el botón principal */}
       <button
         type="submit"
         disabled={isLoading}
         className="w-full rounded-lg bg-burning-flame px-4 py-3.5 text-sm font-bold text-abyssal-blue shadow-sm transition hover:brightness-95 disabled:opacity-60"
       >
-        {isLoading ? "Ingresando..." : "Ingresar →"}
+        {isLoading ? "Ingresando..." : "Ingresar al Portal ->"}
       </button>
 
       <hr className="border-oatmeal" />
@@ -172,8 +194,8 @@ export function LoginForm() {
           <LockIcon />
         </span>
         <p>
-          Acceso protegido para Administradores del Sistema, Decanaturas y Titulados debidamente
-          registrados.
+          Acceso protegido para Administradores del Sistema, Decanaturas y
+          Titulados debidamente registrados.
         </p>
       </div>
 

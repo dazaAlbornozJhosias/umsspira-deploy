@@ -3,7 +3,6 @@
 import { Camera, Check, FileText } from 'lucide-react';
 import Link from 'next/link';
 
-import { SAMPLE_BACKUP_URL } from '@/modules/profile/utils/backup-url';
 
 // Campos de la v3 del Figma: fondo crema, borde arena y esquinas de 8px
 export const INPUT_CLASS =
@@ -98,12 +97,14 @@ export function FormField({ id, label, children }: { id: string; label: string; 
 
 type BackupFieldProps = {
   documentName: string;
+  // Dirección del propio archivo; sin ella el nombre se muestra sin enlace (E2.2)
+  documentUrl?: string;
   isVerified: boolean;
   onDocumentChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
 // Respaldo documental con estado, enlace al archivo y botones para subir foto o documento
-export function BackupField({ documentName, isVerified, onDocumentChange }: BackupFieldProps) {
+export function BackupField({ documentName, documentUrl, isVerified, onDocumentChange }: BackupFieldProps) {
   return (
     <div className="flex flex-col gap-[7px]">
       <span className="text-[13px] font-semibold text-blue-fantastic">Respaldo documental</span>
@@ -117,14 +118,13 @@ export function BackupField({ documentName, isVerified, onDocumentChange }: Back
           >
             {isVerified ? 'Respaldo verificado' : 'Respaldo en revisión'}
           </span>
-          <a
-            href={SAMPLE_BACKUP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[13px] font-medium text-truffle-trouble underline"
-          >
-            {documentName}
-          </a>
+          {documentUrl ? (
+            <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-truffle-trouble underline">
+              {documentName}
+            </a>
+          ) : (
+            <span className="text-[13px] font-medium text-truffle-trouble">{documentName}</span>
+          )}
         </div>
       )}
 

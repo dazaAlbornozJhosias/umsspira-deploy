@@ -9,19 +9,74 @@ import { PendingChangesDialog } from './pending-changes-dialog';
 import { RadarErrorState } from './radar-error-state';
 import { SuccessToast } from './success-toast';
 import { AffinitySkeleton } from './affinity-skeleton';
-import RadarInspection from './radar-inspection';
+import RadarInspection, { AREA_NAMES_MAP } from './radar-inspection';
+import { formatPercentage } from '../utils/percentage';
 import affinityVectorMock from '../mocks/affinity-vector-mock.json';
 import { useRecalculateState } from '../hooks/use-recalculate-state';
 import { recalculateAffinity, getAffinityVector } from '../services/affinity-service';
 import { AFFINITY_AREAS, type AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+// Formatea dinámicamente mes (3 letras) y año en español
+const formatCalculatedDate = (dateString?: string | null): string | null => {
+  if (!dateString) return null;
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return null;
+
+  // Nombres canónicos de 3 letras para coincidir con el diseño (Ene, Feb, ..., Sep, Oct, Nov, Dic)
+  const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const mes = meses[d.getMonth()];
+  const anio = d.getFullYear();
+
+  return `${mes} ${anio}`;
+};
 
 // Ruta de Épica 2 almacenada en una constante a nivel de módulo
 const RUTA_EPICA_2_CERTIFICACIONES = '/epica-2/certificaciones/nueva?returnTo=/afinidad';
 
-// Áreas que espera el panel de inspección (se deriva de sus props para no duplicar el tipo)
+// Áreas que espera el panel de inspección
 type InspectionAreas = NonNullable<React.ComponentProps<typeof RadarInspection>['areas']>;
+
+type CandidateArea = AffinityAreaScore & {
+  evidence?: any[];
+  keywords?: string[];
+};
+
+const mockAreas = affinityVectorMock.areas as unknown as InspectionAreas;
+
+// Obtiene evidencias priorizando las del vector recibido, o el mock como respaldo
+const getAreaEvidence = (area: { area: string; evidence?: any[] }, fallbackMock: InspectionAreas): any[] => {
+  if (area.evidence !== undefined) {
+    return area.evidence;
+  }
+  return fallbackMock.find((mock) => mock.area === area.area)?.evidence ?? [];
+};
+
+// Procesa las áreas del vector: si no tiene evidencias, se le asigna afinidad 0
+const processVectorAreas = (
+  areas: Array<AffinityAreaScore & { evidence?: any[]; keywords?: string[] }>,
+  fallbackMock: InspectionAreas
+): CandidateArea[] => {
+  return areas.map((a) => {
+    const evidence = getAreaEvidence(a, fallbackMock);
+    const hasEvidence = Array.isArray(evidence) && evidence.length > 0;
+    return {
+      area: a.area,
+      // Regla de negocio: áreas sin evidencias deben tener afinidad cero
+      affinity: hasEvidence ? (a.affinity ?? 0) : 0,
+      evidence,
+      keywords: a.keywords ?? [],
+    };
+  });
+};
+
+// Solo extrae palabras clave de áreas que cuenten con evidencias
+const extractKeywords = (areas: CandidateArea[]): string[] =>
+  areas
+    .filter((area) => (area.evidence?.length ?? 0) > 0)
+    .flatMap((area) => area.keywords ?? []);
 
 export const GraduateAffinityView: React.FC = () => {
   const router = useRouter();
@@ -36,8 +91,9 @@ export const GraduateAffinityView: React.FC = () => {
   
   const [changedAreaIds, setChangedAreaIds] = useState<string[]>([]);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
+  const [lastCalculatedDate, setLastCalculatedDate] = useState<string | null>(null);
 
-  const [candidateAreas, setCandidateAreas] = useState<AffinityAreaScore[]>([
+  const [candidateAreas, setCandidateAreas] = useState<CandidateArea[]>([
     { area: 'software-development', affinity: 95 },
     { area: 'cloud-devops', affinity: 64 },
     { area: 'data-ai', affinity: 71 },
@@ -45,6 +101,7 @@ export const GraduateAffinityView: React.FC = () => {
     { area: 'cybersecurity-networks', affinity: 42 },
     { area: 'it-management', affinity: 50 },
   ]);
+  const [loadedKeywords, setLoadedKeywords] = useState<string[]>([]);
 
   const isRecalculatingRef = useRef<boolean>(false);
   const changeVersionRef = useRef<number>(0);
@@ -61,13 +118,11 @@ export const GraduateAffinityView: React.FC = () => {
       try {
         setIsLoading(true);
         const result = await getAffinityVector();
-        setCandidateAreas(
-          result.areas.map((a) => ({
-            area: a.area,
-            affinity: a.affinity,
-          }))
-        );
+        const processed = processVectorAreas(result.areas as any, mockAreas);
+        setCandidateAreas(processed);
+        setLoadedKeywords(extractKeywords(processed));
         setHasValidRadar(true);
+        setLastCalculatedDate(formatCalculatedDate(result.calculatedAt));
         setHasRadarError(false);
       } catch {
         setHasRadarError(true);
@@ -91,13 +146,11 @@ export const GraduateAffinityView: React.FC = () => {
     try {
       const previousAreas = [...candidateAreas];
       const result = await recalculateAffinity();
-      const newAreasMapped = result.areas.map((a) => ({
-        area: a.area,
-        affinity: a.affinity,
-      }));
+      setLastCalculatedDate(formatCalculatedDate(result.calculatedAt));
+      const processed = processVectorAreas(result.areas as any, mockAreas);
 
       const modifiedIds: string[] = [];
-      result.areas.forEach((newAreaItem) => {
+      processed.forEach((newAreaItem) => {
         const technicalKey = newAreaItem.area;
         const oldItem = previousAreas.find((p) => p.area === technicalKey);
         
@@ -107,7 +160,8 @@ export const GraduateAffinityView: React.FC = () => {
       });
 
       setChangedAreaIds(modifiedIds);
-      setCandidateAreas(newAreasMapped);
+      setCandidateAreas(processed);
+      setLoadedKeywords(extractKeywords(processed));
 
       if (changeVersionRef.current === versionAtStart) {
         clearPendingChanges();
@@ -145,37 +199,54 @@ export const GraduateAffinityView: React.FC = () => {
     setIsLoading(false);
   }, []);
 
-  const orderedCandidateAreas = AFFINITY_AREAS.map((areaKey) => {
+  const isEmptyVector = candidateAreas.length === 0;
+  const orderedCandidateAreas: CandidateArea[] = AFFINITY_AREAS.map((areaKey) => {
     const found = candidateAreas.find((item) => item.area === areaKey);
-    return found || { area: areaKey, affinity: 0 };
+    return found || { area: areaKey, affinity: 0, evidence: [] };
   });
 
   const radarData = hasRadarError && !hasValidRadar
     ? orderedCandidateAreas.map((item) => ({ ...item, affinity: Number.NaN }))
     : orderedCandidateAreas;
 
-  // Mientras no llega el primer vector ni ocurre un error, se muestra el skeleton para no presentar el perfil como vacío (HU-2, escenarios de carga y error).
+  // Mientras no llega el primer vector ni ocurre un error, se muestra el skeleton
   const isInitialLoading = !hasValidRadar && !hasRadarError;
 
-  // Los porcentajes del panel salen del mismo vector que dibuja el radar; los respaldos vienen del mock en el Sprint 1.
-  const mockAreas = affinityVectorMock.areas as unknown as InspectionAreas;
+  // Respaldos inspeccionables preservando las evidencias recibidas en el vector
   const inspectionAreas: InspectionAreas = orderedCandidateAreas.map((item) => ({
     area: item.area,
     affinity: item.affinity,
-    evidence: mockAreas.find((mock) => mock.area === item.area)?.evidence ?? [],
+    evidence: item.evidence ?? getAreaEvidence(item, mockAreas),
   }));
+
+  // Top 3 áreas con evidencias y mayor afinidad
+  const topAffinityAreas = [...orderedCandidateAreas]
+    .filter((item) => {
+      const ev = item.evidence ?? getAreaEvidence(item, mockAreas);
+      return ev.length > 0 && item.affinity > 0;
+    })
+    .sort((a, b) => b.affinity - a.affinity)
+    .slice(0, 3)
+    .map((item) => ({
+      id: item.area,
+      label: AREA_NAMES_MAP[item.area] ?? item.area,
+      score: item.affinity,
+    }));
+
+  // Palabras clave consolidadas
+  const influentialKeywords = Array.from(new Set(loadedKeywords));
 
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <a
-            href="#"
+          <Link
+            href="/profile"
             className="text-[13px] font-semibold text-truffle-trouble hover:underline flex items-center space-x-1 mb-1"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Volver a mi perfil</span>
-          </a>
+          </Link>
           <h1 className="text-[22px] sm:text-[32px] font-bold text-abyssal-blue tracking-tight">
             Tu afinidad profesional
           </h1>
@@ -189,86 +260,158 @@ export const GraduateAffinityView: React.FC = () => {
 
       {profileState === 'calculated' ? (
         isInitialLoading ? (
-        <AffinitySkeleton />
+          <AffinitySkeleton />
         ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          <div className="lg:col-span-7 bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-oatmeal flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between border-b border-palladian pb-4 mb-4">
-                <h3 className="font-bold text-abyssal-blue text-base">Gráfico de afinidad</h3>
-                {/* La etiqueta solo aparece cuando existe un radar válido, no durante una falla inicial */}
-                {hasValidRadar && (
-                  <span className="text-xs font-mono font-semibold text-truffle-trouble bg-palladian px-2.5 py-1 rounded-md border border-oatmeal flex items-center space-x-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-truffle-trouble" />
-                    <span>Vector Calculado</span>
-                  </span>
-                )}
-              </div>
-
-              <div className="relative py-4 flex flex-col items-center justify-center bg-palladian/40 rounded-xl border border-oatmeal/60">
-                <div className={hasRadarError && hasValidRadar ? 'opacity-40' : undefined}>
-                  {/* Se remueve variant="full" porque el componente usa la renderización estándar */}
-                  <AffinityRadar
-                    affinityData={radarData}
-                    hasData={hasValidRadar}
-                    isLoading={isLoading}
-                    changedAreaIds={changedAreaIds}
-                    selectedAreaId={selectedAreaId}
-                    onSelectArea={setSelectedAreaId}
-                  />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <div className="lg:col-span-7 bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-oatmeal flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-palladian pb-4 mb-4">
+                  <h3 className="font-bold text-abyssal-blue text-xl">Gráfico de afinidad</h3>
+                  {hasValidRadar && !isEmptyVector && (
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-oatmeal bg-white/90 text-xs text-slate-700 shadow-sm font-medium">
+                      <svg className="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span>
+                        Última actualización: <strong className="text-slate-900">{lastCalculatedDate ?? 'No disponible'}</strong>
+                      </span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 ml-1" />
+                    </div>
+                  )}
                 </div>
 
-                {hasRadarError && (
-                  <div className="absolute inset-0 flex items-center justify-center p-4">
-                    <RadarErrorState onRetry={handleRecalculate} isRetrying={isLoading} />
+                <div className="relative py-4 flex flex-col items-center justify-center bg-palladian/40 rounded-xl border border-oatmeal/60">
+                  <div className={hasRadarError && hasValidRadar ? 'opacity-40' : undefined}>
+                    <AffinityRadar
+                      affinityData={radarData}
+                      hasData={hasValidRadar && !isEmptyVector}
+                      isLoading={isLoading}
+                      changedAreaIds={changedAreaIds}
+                      selectedAreaId={selectedAreaId}
+                      onSelectArea={setSelectedAreaId}
+                    />
+                  </div>
+
+                  {hasValidRadar && isEmptyVector && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-white/40 backdrop-blur-[3px] rounded-xl border border-white/50 shadow-sm">
+                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                        <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-800 mb-1">
+                        Completa tu perfil para<br />descubrir tu afinidad profesional
+                      </h3>
+                      <p className="text-xs text-slate-500 mb-5 max-w-[260px] mx-auto leading-relaxed">
+                        Aún no podemos calcular tus áreas de mayor afinidad. Necesitamos algunos datos de tu perfil para generar tu mapa de afinidad.
+                      </p>
+                      <button 
+                        type="button"
+                        onClick={() => router.push('/profile')} 
+                        className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                      >
+                        Completar perfil
+                        <ArrowLeft className="w-4 h-4 rotate-180" />
+                      </button>
+                    </div>
+                  )}
+
+                  {hasRadarError && (
+                    <div className="absolute inset-0 flex items-center justify-center p-4">
+                      <RadarErrorState onRetry={handleRecalculate} isRetrying={isLoading} />
+                    </div>
+                  )}
+                </div>
+
+                {hasValidRadar && !hasRadarError && !isLoading && (topAffinityAreas.length > 0 || influentialKeywords.length > 0) && (
+                  <div className="mt-6 bg-palladian rounded-xl border border-oatmeal/60 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="w-2 h-2 rounded-full bg-red-600 shrink-0" />
+                      <span className="text-sm font-bold text-gray-800">Áreas con mayor afinidad identificadas:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {topAffinityAreas.map((area, index) => (
+                        <div
+                          key={area.id}
+                          className={`px-3 py-1 text-sm rounded-md font-medium ${
+                            index === 0
+                              ? 'bg-[#FDBA74] text-gray-900'
+                              : index === 1
+                                ? 'bg-[#1E293B] text-white'
+                                : 'bg-white border border-gray-300 text-gray-900'
+                          }`}
+                        >
+                          {index + 1}. {area.label} ({formatPercentage(area.score)})
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Tag className="w-4 h-4 text-gray-700 shrink-0" />
+                        <span className="text-sm font-bold text-gray-800">Palabras clave más influyentes:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {influentialKeywords.map((keyword) => (
+                          <span
+                            key={keyword}
+                            className="px-3 py-1 text-xs bg-white border border-gray-300 rounded-full text-gray-600"
+                          >
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
 
-            <div className="pt-6 border-t border-palladian mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-[13px] text-blue-fantastic">
-                Áreas profesionales, porcentaje de afinidad y palabras clave relacionadas con tu perfil.
-              </p>
+              <div className="pt-6 border-t border-palladian mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p className="text-[13px] text-blue-fantastic">
+                  Áreas profesionales, porcentaje de afinidad y palabras clave relacionadas con tu perfil.
+                </p>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  aria-label="Simular actualización del radar"
-                  className="h-11 px-4 rounded-lg border border-oatmeal bg-white text-blue-fantastic text-sm font-semibold hover:bg-palladian transition-colors"
-                >
-                  Simular actualización del radar
-                </button>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(true)}
+                    aria-label="Simular actualización del radar"
+                    className="h-11 px-4 rounded-lg border border-oatmeal bg-white text-blue-fantastic text-sm font-semibold hover:bg-palladian transition-colors flex items-center justify-center"
+                  >
+                    Simular Actualización
+                  </button>
 
-                <RecalculateButton
-                  hasPendingChanges={hasPendingChanges}
-                  isLoading={isLoading}
-                  onRecalculate={handleRecalculate}
-                />
+                  <RecalculateButton
+                    hasPendingChanges={hasPendingChanges}
+                    isLoading={isLoading}
+                    onRecalculate={handleRecalculate}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={triggerTimeoutSimulation}
+                    className="min-h-[44px] px-3.5 py-1.5 border border-red-300 rounded-lg hover:bg-red-50 transition-colors flex flex-col items-center justify-center text-center cursor-pointer select-none"
+                  >
+                    <span className="text-xs font-bold text-red-600 leading-tight">
+                      Simular Timeout
+                    </span>
+                    <span className="text-[11px] font-medium text-red-500 leading-tight mt-0.5">
+                      (7s) [Demo Sprint 1]
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="lg:col-span-5">
-            {/* Con error y sin un radar válido previo no se muestra el panel, para no presentar la falla como un perfil sin datos */}
-            {hasValidRadar && (
-              <RadarInspection
-                selectedAreaId={selectedAreaId}
-                onSelectArea={setSelectedAreaId}
-                areas={inspectionAreas}
-              />
-            )}
+            <div className="lg:col-span-5">
+              {hasValidRadar && (
+                <RadarInspection
+                  selectedAreaId={selectedAreaId}
+                  onSelectArea={setSelectedAreaId}
+                  areas={inspectionAreas}
+                />
+              )}
+            </div>
           </div>
-          
-          <button
-            type="button"
-            onClick={triggerTimeoutSimulation}
-            className="px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
-          >
-            Simular Timeout (7s) [Demo Sprint 1]
-          </button>
-        </div>
         )
       ) : (
         <AffinityCustomizer />
@@ -283,7 +426,7 @@ export const GraduateAffinityView: React.FC = () => {
           className="px-6 py-2.5 bg-burning-flame hover:bg-burning-flame/90 text-slate-900 font-semibold text-sm rounded-full flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
         >
           <svg className="w-4 h-4 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
           </svg>
           <span>Añadir certificaciones</span>
         </button>

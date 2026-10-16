@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Cpu, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import { Search, Cpu, RefreshCw, ArrowLeft } from 'lucide-react';
 import type { RawAreaPoint } from '../utils/affinity-areas';
 import { rankCandidatesByQuery } from '../utils/candidate-search';
 
@@ -58,6 +59,18 @@ export const NlpSearch: React.FC<NlpSearchProps> = ({
 
   return (
     <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-6">
+      
+      {/* Botón de Volver a Reclutador (Bug 10) */}
+      <div className="w-full">
+        <Link 
+          href="/companies"
+          className="inline-flex items-center text-sm font-bold text-burning-flame hover:opacity-80 transition-opacity cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1.5" />
+          Volver a mi perfil
+        </Link>
+      </div>
+
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div>

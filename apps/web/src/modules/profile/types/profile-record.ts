@@ -13,6 +13,8 @@ export type EducationRecord = OwnedRecord & {
   degree: string;
   // Nombre del archivo de respaldo (sin respaldo = undefined)
   backupFile?: string;
+  // Dirección del propio archivo; sin dirección el nombre se muestra sin enlace (E2.2)
+  backupUrl?: string;
 };
 
 export type ExperienceRecord = OwnedRecord & {
@@ -31,6 +33,7 @@ export type CertificationRecord = OwnedRecord & {
   issueYear: string;
   // Nombre del archivo de respaldo y si la administración ya lo validó
   backupFile?: string;
+  backupUrl?: string;
   backupVerified?: boolean;
 };
 

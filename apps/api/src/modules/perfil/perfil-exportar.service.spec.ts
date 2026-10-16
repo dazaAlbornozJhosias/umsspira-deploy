@@ -53,8 +53,8 @@ describe('PerfilExportarService', () => {
 
     const json = JSON.parse(contenido);
     expect(json.titulado).toMatchObject({ id: 't1', nombre: 'Carlos Mendoza Ríos' });
-    expect(json.formacionAcademica.total).toBe(1);
-    expect(json.formacionAcademica.registros[0].titulo).toBe('Licenciatura');
+    expect(json['Formación académica'].total).toBe(1);
+    expect(json['Formación académica'].registros[0].titulo).toBe('Licenciatura');
   });
 
   it('un perfil vacío igual se exporta, con las 3 secciones en cero', async () => {
@@ -67,9 +67,9 @@ describe('PerfilExportarService', () => {
 
     const json = JSON.parse((await new PerfilExportarService(repo).exportar('t1', ahora)).contenido);
 
-    expect(json.formacionAcademica).toEqual({ total: 0, registros: [] });
-    expect(json.experienciaLaboral).toEqual({ total: 0, registros: [] });
-    expect(json.certificaciones).toEqual({ total: 0, registros: [] });
+    expect(json['Formación académica']).toEqual({ total: 0, registros: [] });
+    expect(json['Experiencia laboral']).toEqual({ total: 0, registros: [] });
+    expect(json.Certificaciones).toEqual({ total: 0, registros: [] });
   });
 
   it('si el titulado no existe, propaga el 404 del resumen', async () => {

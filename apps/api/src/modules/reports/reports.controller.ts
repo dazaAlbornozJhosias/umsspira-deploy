@@ -6,14 +6,13 @@ import { GetGraduatesQueryDto } from './dto/get-graduates-query.dto';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-  // Mapea metrics, indicators y la ruta anidada dashboard/indicators de Taís
   @Get(['metrics', 'indicators', 'dashboard/indicators'])
-  getMetrics() {
-    return this.reportsService.getMetrics();
+  async getMetrics() {
+    return await this.reportsService.getMetrics();
   }
 
   @Get('graduates')
-  getGraduates(@Query() query: GetGraduatesQueryDto) {
-    return this.reportsService.getGraduates(query);
+  async getGraduates(@Query() query: GetGraduatesQueryDto) {
+    return await this.reportsService.getGraduates(query);
   }
 }

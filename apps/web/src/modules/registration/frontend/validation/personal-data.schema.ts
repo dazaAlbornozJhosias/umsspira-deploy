@@ -48,7 +48,7 @@ export const personalDataSchema = z.object({
     .trim()
     .toLowerCase()
     .min(1, REQUIRED_MESSAGE)
-    .max(100, 'Máximo 100 caracteres.')
+    .max(30, 'Máximo 30 caracteres.')
     .email('Ingresa un correo electrónico válido.'),
   telefono: z
     .string()

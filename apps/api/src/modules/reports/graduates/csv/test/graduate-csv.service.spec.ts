@@ -207,6 +207,7 @@ test('el endpoint CSV exporta solo los observados seleccionados', async () => {
   assert.ok(content.includes(',OBSERVADO'));
   assert.ok(!content.includes(',VERIFICADO'));
   assert.equal(headers['Content-Type'], 'text/csv; charset=utf-8');
+  assert.equal(headers['Content-Length'], String(buffer.byteLength));
   assert.match(
     headers['Content-Disposition'],
     /^attachment; filename="nomina-egresados-observados-\d{8}\.csv"$/,

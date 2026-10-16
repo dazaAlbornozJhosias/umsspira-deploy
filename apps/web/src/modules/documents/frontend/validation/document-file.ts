@@ -42,6 +42,50 @@ export function getPreviewKind(file: File): PreviewKind | null {
   return byExtension;
 }
 
+
+export async function validateDocumentFile(
+  file: File
+): Promise<PreviewKind | null> {
+  const previewKind = getPreviewKind(file);
+
+  if (!previewKind) return null;
+
+  const buffer = await file.slice(0, 8).arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+
+  const matches = (signature: number[]): boolean =>
+    signature.every(
+      (byte, index) => bytes[index] === byte
+    );
+
+  const extension = getExtension(file.name);
+
+  const isPdf = matches([
+    0x25, 0x50, 0x44, 0x46, 0x2d
+  ]);
+
+  const isPng = matches([
+    0x89, 0x50, 0x4e, 0x47,
+    0x0d, 0x0a, 0x1a, 0x0a
+  ]);
+
+  const isJpg = matches([
+    0xff, 0xd8, 0xff
+  ]);
+
+  if (extension === 'pdf' && isPdf) return 'pdf';
+  if (extension === 'png' && isPng) return 'image';
+
+  if (
+    (extension === 'jpg' || extension === 'jpeg') &&
+    isJpg
+  ) {
+    return 'image';
+  }
+
+  return null;
+}
+
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024) {
     return `${Math.max(1, Math.round(bytes / 1024))} KB`;

@@ -18,7 +18,7 @@ describe('VerifyEmailForm Component', () => {
   it('debe mantener deshabilitado el botón hasta completar los 6 dígitos', () => {
     render(<VerifyEmailForm />);
 
-    const submitBtn = screen.getByRole('button', { name: /verificar código y continuar/i });
+    const submitBtn = screen.getByRole('button', { name: /^verificar correo$/i });
     expect(submitBtn).toBeDisabled();
 
     // Llenamos solo 3 casillas

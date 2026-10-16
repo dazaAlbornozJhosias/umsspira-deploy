@@ -16,17 +16,20 @@ import { useGraduates } from '../../../modules/reports/hooks/use-graduates';
 import type { Graduate } from '../../../modules/reports/data/graduates.mock';
 import { RotateCcw } from 'lucide-react';
 
-// HU 4: Exportação institucional em PDF (Dadier Cadima)
+// HU 4: Exportación institucional en PDF
 import {
   GraduatesReportExport,
   type GraduateStatus,
 } from '../../../modules/reports/graduates/pdf';
 
-// HU 5: Exportação de nómina em CSV (Miguel Vargas / Anelis Córdova)
+// HU 5: Exportación de nómina en CSV
 import { GraduateCsvExport } from '../../../modules/reports/graduates/csv/graduate-csv-export';
 
 const ITEMS_PER_PAGE = 10;
 const REPORTS_LIST_STATE_KEY = 'umsspira:reports-liststate';
+const REPORTS_ACTIVE_TAB_KEY = 'umsspira:reports-active-tab';
+
+type ActiveTab = 'dashboard' | 'graduates';
 
 interface ReportsListState {
   searchTerm: string;
@@ -55,7 +58,7 @@ function readReportsListState(): ReportsListState | null {
     }
 
     return {
-      searchTerm,
+      searchTerm: searchTerm.slice(0, 60),
       selectedStatus,
       currentPage,
     };
@@ -73,6 +76,8 @@ function normalizeText(value: string): string {
 }
 
 export default function ReportsPage() {
+  const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+
   const {
     data: indicators,
     loading: loadingIndicators,
@@ -80,19 +85,27 @@ export default function ReportsPage() {
   } = useDashboardIndicators();
   const { data: graduates, loading: loadingGraduates } = useGraduates();
 
-  // Estados de filtragem (HU 2)
+  // Estados de filtrado (HU 2)
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] =
     useState<StatusFilterOption>('TODOS');
 
-  // Estados de paginação y modal (HU 3)
+  // Estados de paginación y modal (HU 3)
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedGraduate, setSelectedGraduate] = useState<Graduate | null>(null);
   const [hasRestoredListState, setHasRestoredListState] = useState(false);
 
   useEffect(() => {
-    const storedState = readReportsListState();
+    try {
+      const savedTab = window.localStorage.getItem(REPORTS_ACTIVE_TAB_KEY) as ActiveTab;
+      if (savedTab === 'dashboard' || savedTab === 'graduates') {
+        setActiveTab(savedTab);
+      }
+    } catch {
+      // noop
+    }
 
+    const storedState = readReportsListState();
     if (storedState) {
       setSearchTerm(storedState.searchTerm);
       setSelectedStatus(storedState.selectedStatus);
@@ -102,15 +115,20 @@ export default function ReportsPage() {
     setHasRestoredListState(true);
   }, []);
 
-  // Mapeamento de status para o contrato de exportação em PDF da HU 4
+  const handleTabChange = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    try {
+      window.localStorage.setItem(REPORTS_ACTIVE_TAB_KEY, tab);
+    } catch {
+      // noop
+    }
+  };
+
   const pdfExportStatus = useMemo<GraduateStatus>(() => {
     if (selectedStatus === 'OBSERVADO') return 'observed';
     return 'verified';
   }, [selectedStatus]);
 
-  // Filtragem reativa na memória (HU 2).
-  // Este mesmo estado e termo são enviados à HU 5 para que o CSV contenha
-  // exatamente o mesmo conjunto da vista prévia, sem limitar-se à paginação.
   const filteredGraduates = useMemo(() => {
     if (!graduates) return [];
 
@@ -129,7 +147,6 @@ export default function ReportsPage() {
     });
   }, [graduates, selectedStatus, searchTerm]);
 
-  // Handlers reativos
   const handleSearchChange = (term: string) => {
     setSearchTerm(term);
     setCurrentPage(1);
@@ -146,7 +163,6 @@ export default function ReportsPage() {
     setCurrentPage(1);
   };
 
-  // Fatiamento estrito a 10 registros por página (HU 3)
   const paginatedGraduates = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredGraduates.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -179,7 +195,7 @@ export default function ReportsPage() {
         JSON.stringify(listState),
       );
     } catch {
-      // La vista sigue funcionando aunque el navegador no permita almacenamiento local.
+      // noop
     }
   }, [
     currentPage,
@@ -200,104 +216,145 @@ export default function ReportsPage() {
 
   return (
     <main className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Dashboard de Indicadores
-        </h1>
-        <p className="text-sm text-gray-500">
-          Padrón y reportería institucional de titulados
-        </p>
-      </div>
+      {/* Pestañas de navegación según mockup HU-1 */}
+      <nav aria-label="Secciones de reporte" className="flex border-b border-gray-200">
+        <button
+          type="button"
+          onClick={() => handleTabChange('dashboard')}
+          className={`px-5 py-2.5 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'dashboard'
+              ? 'border-[#1e293b] text-[#1e293b]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Dashboard
+        </button>
+        <button
+          type="button"
+          onClick={() => handleTabChange('graduates')}
+          className={`px-5 py-2.5 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'graduates'
+              ? 'border-[#1e293b] text-[#1e293b]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Titulados
+        </button>
+      </nav>
 
-      {errorIndicators ? (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">
-          {errorIndicators}
-        </div>
-      ) : (
-        indicators && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <KpiCard
-              title="Titulados registrados"
-              value={indicators.totalGraduates}
-            />
-            <KpiCard
-              title="Titulados verificados"
-              value={indicators.verifiedGraduates}
-            />
-            <KpiCard
-              title="Titulados observados"
-              value={indicators.observedGraduates}
-            />
-            <KpiCard title="Mentores activos" value={indicators.activeMentors} />
+      {/* Pestaña: Dashboard (KPIs e Indicadores) */}
+      {activeTab === 'dashboard' && (
+        <section aria-labelledby="dashboard-heading" className="space-y-6">
+          <div>
+            <h1 id="dashboard-heading" className="text-2xl font-bold text-gray-900">
+              Dashboard de Indicadores
+            </h1>
+            <p className="text-sm text-gray-500">
+              Métricas cuantitativas y resumen institucional del padrón
+            </p>
           </div>
-        )
-      )}
 
-      {/* Controles de Busca, Filtro (HU 2) e Botón Único de Exportación (HU 4 + HU 5) */}
-      <section className="flex flex-col gap-4 rounded-lg border border-[#C9C1B1] bg-[#EEE9DF] p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <GraduatesSearch
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-            onReset={handleResetFilters}
-          />
-          <GraduatesStatusFilter
-            selectedStatus={selectedStatus}
-            onStatusChange={handleStatusChange}
-          />
-
-          <button
-            type="button"
-            onClick={handleResetFilters}
-            title="Limpiar filtros"
-            aria-label="Limpiar filtros"
-            className="flex h-[50px] w-[50px] items-center justify-center rounded-md border border-[#C9C1B1] bg-white text-gray-600 transition-colors hover:bg-gray-100"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="flex items-center self-end sm:self-auto">
-          {/* Componente HU 4 orquestrando a UI unificada através do renderTrigger */}
-          <GraduatesReportExport
-            status={pdfExportStatus}
-            onBackToListStart={() => setCurrentPage(1)}
-            renderTrigger={({ exportPdf }) => (
-              <div className="w-48">
-                <GraduateCsvExport
-                  totalRecords={filteredGraduates.length}
-                  filters={{
-                    status: selectedStatus,
-                    search: searchTerm,
-                  }}
-                  onPdfExport={() => exportPdf(pdfExportStatus)}
+          {errorIndicators ? (
+            <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">
+              {errorIndicators}
+            </div>
+          ) : (
+            indicators && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <KpiCard
+                  title="Titulados registrados"
+                  value={indicators.totalGraduates}
+                />
+                <KpiCard
+                  title="Titulados verificados"
+                  value={indicators.verifiedGraduates}
+                />
+                <KpiCard
+                  title="Titulados observados"
+                  value={indicators.observedGraduates}
+                />
+                <KpiCard
+                  title="Mentores activos"
+                  value={indicators.activeMentors}
                 />
               </div>
-            )}
-          />
-        </div>
-      </section>
-
-      {/* Tabela com Paginação ou Estado Vazio (HU 1 + HU 3) */}
-      {filteredGraduates.length === 0 ? (
-        <EmptyState onRefresh={handleResetFilters} />
-      ) : (
-        <div className="space-y-2">
-          <GraduatesTable
-            graduates={paginatedGraduates}
-            onViewReason={setSelectedGraduate}
-            startIndex={(currentPage - 1) * ITEMS_PER_PAGE}
-          />
-          <Pagination
-            currentPage={currentPage}
-            totalItems={filteredGraduates.length}
-            itemsPerPage={ITEMS_PER_PAGE}
-            onPageChange={setCurrentPage}
-          />
-        </div>
+            )
+          )}
+        </section>
       )}
 
-      {/* Modal de Detalhes da Observação (HU 3) */}
+      {/* Pestaña: Titulados (Filtros, Acciones y Tabla Base) */}
+      {activeTab === 'graduates' && (
+        <section aria-labelledby="graduates-heading" className="space-y-4">
+          <div className="flex flex-col gap-4 rounded-lg border border-[#C9C1B1] bg-[#EEE9DF] p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <GraduatesSearch
+                searchTerm={searchTerm}
+                onSearchChange={handleSearchChange}
+                onReset={handleResetFilters}
+              />
+              <GraduatesStatusFilter
+                selectedStatus={selectedStatus}
+                onStatusChange={handleStatusChange}
+              />
+
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                title="Limpiar filtros"
+                aria-label="Limpiar filtros"
+                className="flex h-[50px] w-[50px] items-center justify-center rounded-md border border-[#C9C1B1] bg-white text-gray-600 transition-colors hover:bg-gray-100"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center self-end sm:self-auto">
+              <GraduatesReportExport
+                status={pdfExportStatus}
+                onBackToListStart={() => setCurrentPage(1)}
+                renderTrigger={({ exportPdf, isGenerating }) => (
+                  <div className="w-48">
+                    <GraduateCsvExport
+                      totalRecords={filteredGraduates.length}
+                      filters={{
+                        status: selectedStatus,
+                        search: searchTerm,
+                      }}
+                      isPdfGenerating={isGenerating}
+                      onPdfExport={
+                        selectedStatus === 'TODOS'
+                          ? undefined
+                          : () => exportPdf(pdfExportStatus)
+                      }
+                    />
+                  </div>
+                )}
+              />
+            </div>
+          </div>
+
+          {filteredGraduates.length === 0 ? (
+            <EmptyState onRefresh={handleResetFilters} />
+          ) : (
+            <div className="space-y-2">
+              <GraduatesTable
+                graduates={paginatedGraduates}
+                onViewReason={setSelectedGraduate}
+                startIndex={(currentPage - 1) * ITEMS_PER_PAGE}
+              />
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredGraduates.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Modal de Detalle de Observación (HU 3) */}
       {selectedGraduate && (
         <ObservationModal
           graduate={selectedGraduate}

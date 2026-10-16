@@ -10,6 +10,8 @@ export type TimelineItem = {
   date?: string;
   detail?: string;
   document?: string;
+  // Dirección del archivo de respaldo; sin ella el documento se muestra sin enlace
+  documentUrl?: string;
   status?: BackupStatus;
   // Solo certificaciones. Se reemplazan por el tipo de lectura de shared-types cuando exista.
   issuer?: string;

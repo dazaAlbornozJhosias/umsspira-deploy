@@ -6,7 +6,7 @@ import { cn } from '@/shared/utils/cn';
 import { ACCEPTED_DOCUMENT_TYPES } from '../validation/document-file';
 
 export interface DocumentFilePickerProps {
-  onSelect: (file: File) => void;
+  onSelect: (file: File) => void | Promise<boolean>;
   hasError?: boolean;
   disabled?: boolean;
 }
@@ -21,7 +21,7 @@ export function DocumentFilePicker({ onSelect, hasError, disabled }: DocumentFil
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) onSelect(file);
+    if (file) void onSelect(file);
     event.target.value = '';
   }
 
@@ -29,7 +29,7 @@ export function DocumentFilePicker({ onSelect, hasError, disabled }: DocumentFil
     event.preventDefault();
     setIsDragging(false);
     const file = event.dataTransfer.files?.[0];
-    if (file && !disabled) onSelect(file);
+    if (file && !disabled) void onSelect(file);
   }
 
   return (

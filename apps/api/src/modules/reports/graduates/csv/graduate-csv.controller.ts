@@ -48,6 +48,11 @@ export class GraduateCsvController {
       );
 
       response.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      response.setHeader('Content-Length', String(file.buffer.byteLength));
+      response.setHeader(
+        'Access-Control-Expose-Headers',
+        'Content-Disposition, Content-Length',
+      );
       response.setHeader(
         'Content-Disposition',
         `attachment; filename="${file.filename}"`,
@@ -68,7 +73,9 @@ export class GraduateCsvController {
     }
   }
 
-  private parseStatus(status: string | undefined): GraduateReportStatus | undefined {
+  private parseStatus(
+    status: string | undefined,
+  ): GraduateReportStatus | undefined {
     if (!status || status.toUpperCase() === 'TODOS') {
       return undefined;
     }

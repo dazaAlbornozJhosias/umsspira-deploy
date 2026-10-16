@@ -5,7 +5,6 @@ import { FileText } from 'lucide-react';
 
 import type { TimelineItem, TimelineSection } from '@/modules/profile/data/profile-data';
 import CertificationItem from '@/modules/profile/ver/certification-item';
-import { SAMPLE_BACKUP_URL } from '@/modules/profile/utils/backup-url';
 
 const SECTION_CERTIFICATIONS = 'CERTIFICACIONES';
 
@@ -104,17 +103,24 @@ export default function Timeline({ sections }: TimelineProps) {
                   </div>
 
                   {/* Documento de respaldo */}
-                  {item.document && (
-                    <a
-                      href={SAMPLE_BACKUP_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex w-fit items-center gap-1.5 rounded-md border border-oatmeal bg-white px-2 py-1.5 text-[11px] font-semibold text-blue-fantastic transition hover:bg-palladian"
-                    >
-                      <FileText className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
-                      {item.document}
-                    </a>
-                  )}
+                  {item.document &&
+                    (item.documentUrl ? (
+                      // Cada respaldo abre su propio archivo (E2.2)
+                      <a
+                        href={item.documentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex w-fit items-center gap-1.5 rounded-md border border-oatmeal bg-white px-2 py-1.5 text-[11px] font-semibold text-blue-fantastic transition hover:bg-palladian"
+                      >
+                        <FileText className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
+                        {item.document}
+                      </a>
+                    ) : (
+                      <span className="inline-flex w-fit items-center gap-1.5 rounded-md border border-oatmeal bg-white px-2 py-1.5 text-[11px] font-semibold text-blue-fantastic">
+                        <FileText className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
+                        {item.document}
+                      </span>
+                    ))}
                 </div>
               </article>
             ),

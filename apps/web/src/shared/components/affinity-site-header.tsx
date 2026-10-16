@@ -1,19 +1,17 @@
 'use client';
 
 import React from 'react';
-import { Search, Bell, User, Briefcase, Calendar, Users, Award, Home, GraduationCap } from 'lucide-react';
+import { Search, Bell, Briefcase, Calendar, Users, Award, Home, GraduationCap } from 'lucide-react';
 
 interface AffinitySiteHeaderProps {
-  activeView?: 'recruiter' | 'graduate';
-  onToggleView?: (view: 'recruiter' | 'graduate') => void;
+  className?: string;
 }
 
 export const AffinitySiteHeader: React.FC<AffinitySiteHeaderProps> = ({
-  activeView = 'recruiter',
-  onToggleView,
+  className = '',
 }) => {
   return (
-    <header className="bg-abyssal-blue text-white sticky top-0 z-50 shadow-md border-b border-slate-800">
+    <header className={`bg-abyssal-blue text-white sticky top-0 z-50 shadow-md border-b border-slate-800 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Left Brand Logo */}
         <div className="flex items-center space-x-3">
@@ -24,7 +22,6 @@ export const AffinitySiteHeader: React.FC<AffinitySiteHeaderProps> = ({
             <span className="font-black text-xl tracking-tight text-white">UMSSPIRA</span>
           </div>
         </div>
-
 
         {/* Center Nav Links */}
         <nav className="hidden lg:flex items-center space-x-6 text-xs font-semibold text-slate-300">
@@ -50,34 +47,8 @@ export const AffinitySiteHeader: React.FC<AffinitySiteHeaderProps> = ({
           </a>
         </nav>
 
-        {/* Right User Actions & View Switcher */}
+        {/* Right User Actions */}
         <div className="flex items-center space-x-3">
-          {/* Mode Switcher Pill */}
-          {onToggleView && (
-            <div className="bg-blue-fantastic p-1 rounded-xl flex items-center border border-slate-700 text-xs">
-              <button
-                onClick={() => onToggleView('recruiter')}
-                className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                  activeView === 'recruiter'
-                    ? 'bg-burning-flame text-abyssal-blue shadow-sm'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                Modo Buscador (Reclutador)
-              </button>
-              <button
-                onClick={() => onToggleView('graduate')}
-                className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                  activeView === 'graduate'
-                    ? 'bg-burning-flame text-abyssal-blue shadow-sm'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                Modo Titulado (Mi Afinidad)
-              </button>
-            </div>
-          )}
-
           <button className="p-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors">
             <Search className="w-4 h-4" />
           </button>

@@ -28,6 +28,7 @@ export function GraduatesSearch({
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Buscar por código SIS o nombre del titulado..."
           className="h-11 w-full rounded-md border border-[#C9C1B1] bg-white pl-9 pr-10 text-sm text-[#1B2632] placeholder:text-[#2C3B4D]/50 focus:outline-none focus:ring-2 focus:ring-[#FFB162]"
+          maxLength={60}
         />
         {searchTerm && (
           <button

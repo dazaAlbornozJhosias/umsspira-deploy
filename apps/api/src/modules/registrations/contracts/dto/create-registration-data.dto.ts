@@ -37,7 +37,7 @@ export class CreateRegistrationDataDto {
 
   @Transform(trimLower) @IsNotEmpty(REQUIRED)
   @IsEmail({}, { message: 'Correo no válido' })
-  @MaxLength(100, { message: 'Máximo 100 caracteres' })
+  @MaxLength(30, { message: 'Máximo 30 caracteres' })
   correo!: string;
 
   @Transform(trim) @IsNotEmpty(REQUIRED) @IsString()

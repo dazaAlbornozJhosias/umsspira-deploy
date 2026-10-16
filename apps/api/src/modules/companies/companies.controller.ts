@@ -1,13 +1,18 @@
 import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '@umsspira/shared-types';
+import { AuthGuard, CurrentUser, RolesGuard } from '@/shared/guards';
+import { Roles } from '@/shared/guards/roles.decorator';
 import { CompaniesService } from './companies.service';
 import { HeaderResponseDto } from './dto/header-response.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { ContactResponseDto } from './dto/contact-response.dto';
 
+// El login real devuelve el JWT de Supabase: se valida con AuthGuard
+// (Supabase Auth) y no con el mecanismo local legacy (JwtAuthGuard),
+// que rechaza esos tokens y dejaba a la empresa fuera de sus rutas.
 @Controller('api/empresa/perfil')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('empresa')
 export class CompaniesController {
   constructor(private readonly companiesService: CompaniesService) {}
 
@@ -16,9 +21,9 @@ export class CompaniesController {
    */
   @Get('header')
   async getHeader(
-    @CurrentUser('empresaId') empresaId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<HeaderResponseDto> {
-    return this.companiesService.getHeader(empresaId);
+    return this.companiesService.getHeader(user.id);
   }
 
    /**
@@ -27,10 +32,10 @@ export class CompaniesController {
    */
   @Put()
   async updateProfile(
-    @CurrentUser('empresaId') empresaId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateCompanyDto,
   ) {
-    return this.companiesService.updateProfile(empresaId, dto);
+    return this.companiesService.updateProfile(user.id, dto);
   }
     /**
    * TSK-3.4: Obtener datos de contacto y detalles institucionales.
@@ -38,8 +43,8 @@ export class CompaniesController {
    */
   @Get('contacto')
   async getContact(
-    @CurrentUser('empresaId') empresaId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ContactResponseDto> {
-    return this.companiesService.getContact(empresaId);
+    return this.companiesService.getContact(user.id);
   }
 }

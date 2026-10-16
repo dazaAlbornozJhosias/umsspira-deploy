@@ -60,7 +60,7 @@ describe('GET /perfil/exportar-json (T5.4)', () => {
 
     // indentación de 2 espacios
     expect(contenido).toBe(JSON.stringify(JSON.parse(contenido), null, 2));
-    expect(JSON.parse(contenido).formacionAcademica.total).toBe(1);
+    expect(JSON.parse(contenido)['Formación académica'].total).toBe(1);
   });
 
   it('perfil vacío: responde igual, con las 3 secciones en cero', async () => {
@@ -69,9 +69,9 @@ describe('GET /perfil/exportar-json (T5.4)', () => {
 
     const json = JSON.parse(await controlador.exportarJson(peticion, crearRespuesta()));
 
-    expect(json.formacionAcademica).toEqual({ total: 0, registros: [] });
-    expect(json.experienciaLaboral).toEqual({ total: 0, registros: [] });
-    expect(json.certificaciones).toEqual({ total: 0, registros: [] });
+    expect(json['Formación académica']).toEqual({ total: 0, registros: [] });
+    expect(json['Experiencia laboral']).toEqual({ total: 0, registros: [] });
+    expect(json.Certificaciones).toEqual({ total: 0, registros: [] });
   });
 
   it('sin titulado autenticado: responde 403 y no consulta ni descarga nada', async () => {

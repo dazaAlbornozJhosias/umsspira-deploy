@@ -1,22 +1,41 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Award, FileText, CheckCircle2, ShieldCheck, ExternalLink, Calendar, Code, Database, Cloud, Lock, ShieldAlert, Target, Mail } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, ExternalLink, Calendar, Code, Database, Cloud, Lock, ShieldAlert, Target } from 'lucide-react';
 
 export interface CandidateEvidenceProps {
   candidateName: string;
+  candidateData?: any; // Recibe los datos reales o el mock específico del candidato
 }
 
-export const EvidenceBreakdown: React.FC<CandidateEvidenceProps> = ({ candidateName }) => {
+export const EvidenceBreakdown: React.FC<CandidateEvidenceProps> = ({ candidateName, candidateData }) => {
   const [activeAreaTab, setActiveAreaTab] = useState('desarrollo');
 
+  const AREA_KEY_MAP: Record<string, string> = {
+    desarrollo: 'desarrollo de software',
+    datos: 'ciencia de datos & ia',
+    cloud: 'cloud & devops',
+    gestion: 'gestion de ti & gobernanza',
+    ciberseguridad: 'ciberseguridad y redes',
+    qa: 'aseguramiento de calidad (qa)',
+  };
+
+  const getScore = (tabId: string, defaultScore: number): number => {
+    if (!candidateData?.areas || !Array.isArray(candidateData.areas)) return defaultScore;
+    const targetArea = AREA_KEY_MAP[tabId];
+    const matched = candidateData.areas.find(
+      (a: { area: string; affinity: number }) => a.area?.toLowerCase() === targetArea
+    );
+    return matched?.affinity !== undefined ? matched.affinity : defaultScore;
+  };
+
   const tabs = [
-    { id: 'desarrollo', label: 'Desarrollo de Software', score: 85, icon: Code },
-    { id: 'datos', label: 'Ciencia de Datos & IA', score: 74, icon: Database },
-    { id: 'cloud', label: 'Cloud & DevOps', score: 68, icon: Cloud },
-    { id: 'gestion', label: 'Gestión de TI & Gob.', score: 58, icon: ShieldAlert },
-    { id: 'ciberseguridad', label: 'Ciberseguridad & Redes', score: 52, icon: Lock },
-    { id: 'qa', label: 'Aseguramiento de Calidad (QA)', score: 45, icon: Target },
+    { id: 'desarrollo', label: 'Desarrollo de Software', score: getScore('desarrollo', 85), icon: Code },
+    { id: 'datos', label: 'Ciencia de Datos & IA', score: getScore('datos', 74), icon: Database },
+    { id: 'cloud', label: 'Cloud & DevOps', score: getScore('cloud', 68), icon: Cloud },
+    { id: 'gestion', label: 'Gestión de TI & Gob.', score: getScore('gestion', 58), icon: ShieldAlert },
+    { id: 'ciberseguridad', label: 'Ciberseguridad & Redes', score: getScore('ciberseguridad', 52), icon: Lock },
+    { id: 'qa', label: 'Aseguramiento de Calidad (QA)', score: getScore('qa', 45), icon: Target },
   ];
 
   const evidenceData: Record<string, Array<{
@@ -132,7 +151,11 @@ export const EvidenceBreakdown: React.FC<CandidateEvidenceProps> = ({ candidateN
     ]
   };
 
-  const currentEvidenceList = evidenceData[activeAreaTab] || evidenceData['desarrollo'];
+  // Prioriza evidencias estructuradas del candidato si existen, o usa los respaldos formateados por área
+  const currentEvidenceList =
+    candidateData?.evidence?.[activeAreaTab] ||
+    evidenceData[activeAreaTab] ||
+    evidenceData['desarrollo'];
   const activeTabObj = tabs.find((t) => t.id === activeAreaTab) || tabs[0];
 
   return (
@@ -202,7 +225,7 @@ export const EvidenceBreakdown: React.FC<CandidateEvidenceProps> = ({ candidateN
 
       {/* Evidence Cards List */}
       <div className="space-y-4">
-        {currentEvidenceList.map((item, idx) => (
+        {currentEvidenceList.map((item: any, idx: number) => (
           <div
             key={idx}
             className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 hover:border-slate-300 transition-all space-y-2"
@@ -234,24 +257,6 @@ export const EvidenceBreakdown: React.FC<CandidateEvidenceProps> = ({ candidateN
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Bottom Action Footer Bar */}
-      <div className="p-4 rounded-xl bg-slate-100/90 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-        <span className="text-[11px] text-slate-600 font-mono max-w-xl flex items-start space-x-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-          <span>Datos protegidos bajo el Reglamento de Protección de Datos y Privacidad Alumni FCyT (Resolución Facultativa 412/2023).</span>
-        </span>
-
-        <div className="flex items-center space-x-3 shrink-0">
-          <button className="px-4 py-2 bg-white border border-slate-300 text-slate-800 text-xs font-bold rounded-xl shadow-xs hover:bg-slate-50 transition-colors">
-            Agendar Entrevista Técnica
-          </button>
-          <button className="px-5 py-2 bg-burning-flame hover:bg-burning-flame/90 text-abyssal-blue text-xs font-bold rounded-xl shadow-sm transition-all flex items-center space-x-1.5">
-            <Mail className="w-3.5 h-3.5" />
-            <span>Enviar Propuesta Laboral</span>
-          </button>
-        </div>
       </div>
     </div>
   );

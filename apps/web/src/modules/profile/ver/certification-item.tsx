@@ -2,7 +2,6 @@ import type { KeyboardEvent, ReactNode } from 'react';
 import { ChevronDown, Download, FileText } from 'lucide-react';
 
 import type { TimelineItem } from '@/modules/profile/data/profile-data';
-import { SAMPLE_BACKUP_URL } from '@/modules/profile/utils/backup-url';
 
 type CertificationItemProps = {
   item: TimelineItem;
@@ -66,17 +65,24 @@ export default function CertificationItem({
       </button>
 
       {/* Documento de respaldo, igual que en la v3 */}
-      {item.document && (
-        <a
-          href={SAMPLE_BACKUP_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-oatmeal bg-white px-2 py-1.5 text-[11px] font-semibold text-blue-fantastic transition hover:bg-palladian"
-        >
-          <FileText className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
-          {item.document}
-        </a>
-      )}
+      {item.document &&
+        (item.documentUrl ? (
+          // Cada respaldo abre su propio archivo (E2.2)
+          <a
+            href={item.documentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-fit items-center gap-1.5 rounded-md border border-oatmeal bg-white px-2 py-1.5 text-[11px] font-semibold text-blue-fantastic transition hover:bg-palladian"
+          >
+            <FileText className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
+            {item.document}
+          </a>
+        ) : (
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-md border border-oatmeal bg-white px-2 py-1.5 text-[11px] font-semibold text-blue-fantastic">
+            <FileText className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
+            {item.document}
+          </span>
+        ))}
 
       {isOpen && (
         <div id={detailId} className="space-y-3 rounded-[10px] bg-palladian px-[14px] py-3">
@@ -92,16 +98,18 @@ export default function CertificationItem({
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-blue-fantastic">
                 {item.document}
               </span>
-              {/* Por ahora abre el PDF de ejemplo; se enlaza al archivo real cuando exista el backend */}
-              <a
-                href={SAMPLE_BACKUP_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-                aria-label={`Descargar ${item.document}`}
-                className="shrink-0 rounded p-1 text-blue-fantastic transition hover:bg-palladian"
-              >
-                <Download className="h-4 w-4" aria-hidden="true" />
-              </a>
+              {/* Solo se ofrece la descarga si el registro tiene la dirección de su propio archivo */}
+              {item.documentUrl && (
+                <a
+                  href={item.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Descargar ${item.document}`}
+                  className="shrink-0 rounded p-1 text-blue-fantastic transition hover:bg-palladian"
+                >
+                  <Download className="h-4 w-4" aria-hidden="true" />
+                </a>
+              )}
             </div>
           ) : (
             <p className="text-sm text-blue-fantastic/60">

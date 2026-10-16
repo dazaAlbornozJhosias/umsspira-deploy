@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { uploadDocument, type DocumentType, type UploadDocumentResult } from '../services';
-import { DOCUMENT_ERROR_MESSAGES, getPreviewKind, type PreviewKind } from '../validation/document-file';
+import {DOCUMENT_ERROR_MESSAGES,validateDocumentFile,type PreviewKind } from '../validation/document-file';
 
 interface SelectedDocument {
   file: File;
@@ -19,6 +19,8 @@ export function useDocumentUpload() {
   const [selected, setSelected] = useState<SelectedDocument | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const validationId = useRef(0);
 
   // Libera la URL temporal de la vista previa al reemplazar el archivo o salir de la pantalla.
   useEffect(() => {
@@ -32,17 +34,44 @@ export function useDocumentUpload() {
    * Devuelve true si el archivo fue aceptado. Si se rechaza, se conserva el archivo
    * anterior y se muestra el mensaje de CA-03.3.
    */
-  const selectFile = useCallback((file: File | null | undefined): boolean => {
+
+  const selectFile = useCallback(async (file: File | null | undefined): Promise<boolean> => {
     if (!file) return false;
-    const previewKind = getPreviewKind(file);
-    if (!previewKind) {
-      setFileError(DOCUMENT_ERROR_MESSAGES.invalidFile);
+
+    const currentId = ++validationId.current;
+    setIsValidating(true);
+
+    let previewKind: PreviewKind | null = null;
+
+    try {
+      previewKind = await validateDocumentFile(file);
+    } catch {
+      previewKind = null;
+    }
+
+    // Ignorar resultados de una selección anterior.
+    if (currentId !== validationId.current) {
       return false;
     }
+
+    setIsValidating(false);
+
+    if (!previewKind) {
+      setFileError(DOCUMENT_ERROR_MESSAGES.invalidFile);
+    return false;
+    }
+
     setFileError(null);
-    setSelected({ file, previewKind, previewUrl: URL.createObjectURL(file) });
+
+    setSelected({
+      file,
+      previewKind,
+      previewUrl: URL.createObjectURL(file),
+    });
+
     return true;
   }, []);
+
 
   const upload = useCallback(
     async (sessionToken: string, tipoDocumento: DocumentType): Promise<UploadDocumentResult | null> => {
@@ -67,6 +96,7 @@ export function useDocumentUpload() {
     fileError,
     setFileError,
     isUploading,
+    isValidating,
     selectFile,
     upload,
   };

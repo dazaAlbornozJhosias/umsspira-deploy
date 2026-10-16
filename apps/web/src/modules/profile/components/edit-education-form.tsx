@@ -10,6 +10,7 @@ import {
   INPUT_CLASS,
   RecordNotFound,
 } from '@/modules/profile/components/edit-record-layout';
+import { urlDeArchivo } from '@/modules/profile/utils/backup-url';
 import { recordsHref } from '@/modules/profile/data/profile-records-data';
 import { actualizarFormacion } from '@/modules/profile/services/perfil-api';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
@@ -53,6 +54,7 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
     degree: education.degree,
   });
   const [documentName, setDocumentName] = useState(education.backupFile ?? '');
+  const [documentUrl, setDocumentUrl] = useState(education.backupUrl);
   const [isNewDocument, setIsNewDocument] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   // Mismas reglas que al crear; el error del año se recalcula mientras se corrige
@@ -74,6 +76,7 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
     const file = event.target.files?.[0];
     if (file) {
       setDocumentName(file.name);
+      setDocumentUrl(urlDeArchivo(file));
       setIsNewDocument(true);
       setIsSaved(false);
     }
@@ -104,7 +107,11 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
     try {
       const actualizada = await actualizarFormacion(education.id, formacion);
       // El respaldo de la formación no se guarda en la API: se conserva el del estado
-      updateRecord('education', { ...actualizada, backupFile: documentName || undefined });
+      updateRecord('education', {
+        ...actualizada,
+        backupFile: documentName || undefined,
+        backupUrl: documentName ? documentUrl : undefined,
+      });
       setIsSaved(true);
     } catch (apiError) {
       if (!(apiError instanceof ApiError)) throw apiError;
@@ -182,6 +189,7 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
       {/* Un respaldo ya cargado se considera validado; uno nuevo queda en revisión */}
       <BackupField
         documentName={documentName}
+        documentUrl={documentUrl}
         isVerified={Boolean(documentName) && !isNewDocument}
         onDocumentChange={handleDocumentChange}
       />

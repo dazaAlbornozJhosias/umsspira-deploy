@@ -55,6 +55,12 @@ function buildYearOptions() {
   });
 }
 
+const sanitizeName = (value: string) =>
+  value.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ' -]/g, '').slice(0, 45);
+
+const sanitizeCi = (value: string) =>
+  value.replace(/\D/g, '').slice(0, 10);
+
 export function RegistrationForm() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -156,11 +162,11 @@ export function RegistrationForm() {
             Datos de identidad
           </legend>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Nombres" required autoComplete="given-name" error={errors.nombres?.message} aria-invalid={!!errors.nombres} {...register('nombres')} />
-            <Input label="Apellidos" required autoComplete="family-name" error={errors.apellidos?.message} aria-invalid={!!errors.apellidos} {...register('apellidos')} />
-          </div>
+            <Input label="Nombres" required maxLength={45} autoComplete="given-name" error={errors.nombres?.message} aria-invalid={!!errors.nombres} {...register('nombres', { onChange: (e) => { e.target.value = sanitizeName(e.target.value); } })} />
+            <Input label="Apellidos" required maxLength={45} autoComplete="family-name" error={errors.apellidos?.message} aria-invalid={!!errors.apellidos} {...register('apellidos', { onChange: (e) => { e.target.value = sanitizeName(e.target.value); } })} />          
+            </div>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Input label="Número de C.I." required inputMode="numeric" maxLength={10} error={errors.ci?.message} aria-invalid={!!errors.ci} {...register('ci')} />
+            <Input label="Número de C.I." required inputMode="numeric" maxLength={10} error={errors.ci?.message} aria-invalid={!!errors.ci} {...register('ci', { setValueAs: sanitizeCi, onChange: (e) => { e.target.value = sanitizeCi(e.target.value); } })} />
             <Input label="Complemento de C.I. (Opcional)" placeholder="Ej. 1A" maxLength={2} error={errors.complementoCi?.message} aria-invalid={!!errors.complementoCi} {...register('complementoCi')} />
             <FormSelect label="Expedido en" required placeholder="Selecciona" options={EXPEDITION_OPTIONS} error={errors.expedidoEn?.message} {...register('expedidoEn')} />
           </div>
@@ -171,7 +177,7 @@ export function RegistrationForm() {
             Contacto
           </legend>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input label="Correo electrónico" required type="email" autoComplete="email" maxLength={100} error={errors.correo?.message} aria-invalid={!!errors.correo} {...register('correo')} />
+            <Input label="Correo electrónico" required type="email" autoComplete="email" maxLength={30} error={errors.correo?.message} aria-invalid={!!errors.correo} {...register('correo')} />
             <div className="flex flex-col gap-1.5">
               <label htmlFor="telefono" className="text-[13px] font-semibold text-abyssal-blue">
                 Teléfono / WhatsApp<span className="text-truffle-trouble"> *</span>
@@ -208,10 +214,14 @@ export function RegistrationForm() {
         </fieldset>
 
         <div className="flex flex-col-reverse gap-3 border-t border-oatmeal/60 pt-6 sm:flex-row sm:justify-end">
-          <Button type="button" variant="secondary" onClick={() => router.push('/')}>
+          <Button type="button" variant="secondary" onClick={() => router.push('/login')}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="rounded-lg bg-burning-flame px-4 py-3.5 text-sm font-bold text-abyssal-blue shadow-sm transition hover:brightness-95 disabled:opacity-60"
+          >
             {isSubmitting ? 'Verificando...' : 'Continuar'}
           </Button>
         </div>

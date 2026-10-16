@@ -49,9 +49,9 @@ export function DocumentUploadStep() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const personalData = useRegistrationStore((state) => state.personalData);
 
-  const { file, previewUrl, previewKind, fileError, setFileError, isUploading, selectFile, upload } =
+  const { file, previewUrl, previewKind, fileError, setFileError, isUploading, isValidating, selectFile, upload } =
     useDocumentUpload();
-  const isLocked = isUploading || isSubmitting || !!submitted;
+  const isLocked = isValidating || isUploading || isSubmitting || !!submitted;
   const isSending = isUploading || isSubmitting;
 
   useEffect(() => {
@@ -60,6 +60,7 @@ export function DocumentUploadStep() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isValidating) return;
     setGeneralError(null);
 
     // CA-03.5: no se envia sin tipo de documento ni archivo; tambien se exige la declaracion jurada.
@@ -158,7 +159,7 @@ export function DocumentUploadStep() {
   }
 
   return (
-    <section className="rounded-2xl border border-oatmeal bg-palladian/60 p-6 shadow-sm sm:p-10">
+    <section className="rounded-2xl border border-oatmeal bg-white p-6 shadow-sm sm:p-10">
       <header className="border-b border-oatmeal pb-6">
         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-abyssal-blue/70">
           <FolderOpen aria-hidden="true" className="h-5 w-5 text-burning-flame" />
@@ -174,7 +175,7 @@ export function DocumentUploadStep() {
       </header>
 
       {submitted && !isModalOpen && (
-        <div className="mt-6 flex flex-col gap-3 rounded-lg border border-blue-fantastic/30 bg-white p-4 text-sm text-blue-fantastic sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-6 flex flex-col gap-3 rounded-lg border border-blue-fantastic/30 bg-palladian p-4 text-sm text-blue-fantastic sm:flex-row sm:items-center sm:justify-between">
           <p role="status" className="font-medium">
             Tu solicitud fue registrada correctamente.
           </p>
@@ -200,7 +201,7 @@ export function DocumentUploadStep() {
             value={tipoDocumento}
             error={typeError ?? undefined}
             disabled={isLocked}
-            className="bg-white"
+            className="bg-palladian"
             onChange={(event) => {
               setTipoDocumento(event.target.value as DocumentType | '');
               setTypeError(null);

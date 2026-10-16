@@ -7,6 +7,9 @@ import { Home, Calendar, Briefcase, Star, Users, User, Bell, ChevronDown, Award,
 
 // Importamos la imagen usando la ruta correcta desde shared/assets
 import logoUmss from '@/shared/assets/images/logoumsspira.jpg';
+import { authStore } from '@/modules/auth/frontend/store/auth.store';
+import { clearSession } from '@/modules/auth/frontend/services/session';
+import { hardRedirect } from '@/modules/auth/frontend/services/navigation';
 
 const navItems = [
   { href: '/portal', label: 'Inicio', Icon: Home, exact: true },
@@ -177,6 +180,22 @@ export const Navbar: React.FC = () => {
                       </div>
                       <span className="text-slate-400">›</span>
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearSession();
+                        authStore.reset();
+                        setIsProfileDropdownOpen(false);
+                        hardRedirect('/login');
+                      }}
+                      className="flex w-full items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-xs font-semibold text-slate-700"
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <LogOut className="w-4 h-4 text-slate-500" />
+                        <span>Cerrar sesión</span>
+                      </div>
+                      <span className="text-slate-400">›</span>
+                    </button>
                   </div>
                 </div>
               )}

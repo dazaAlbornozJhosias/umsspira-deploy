@@ -26,8 +26,8 @@ export function GraduatesStatusFilter({
         className="h-11 w-full rounded-md border border-[#C9C1B1] bg-white px-3 text-sm text-[#1B2632] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#FFB162]"
       >
         <option value="TODOS">Todos los estados</option>
-        <option value="VERIFICADO">Titulados verificados</option>
-        <option value="OBSERVADO">Titulados observados</option>
+        <option value="VERIFICADO">Verificado</option>
+        <option value="OBSERVADO">Observado</option>
       </select>
     </div>
   );

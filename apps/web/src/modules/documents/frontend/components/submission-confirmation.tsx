@@ -1,14 +1,13 @@
-import { maskEmail } from "../../../../shared/utils/mask-email";
+import type { ReactNode } from 'react';
+import { FileText } from 'lucide-react';
+import { maskEmail } from '@/shared/utils/mask-email';
 
-export type SubmittedDocumentType =
-  | "national-title"
-  | "academic-diploma"
-  | "graduation-certificate";
+export type SubmittedDocumentType = 'national-title' | 'academic-diploma' | 'graduation-certificate';
 
 const DOCUMENT_TYPE_LABELS: Record<SubmittedDocumentType, string> = {
-  "national-title": "Título en Provisión Nacional",
-  "academic-diploma": "Diploma Académico",
-  "graduation-certificate": "Certificado de Egreso",
+  'national-title': 'Título en Provisión Nacional',
+  'academic-diploma': 'Diploma Académico',
+  'graduation-certificate': 'Certificado de Egreso',
 };
 
 export interface SubmissionConfirmationProps {
@@ -17,6 +16,10 @@ export interface SubmissionConfirmationProps {
   fullName: string;
   idNumber: string;
   email: string;
+  trackingCode?: string;
+  fileName?: string;
+  fileSizeLabel?: string;
+  status?: string;
   responseDeadlineHours?: number;
 }
 
@@ -24,74 +27,79 @@ function formatSubmittedAt(value: Date | string): string {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "Fecha no disponible";
+    return 'Fecha no disponible';
   }
 
-  return new Intl.DateTimeFormat("es-BO", {
-    dateStyle: "long",
-    timeStyle: "short",
-    timeZone: "America/La_Paz",
+  return new Intl.DateTimeFormat('es-BO', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'America/La_Paz',
   }).format(date);
 }
 
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-1.5">
+      <dt className="shrink-0 text-xs text-abyssal-blue/70">{label}</dt>
+      <dd className="min-w-0 text-right text-xs font-semibold text-abyssal-blue">{children}</dd>
+    </div>
+  );
+}
+
+/**
+ * Resumen de la solicitud enviada (CA-03.2). Sigue el orden del mockup:
+ * código de trámite (N/A hasta el siguiente sprint), postulante, documento adjunto, fecha y hora, y estado del proceso;
+ * los datos que pide el criterio (C.I., correo enmascarado y tipo de documento) van junto a su fila relacionada.
+ * El título, el subtítulo y el botón de salida pertenecen al modal que lo contiene.
+ */
 export function SubmissionConfirmation({
   submittedAt,
   documentType,
   fullName,
   idNumber,
   email,
+  trackingCode,
+  fileName,
+  fileSizeLabel,
+  status,
   responseDeadlineHours = 48,
 }: SubmissionConfirmationProps) {
-  const details: Array<[string, string]> = [
-    ["Fecha y hora de envío", formatSubmittedAt(submittedAt)],
-    ["Tipo de documento", DOCUMENT_TYPE_LABELS[documentType]],
-    ["Nombre completo", fullName],
-    ["C.I.", idNumber],
-    ["Correo", maskEmail(email)],
-  ];
-
   return (
-    <section
-      aria-labelledby="submission-confirmation-title"
-      className="mx-auto w-full max-w-xl rounded-lg border border-oatmeal bg-white p-6 text-abyssal-blue sm:p-8"
-    >
-      <div className="flex items-center gap-3">
-        <span
-          aria-hidden="true"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-burning-flame"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M5 12.5l4.5 4.5L19 7.5" />
-          </svg>
-        </span>
-        <h1 id="submission-confirmation-title" className="text-2xl font-semibold">
-          Solicitud enviada
-        </h1>
-      </div>
-
-      <dl className="mt-6 divide-y divide-oatmeal border-y border-oatmeal">
-        {details.map(([label, value]) => (
-          <div
-            key={label}
-            className="flex flex-col gap-1 py-3 sm:flex-row sm:justify-between sm:gap-4"
-          >
-            <dt className="text-sm text-abyssal-blue/70">{label}</dt>
-            <dd className="text-sm font-medium sm:text-right">{value}</dd>
-          </div>
-        ))}
+    <section aria-label="Resumen de la solicitud">
+      <dl className="divide-y divide-oatmeal/60 rounded-xl border border-oatmeal bg-white/60 px-4 py-1">
+        <Row label="Código de trámite">
+          <span className="rounded-md bg-burning-flame/30 px-2 py-0.5 font-mono font-bold tracking-wide">
+            {trackingCode ?? 'N/A'}
+          </span>
+        </Row>
+        <Row label="Postulante">{fullName}</Row>
+        <Row label="C.I.">{idNumber}</Row>
+        <Row label="Correo">{maskEmail(email)}</Row>
+        {fileName && (
+          <Row label="Documento adjunto">
+            <span className="inline-flex max-w-full items-center gap-1.5">
+              <FileText aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-truffle-trouble" />
+              <span className="truncate" title={fileName}>
+                {fileSizeLabel ? `${fileName} (${fileSizeLabel})` : fileName}
+              </span>
+            </span>
+          </Row>
+        )}
+        <Row label="Tipo de documento">{DOCUMENT_TYPE_LABELS[documentType]}</Row>
+        <Row label="Fecha y hora">{formatSubmittedAt(submittedAt)}</Row>
+        {status && (
+          <Row label="Estado del proceso">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-abyssal-blue px-2.5 py-0.5 text-white">
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-burning-flame" />
+              {status}
+            </span>
+          </Row>
+        )}
       </dl>
 
-      <p className="mt-6 rounded-md bg-palladian p-4 text-sm">
-        El equipo administrativo revisará tu documento y te responderá por correo en un
-        plazo de {responseDeadlineHours} horas.
+      <p className="mt-3 rounded-md bg-oatmeal/30 p-3 text-xs text-abyssal-blue">
+        El equipo administrativo revisará tu documento y te responderá por correo en un plazo de{' '}
+        {responseDeadlineHours} horas.
       </p>
     </section>
   );

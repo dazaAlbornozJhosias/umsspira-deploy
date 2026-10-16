@@ -38,7 +38,14 @@ export class PerfilExportarService {
 
   async exportar(tituladoId: string, ahora: Date = new Date()): Promise<ExportacionPerfil> {
     const perfil: PerfilResumen = await this.resumen.obtenerResumen(tituladoId);
-    const documento = { fechaExportacion: fechaISO(ahora), ...perfil };
+    // HU5-05: las secciones usan los nombres del Sprint Backlog, igual que la descarga del frontend
+    const documento = {
+      fechaExportacion: fechaISO(ahora),
+      titulado: perfil.titulado,
+      'Formación académica': perfil.formacionAcademica,
+      'Experiencia laboral': perfil.experienciaLaboral,
+      Certificaciones: perfil.certificaciones,
+    };
 
     return {
       // Indentación de 2 espacios

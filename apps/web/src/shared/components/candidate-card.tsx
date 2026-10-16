@@ -178,8 +178,17 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
         </button>
 
         <button
-          onClick={() => {
-            if (onSelectCandidate) onSelectCandidate(graduateId);
+         onClick={(e) => {
+        e.preventDefault();
+        if (onSelectCandidate) onSelectCandidate(graduateId);
+        // Enfoque directo a la sección solicitada por la compañera
+        setTimeout(() => {
+          const section = document.getElementById('evidence-section');
+          if (section) {
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 150);
+
           }}
           className="flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold border border-slate-300 text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center space-x-1"
         >

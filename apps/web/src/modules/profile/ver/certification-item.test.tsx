@@ -13,6 +13,7 @@ const withBackup: TimelineItem = {
   grade: 'Profesional',
   detail: 'Grado: Profesional',
   document: 'respaldo.pdf',
+  documentUrl: '/respaldos/aws.pdf',
   status: 'verified',
 };
 
@@ -71,6 +72,19 @@ describe('CertificationItem', () => {
     const detail = screen.getByText('Entidad emisora').closest('div[id]') as HTMLElement;
     expect(within(detail).getByText('respaldo.pdf')).toBeInTheDocument();
     expect(within(detail).getByRole('link', { name: 'Descargar respaldo.pdf' })).toBeInTheDocument();
+  });
+
+  it('cada respaldo abre su propio archivo (E2.2)', () => {
+    render(<Harness item={withBackup} />);
+
+    expect(screen.getByRole('link', { name: 'respaldo.pdf' })).toHaveAttribute('href', '/respaldos/aws.pdf');
+  });
+
+  it('sin dirección del archivo muestra el nombre sin enlace', () => {
+    render(<Harness item={{ ...withBackup, documentUrl: undefined }} />);
+
+    expect(screen.getByText('respaldo.pdf')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'respaldo.pdf' })).not.toBeInTheDocument();
   });
 
   it('sin respaldo muestra el aviso', () => {

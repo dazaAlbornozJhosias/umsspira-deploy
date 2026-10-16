@@ -1,3 +1,4 @@
+
 {
   "graduateId": "00000000-0000-0000-0000-000000000001",
   "calculatedAt": "2026-09-28T12:00:00.000Z",
@@ -9,18 +10,30 @@
       "keywords": [
         "React",
         "TypeScript",
-        "Node.js"
+        "Node.js",
+        "JavaScript",
+        "Backend"
       ],
       "evidence": [
+        {
+          "type": "certification",
+          "title": "Certificación Avanzada de React",
+          "detail": "Emitido por Meta."
+        },
+        {
+          "type": "certification",
+          "title": "Desarrollo Backend con Node.js y TypeScript",
+          "detail": "Validado por OpenBootcamp."
+        },
         {
           "type": "project",
           "title": "Plataforma E-Commerce Web",
           "detail": "Desarrollo full-stack con React y Node."
         },
         {
-          "type": "certification",
-          "title": "Certificación Avanzada de React",
-          "detail": "Emitido por Meta."
+          "type": "project",
+          "title": "API REST de Microservicios",
+          "detail": "Arquitectura modular en TypeScript y JavaScript."
         }
       ]
     },
@@ -30,13 +43,24 @@
       "keywords": [
         "AWS",
         "Docker",
-        "CI/CD"
+        "CI/CD",
+        "Git"
       ],
       "evidence": [
         {
           "type": "certification",
           "title": "AWS Certified Cloud Practitioner",
-          "detail": "Amazon Web Services"
+          "detail": "Amazon Web Services."
+        },
+        {
+          "type": "certification",
+          "title": "Fundamentos de Docker y Contenedores",
+          "detail": "Linux Foundation."
+        },
+        {
+          "type": "project",
+          "title": "Pipeline CI/CD con Git y Despliegue Automatizado",
+          "detail": "Integración continua en la nube."
         }
       ]
     },
@@ -46,36 +70,93 @@
       "keywords": [
         "Python",
         "Pandas",
-        "Machine Learning"
+        "Machine Learning",
+        "SQL",
+        "Scikit-learn"
       ],
-      "evidence": []
+      "evidence": [
+        {
+          "type": "certification",
+          "title": "Certificación Profesional de Machine Learning",
+          "detail": "Emitido por Coursera."
+        },
+        {
+          "type": "certification",
+          "title": "Análisis de Datos con Python y SQL",
+          "detail": "Certificación DataCamp."
+        },
+        {
+          "type": "project",
+          "title": "Modelo de predicción de ventas con Python",
+          "detail": "Análisis de datos con Pandas y Scikit-learn."
+        }
+      ]
     },
     {
       "area": "quality-assurance",
       "affinity": 38,
       "keywords": [
+        "ISTQB",
+        "Cypress",
         "Jest",
-        "Cypress"
+        "Pruebas E2E"
       ],
-      "evidence": []
+      "evidence": [
+        {
+          "type": "certification",
+          "title": "ISTQB Foundation Level",
+          "detail": "Certified Tester."
+        },
+        {
+          "type": "project",
+          "title": "Suite de pruebas E2E para plataforma e-commerce",
+          "detail": "Automatización con Cypress y Jest."
+        }
+      ]
     },
     {
       "area": "cybersecurity-networks",
       "affinity": 27.5,
       "keywords": [
-        "SecOps",
-        "Firewalls"
+        "Cisco CCNA",
+        "Redes",
+        "Firewalls",
+        "SecOps"
       ],
-      "evidence": []
+      "evidence": [
+        {
+          "type": "certification",
+          "title": "Cisco Certified Network Associate (CCNA)",
+          "detail": "Cisco Systems - Enrutamiento, Conmutación y Redes."
+        },
+        {
+          "type": "project",
+          "title": "Configuración de Firewalls y Políticas SecOps",
+          "detail": "Seguridad perimetral y auditoría de accesos."
+        }
+      ]
     },
     {
       "area": "it-management",
       "affinity": 45,
       "keywords": [
         "Scrum",
-        "Agile"
+        "Agile",
+        "PSM I",
+        "Gestión de proyectos"
       ],
-      "evidence": []
+      "evidence": [
+        {
+          "type": "certification",
+          "title": "Professional Scrum Master (PSM I)",
+          "detail": "Scrum.org - Metodologías Ágiles."
+        },
+        {
+          "type": "project",
+          "title": "Gestión de Proyectos de Software con Scrum y Agile",
+          "detail": "Coordinación de sprint backlog y entregables."
+        }
+      ]
     }
   ]
 }

@@ -21,6 +21,7 @@ function educationItem(record: EducationRecord): TimelineItem {
     subtitle: record.title,
     date: record.graduationYear,
     document: record.backupFile,
+    documentUrl: record.backupUrl,
   };
 }
 
@@ -44,6 +45,7 @@ function certificationItem(record: CertificationRecord): TimelineItem {
     year: record.issueYear,
     grade: record.degree,
     document: record.backupFile,
+    documentUrl: record.backupUrl,
     status,
   };
 }

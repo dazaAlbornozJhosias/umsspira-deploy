@@ -1,7 +1,8 @@
 
 // Servicio de autenticación del módulo auth (HU-05)
 
-export type UserRole = "administrador" | "titulado";
+import type { UserRole } from "@umsspira/shared-types";
+export type { UserRole };
 
 export interface LoginCredentials {
   email: string;
@@ -73,7 +74,11 @@ export function login(
   return USE_MOCK ? loginMock(credentials) : loginRequest(credentials);
 }
 
-// Destino tras iniciar sesión según el rol (CA-05.2 y CA-05.3)
+// Destino tras iniciar sesión según el rol. El titulado entra al portal
+// (decisión de coordinación; CA-05.3 queda pendiente de actualización por el PO).
 export function getRedirectPath(role: UserRole): string {
-  return role === "administrador" ? "/applications" : "/me";
+  if (role === "administrador") return "/applications";
+  if (role === "empresa") return "/companies";
+  if (role === "titulado") return "/portal";
+  return "/me";
 }

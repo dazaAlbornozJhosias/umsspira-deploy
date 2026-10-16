@@ -9,6 +9,7 @@ import {
   INPUT_CLASS,
   RecordNotFound,
 } from '@/modules/profile/components/edit-record-layout';
+import { recordsHref } from '@/modules/profile/data/profile-records-data';
 import { actualizarExperiencia } from '@/modules/profile/services/perfil-api';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { ExperienceRecord } from '@/modules/profile/types/profile-record';
@@ -103,7 +104,7 @@ function EditExperienceFields({ experience }: { experience: ExperienceRecord }) 
       sectionSubtitle="Tu experiencia profesional más relevante"
       isSaved={isSaved}
       onSubmit={handleSubmit}
-      onCancel={() => router.push('/profile/records')}
+      onCancel={() => router.push(recordsHref('experience'))}
     >
       <div className="grid gap-4 md:grid-cols-2">
         <FormField id="company" label="Empresa">

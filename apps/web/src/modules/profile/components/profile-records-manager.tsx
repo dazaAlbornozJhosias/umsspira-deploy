@@ -24,14 +24,19 @@ const TOAST_DURATION_MS = 3000;
 
 type ProfileRecordsManagerProps = {
   initialRecords?: ProfileRecords;
+  // Pestaña abierta al entrar (por ejemplo, al cancelar la edición de una experiencia)
+  initialSection?: RecordSection;
 };
 
-export function ProfileRecordsManager({ initialRecords = PROFILE_RECORDS_MOCK }: ProfileRecordsManagerProps) {
+export function ProfileRecordsManager({
+  initialRecords = PROFILE_RECORDS_MOCK,
+  initialSection = 'education',
+}: ProfileRecordsManagerProps) {
   // Dentro de las pantallas del perfil usa el estado compartido; sin proveedor (pruebas) usa su propio estado
   const store = useOptionalProfileStore();
   const [localRecords, setLocalRecords] = useState<ProfileRecords>(initialRecords);
   const records = store?.records ?? localRecords;
-  const [activeSection, setActiveSection] = useState<RecordSection>('education');
+  const [activeSection, setActiveSection] = useState<RecordSection>(initialSection);
   const [recordToDelete, setRecordToDelete] = useState<ProfileRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<DeleteRecordErrorCode | null>(null);

@@ -55,7 +55,7 @@ describe('EditCertificationForm', () => {
   it('Cancelar vuelve a Gestionar registros', () => {
     renderForm();
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-    expect(push).toHaveBeenCalledWith('/profile/records');
+    expect(push).toHaveBeenCalledWith('/profile/records?seccion=certification');
   });
 
   it('avisa si la certificación no existe', () => {

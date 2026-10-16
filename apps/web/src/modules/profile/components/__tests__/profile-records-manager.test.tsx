@@ -25,6 +25,13 @@ describe('ProfileRecordsManager', () => {
     });
   });
 
+  it('abre la pestaña indicada al volver de editar (BUG-HU04-003)', () => {
+    render(<ProfileRecordsManager initialSection="experience" />);
+
+    expect(within(getDesktopRows()[0]).getByText('NTT DATA')).toBeInTheDocument();
+    expect(getDesktopRows()).toHaveLength(PROFILE_RECORDS_MOCK.experience.length);
+  });
+
   it('pide confirmación y elimina solo el registro seleccionado', async () => {
     render(<ProfileRecordsManager />);
     const [, secondRow] = getDesktopRows();

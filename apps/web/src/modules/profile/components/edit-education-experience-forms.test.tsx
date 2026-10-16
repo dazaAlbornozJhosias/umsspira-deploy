@@ -265,6 +265,6 @@ describe('EditExperienceForm', () => {
   it('Cancelar vuelve a Gestionar registros', () => {
     renderWith(<EditExperienceForm />);
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-    expect(push).toHaveBeenCalledWith('/profile/records');
+    expect(push).toHaveBeenCalledWith('/profile/records?seccion=experience');
   });
 });

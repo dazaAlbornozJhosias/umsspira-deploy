@@ -10,6 +10,7 @@ import {
   INPUT_CLASS,
   RecordNotFound,
 } from '@/modules/profile/components/edit-record-layout';
+import { recordsHref } from '@/modules/profile/data/profile-records-data';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { CertificationRecord } from '@/modules/profile/types/profile-record';
 
@@ -87,7 +88,7 @@ function EditCertificationFields({ certification }: { certification: Certificati
       sectionSubtitle="Credenciales que respaldan tu perfil"
       isSaved={isSaved}
       onSubmit={handleSubmit}
-      onCancel={() => router.push('/profile/records')}
+      onCancel={() => router.push(recordsHref('certification'))}
     >
       <div className="grid gap-4 md:grid-cols-2">
         <FormField id="name" label="Nombre de la certificación">

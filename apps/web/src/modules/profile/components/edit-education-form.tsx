@@ -10,6 +10,7 @@ import {
   INPUT_CLASS,
   RecordNotFound,
 } from '@/modules/profile/components/edit-record-layout';
+import { recordsHref } from '@/modules/profile/data/profile-records-data';
 import { actualizarFormacion } from '@/modules/profile/services/perfil-api';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { EducationRecord } from '@/modules/profile/types/profile-record';
@@ -122,7 +123,7 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
       sectionSubtitle="Tu formación académica principal"
       isSaved={isSaved}
       onSubmit={handleSubmit}
-      onCancel={() => router.push('/profile/records')}
+      onCancel={() => router.push(recordsHref('education'))}
     >
       <div className="grid gap-4 md:grid-cols-2">
         <FormField id="institution" label="Institución">

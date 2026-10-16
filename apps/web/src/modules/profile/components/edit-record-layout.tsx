@@ -139,6 +139,8 @@ export function BackupField({ documentName, isVerified, onDocumentChange }: Back
           Subir documento
           <input type="file" accept="image/jpeg" className="hidden" onChange={onDocumentChange} />
         </label>
+        {/* Decisión del equipo: solo JPG (BUG-HU2-007) */}
+        <p className="w-full text-center text-xs text-blue-fantastic/70">Solo JPG, máximo 5 MB</p>
       </div>
     </div>
   );

@@ -184,6 +184,8 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
                 Subir documento
               </button>
             </div>
+            {/* Decisión del equipo: el backend y el almacenamiento solo aceptan JPG (BUG-HU2-007) */}
+            <p className="text-xs text-[#2C3B4D]/70">Solo JPG, máximo 5 MB</p>
           </div>
           <MensajeError id="error-respaldo" mensaje={errorRespaldo} />
 

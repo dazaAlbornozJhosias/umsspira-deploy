@@ -41,6 +41,7 @@ describe('EditCertificationForm', () => {
     expect(screen.getByLabelText('Entidad emisora')).toHaveValue('Amazon Web Services');
     expect(screen.getByLabelText('Año')).toHaveValue('2022');
     expect(screen.getByText('Respaldo verificado')).toBeInTheDocument();
+    expect(screen.getByText('Solo JPG, máximo 5 MB')).toBeInTheDocument();
   });
 
   it('guarda los cambios en el estado compartido y muestra "Guardado"', () => {

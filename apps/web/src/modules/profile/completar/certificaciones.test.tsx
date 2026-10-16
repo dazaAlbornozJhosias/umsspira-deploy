@@ -25,6 +25,8 @@ describe('FormularioCertificaciones', () => {
     expect(screen.getByRole('button', { name: 'Subir documento' })).toBeInTheDocument();
     expect(screen.getByLabelText('Subir foto', { selector: 'input' })).toHaveAttribute('accept', 'image/jpeg');
     expect(screen.getByLabelText('Subir documento', { selector: 'input' })).toHaveAttribute('accept', 'image/jpeg');
+    // La interfaz indica el formato y el tamaño permitidos (BUG-HU2-007)
+    expect(screen.getByText('Solo JPG, máximo 5 MB')).toBeInTheDocument();
   });
 
   it('envia la certificacion con su respaldo', () => {

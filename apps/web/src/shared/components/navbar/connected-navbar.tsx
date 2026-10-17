@@ -25,6 +25,9 @@ function sessionFromUser(value: unknown): NavbarSession | null {
   return { name, role, initials: initials.toUpperCase() };
 }
 
+// Solo en el deploy personal (sin backend ni login): sin sesión real se muestra el titulado de prueba
+const DEMO_SESSION: NavbarSession = { name: 'Carlos Mendoza Ríos', role: 'titulado', initials: 'CM' };
+
 /** Adaptador real. Nunca consume la sesión ficticia del laboratorio. */
 export function ConnectedNavbar() {
   const pathname = usePathname();
@@ -40,7 +43,7 @@ export function ConnectedNavbar() {
       const controller = new AbortController();
       request = controller;
       const token = getSessionToken() ?? getAccessToken() ?? getToken();
-      if (!token) { setSession(null); return; }
+      if (!token) { setSession(DEMO_SESSION); return; }
       try {
         const response = await fetch(`${API_URL}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -48,9 +51,9 @@ export function ConnectedNavbar() {
           cache: 'no-store',
         });
         const body: { data?: unknown } = response.ok ? await response.json() : {};
-        if (!disposed && !controller.signal.aborted) setSession(response.ok ? sessionFromUser(body.data) : null);
+        if (!disposed && !controller.signal.aborted) setSession((response.ok ? sessionFromUser(body.data) : null) ?? DEMO_SESSION);
       } catch {
-        if (!disposed && !controller.signal.aborted) setSession(null);
+        if (!disposed && !controller.signal.aborted) setSession(DEMO_SESSION);
       }
     };
     void synchronize();

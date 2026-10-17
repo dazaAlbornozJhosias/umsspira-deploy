@@ -54,8 +54,6 @@ export const config = {
   matcher: [
     "/applications/:path*",
     "/me/:path*",
-    "/afinidad",
-    "/afinidad/:path*",
     "/empresa/postulantes",
     "/empresa/postulantes/:path*",
     "/postulantes",

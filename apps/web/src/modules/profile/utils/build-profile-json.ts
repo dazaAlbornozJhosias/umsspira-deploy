@@ -8,11 +8,12 @@ import type {
 import { formatExportDate } from '@/modules/profile/utils/profile-file-name';
 
 export type ProfileJson = {
-  idEgresado: string;
-  fechaDescarga: string;
-  nombre: string;
-  carrera: string;
-  promocion: number;
+  // Datos generales con mayúscula inicial, igual que los campos de cada registro
+  IdEgresado: string;
+  FechaDescarga: string;
+  Nombre: string;
+  Carrera: string;
+  Promocion: number;
   // Respaldo: nombre del archivo adjunto, null si no tiene
   // Claves de las secciones con los nombres del Sprint Backlog (HU5-05)
   // Campos de cada registro con mayúscula inicial y sin tildes (observación de QA, HU-05)
@@ -50,11 +51,11 @@ export function hasProfileBlocks(records: ProfileRecords): boolean {
 // Se arma desde los registros del perfil y no desde la línea de tiempo, que no trae todos los datos
 export function buildProfileJson(header: ProfileHeader, records: ProfileRecords, date: Date): ProfileJson {
   return {
-    idEgresado: header.id,
-    fechaDescarga: formatExportDate(date),
-    nombre: header.name,
-    carrera: header.career,
-    promocion: header.graduationYear,
+    IdEgresado: header.id,
+    FechaDescarga: formatExportDate(date),
+    Nombre: header.name,
+    Carrera: header.career,
+    Promocion: header.graduationYear,
     'Formación académica': (records.education as EducationRecord[]).map((record) => ({
       Institucion: record.institution,
       Titulo: record.title,

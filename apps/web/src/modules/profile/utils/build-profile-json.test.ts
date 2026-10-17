@@ -11,11 +11,11 @@ describe('build-profile-json', () => {
     const json = buildProfileJson(profileHeader, PROFILE_RECORDS_MOCK, date);
 
     expect(json).toMatchObject({
-      idEgresado: '000452',
-      fechaDescarga: '2026-10-02',
-      nombre: 'Carlos Mendoza Ríos',
-      carrera: 'Ingeniería de Sistemas',
-      promocion: 2018,
+      IdEgresado: '000452',
+      FechaDescarga: '2026-10-02',
+      Nombre: 'Carlos Mendoza Ríos',
+      Carrera: 'Ingeniería de Sistemas',
+      Promocion: 2018,
     });
     expect(json['Formación académica'][0]).toEqual({
       Institucion: 'Universidad Mayor de San Simón',

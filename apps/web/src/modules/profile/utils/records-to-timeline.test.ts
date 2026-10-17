@@ -6,7 +6,7 @@ describe('recordsToTimeline', () => {
   const [education, experience, certifications] = recordsToTimeline(PROFILE_RECORDS_MOCK);
 
   it('arma las 3 secciones con los datos de prueba únicos', () => {
-    expect(education.title).toBe('EDUCACIÓN');
+    expect(education.title).toBe('FORMACIÓN ACADÉMICA');
     expect(experience.title).toBe('EXPERIENCIA LABORAL');
     expect(certifications.title).toBe('CERTIFICACIONES');
     expect(education.items).toHaveLength(PROFILE_RECORDS_MOCK.education.length);

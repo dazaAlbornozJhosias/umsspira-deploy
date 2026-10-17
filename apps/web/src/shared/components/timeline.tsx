@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
 
 import type { TimelineItem, TimelineSection } from '@/modules/profile/data/profile-data';
 import CertificationItem from '@/modules/profile/ver/certification-item';
@@ -112,12 +112,12 @@ export default function Timeline({ sections }: TimelineProps) {
                         rel="noopener noreferrer"
                         className="inline-flex w-fit items-center gap-1.5 rounded-md border border-oatmeal bg-white px-2 py-1.5 text-[11px] font-semibold text-blue-fantastic transition hover:bg-palladian"
                       >
-                        <FileText className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
+                        <ImageIcon className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
                         {item.document}
                       </a>
                     ) : (
                       <span className="inline-flex w-fit items-center gap-1.5 rounded-md border border-oatmeal bg-white px-2 py-1.5 text-[11px] font-semibold text-blue-fantastic">
-                        <FileText className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
+                        <ImageIcon className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
                         {item.document}
                       </span>
                     ))}

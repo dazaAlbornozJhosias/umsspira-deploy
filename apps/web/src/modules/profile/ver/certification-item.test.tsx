@@ -12,7 +12,7 @@ const withBackup: TimelineItem = {
   year: '2022',
   grade: 'Profesional',
   detail: 'Grado: Profesional',
-  document: 'respaldo.pdf',
+  document: 'respaldo.jpg',
   documentUrl: '/respaldos/aws.pdf',
   status: 'verified',
 };
@@ -48,10 +48,10 @@ describe('CertificationItem', () => {
     );
     expect(screen.getByText('Amazon Web Services · 2022')).toBeInTheDocument();
     expect(screen.getByText('Grado: Profesional')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'respaldo.pdf' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'respaldo.jpg' })).toBeInTheDocument();
     expect(screen.getByText('Respaldo verificado')).toBeInTheDocument();
     expect(screen.queryByText('Entidad emisora')).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Descargar respaldo.pdf' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Descargar respaldo.jpg' })).not.toBeInTheDocument();
   });
 
   it('al hacer clic muestra entidad, año y grado', () => {
@@ -70,21 +70,21 @@ describe('CertificationItem', () => {
     fireEvent.click(screen.getByRole('button', { name: /AWS Solutions Architect/ }));
 
     const detail = screen.getByText('Entidad emisora').closest('div[id]') as HTMLElement;
-    expect(within(detail).getByText('respaldo.pdf')).toBeInTheDocument();
-    expect(within(detail).getByRole('link', { name: 'Descargar respaldo.pdf' })).toBeInTheDocument();
+    expect(within(detail).getByText('respaldo.jpg')).toBeInTheDocument();
+    expect(within(detail).getByRole('link', { name: 'Descargar respaldo.jpg' })).toBeInTheDocument();
   });
 
   it('cada respaldo abre su propio archivo (E2.2)', () => {
     render(<Harness item={withBackup} />);
 
-    expect(screen.getByRole('link', { name: 'respaldo.pdf' })).toHaveAttribute('href', '/respaldos/aws.pdf');
+    expect(screen.getByRole('link', { name: 'respaldo.jpg' })).toHaveAttribute('href', '/respaldos/aws.pdf');
   });
 
   it('sin dirección del archivo muestra el nombre sin enlace', () => {
     render(<Harness item={{ ...withBackup, documentUrl: undefined }} />);
 
-    expect(screen.getByText('respaldo.pdf')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'respaldo.pdf' })).not.toBeInTheDocument();
+    expect(screen.getByText('respaldo.jpg')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'respaldo.jpg' })).not.toBeInTheDocument();
   });
 
   it('sin respaldo muestra el aviso', () => {

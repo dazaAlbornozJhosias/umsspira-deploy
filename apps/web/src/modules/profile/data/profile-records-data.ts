@@ -15,7 +15,7 @@ export const PROFILE_RECORDS_MOCK: ProfileRecords = {
       title: 'Licenciatura en Ingeniería de Sistemas',
       graduationYear: '2018',
       degree: 'Licenciatura',
-      backupFile: 'respaldo.pdf',
+      backupFile: 'respaldo.jpg',
       backupUrl: SAMPLE_BACKUP_URL,
     },
     {
@@ -25,7 +25,7 @@ export const PROFILE_RECORDS_MOCK: ProfileRecords = {
       title: 'Maestría en Gestión de TI',
       graduationYear: '2021',
       degree: 'Maestría',
-      backupFile: 'respaldo.pdf',
+      backupFile: 'respaldo.jpg',
       backupUrl: SAMPLE_BACKUP_URL,
     },
   ],
@@ -63,7 +63,7 @@ export const PROFILE_RECORDS_MOCK: ProfileRecords = {
       issuer: 'Amazon Web Services',
       degree: 'Profesional',
       issueYear: '2022',
-      backupFile: 'respaldo.pdf',
+      backupFile: 'respaldo.jpg',
       backupUrl: SAMPLE_BACKUP_URL,
       backupVerified: true,
     },
@@ -74,7 +74,7 @@ export const PROFILE_RECORDS_MOCK: ProfileRecords = {
       issuer: 'Scrum.org',
       degree: 'Asociado',
       issueYear: '2021',
-      backupFile: 'respaldo.pdf',
+      backupFile: 'respaldo.jpg',
       backupUrl: SAMPLE_BACKUP_URL,
       backupVerified: true,
     },
@@ -99,7 +99,7 @@ export function toRecordSection(value: string | undefined): RecordSection {
 }
 
 export const SECTION_LABELS: Record<RecordSection, string> = {
-  education: 'Educación',
+  education: 'Formación académica',
   experience: 'Experiencia',
   certification: 'Certificaciones',
 };

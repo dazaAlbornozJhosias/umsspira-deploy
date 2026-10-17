@@ -28,7 +28,8 @@ type ProfileStore = {
 const ProfileStoreContext = createContext<ProfileStore | null>(null);
 
 // Demo sin backend: los cambios se guardan en el navegador para que se conserven al recargar
-const STORAGE_KEY = 'umsspira-perfil-demo';
+// v2: los respaldos de prueba pasaron a JPG; se descartan los datos guardados con la versión anterior
+const STORAGE_KEY = 'umsspira-perfil-demo-v2';
 
 function leerGuardado(): ProfileRecords | null {
   try {

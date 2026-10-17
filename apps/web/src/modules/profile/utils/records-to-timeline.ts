@@ -54,7 +54,7 @@ function certificationItem(record: CertificationRecord): TimelineItem {
 export function recordsToTimeline(records: ProfileRecords): TimelineSection[] {
   return [
     {
-      title: 'EDUCACIÓN',
+      title: 'FORMACIÓN ACADÉMICA',
       dateTone: 'accent',
       items: (records.education as EducationRecord[]).map(educationItem),
     },

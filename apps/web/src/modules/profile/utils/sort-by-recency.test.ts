@@ -11,7 +11,7 @@ describe('sortSectionsByRecency', () => {
   const sorted = sortSectionsByRecency(profileTimeline);
 
   it('ordena la educación del año más reciente al más antiguo', () => {
-    expect(titlesOf(sorted, 'EDUCACIÓN')).toEqual([
+    expect(titlesOf(sorted, 'FORMACIÓN ACADÉMICA')).toEqual([
       'Universidad Católica Boliviana',
       'Universidad Mayor de San Simón',
     ]);

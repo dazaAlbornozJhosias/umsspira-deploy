@@ -22,7 +22,7 @@ describe('build-profile-json', () => {
       titulo: 'Licenciatura en Ingeniería de Sistemas',
       grado: 'Licenciatura',
       anio: 2018,
-      respaldo: 'respaldo.pdf',
+      respaldo: 'respaldo.jpg',
     });
     expect(json['Experiencia laboral']).toHaveLength(3);
     expect(json['Experiencia laboral'][0]).toEqual({

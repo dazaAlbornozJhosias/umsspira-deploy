@@ -79,6 +79,16 @@ describe('EditCertificationForm', () => {
     expect(screen.getByText('certificado.jpg')).toBeInTheDocument();
   });
 
+  it('quita solo la imagen del respaldo sin eliminar la certificación', () => {
+    renderForm();
+    expect(screen.getByText('respaldo.jpg')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar imagen' }));
+
+    expect(screen.queryByText('respaldo.jpg')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Nombre de la certificación')).toHaveValue('AWS Solutions Architect');
+  });
+
   it('Cancelar vuelve a Gestionar registros', () => {
     renderForm();
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));

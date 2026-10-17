@@ -18,6 +18,17 @@ describe('FormularioCertificaciones', () => {
     }
   });
 
+  it('permite quitar la imagen adjunta antes de agregar', () => {
+    render(<FormularioCertificaciones certificaciones={[]} onAgregar={jest.fn()} />);
+    const jpg = new File(['x'], 'certificado.jpg', { type: 'image/jpeg' });
+
+    fireEvent.change(screen.getByLabelText('Subir foto', { selector: 'input' }), { target: { files: [jpg] } });
+    expect(screen.getByText('certificado.jpg')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar imagen' }));
+    expect(screen.queryByText('certificado.jpg')).not.toBeInTheDocument();
+  });
+
   it('marca con asterisco los 4 campos obligatorios', () => {
     const { container } = render(<FormularioCertificaciones certificaciones={[]} onAgregar={jest.fn()} />);
 

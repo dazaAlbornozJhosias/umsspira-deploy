@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Award, Camera, CloudUpload, FileText, Plus } from 'lucide-react';
+import { Award, Camera, CloudUpload, Image as ImageIcon, Plus, Trash2 } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
 import { validarRespaldo } from '@/modules/profile/validation/reglas-perfil';
 
@@ -168,10 +168,19 @@ export function FormularioCertificaciones({ certificaciones, onAgregar, onErrore
             )}
           >
             {datos.respaldo ? (
-              <p className="flex max-w-full items-center gap-2 text-sm font-medium text-[#2C3B4D]">
-                <FileText className="h-4 w-4 shrink-0 text-[#A35139]" />
+              <div className="flex max-w-full flex-wrap items-center justify-center gap-2 text-sm font-medium text-[#2C3B4D]">
+                <ImageIcon className="h-4 w-4 shrink-0 text-[#A35139]" />
                 <span className="truncate">{datos.respaldo.name}</span>
-              </p>
+                {/* Quitar solo la imagen, sin descartar el resto del formulario */}
+                <button
+                  type="button"
+                  onClick={() => setDatos({ ...datos, respaldo: null })}
+                  className="inline-flex items-center gap-1 rounded-md border border-[#C9C1B1] bg-white px-2 py-1 text-xs font-semibold text-[#A35139] hover:bg-[#FFF3EC]"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  Quitar imagen
+                </button>
+              </div>
             ) : (
               <>
                 <CloudUpload className="h-6 w-6 text-[#A35139]" />

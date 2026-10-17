@@ -192,6 +192,12 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
         documentUrl={documentUrl}
         isVerified={Boolean(documentName) && !isNewDocument}
         onDocumentChange={handleDocumentChange}
+        onDocumentRemove={() => {
+          setDocumentName('');
+          setDocumentUrl(undefined);
+          setIsNewDocument(false);
+          setIsSaved(false);
+        }}
       />
 
       <MensajeError id="error-education-save" mensaje={saveError} />

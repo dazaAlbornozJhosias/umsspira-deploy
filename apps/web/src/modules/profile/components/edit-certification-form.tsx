@@ -78,7 +78,7 @@ function EditCertificationFields({ certification }: { certification: Certificati
       backupFile: documentName || undefined,
       backupUrl: documentName ? documentUrl : undefined,
       // Un respaldo nuevo vuelve a quedar en revisión
-      backupVerified: isNewDocument ? false : certification.backupVerified,
+      backupVerified: Boolean(documentName) && !isNewDocument ? certification.backupVerified : false,
     });
     setIsSaved(true);
   }
@@ -131,6 +131,12 @@ function EditCertificationFields({ certification }: { certification: Certificati
         documentUrl={documentUrl}
         isVerified={Boolean(documentName) && !isNewDocument && Boolean(certification.backupVerified)}
         onDocumentChange={handleDocumentChange}
+        onDocumentRemove={() => {
+          setDocumentName('');
+          setDocumentUrl(undefined);
+          setIsNewDocument(false);
+          setIsSaved(false);
+        }}
       />
     </EditRecordLayout>
   );

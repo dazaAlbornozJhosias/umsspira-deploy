@@ -18,32 +18,32 @@ describe('build-profile-json', () => {
       promocion: 2018,
     });
     expect(json['Formación académica'][0]).toEqual({
-      institucion: 'Universidad Mayor de San Simón',
-      titulo: 'Licenciatura en Ingeniería de Sistemas',
-      grado: 'Licenciatura',
-      anio: 2018,
-      respaldo: 'respaldo.jpg',
+      Institucion: 'Universidad Mayor de San Simón',
+      Titulo: 'Licenciatura en Ingeniería de Sistemas',
+      Grado: 'Licenciatura',
+      Anio: 2018,
+      Respaldo: 'respaldo.jpg',
     });
     expect(json['Experiencia laboral']).toHaveLength(3);
     expect(json['Experiencia laboral'][0]).toEqual({
-      empresa: 'NTT DATA',
-      cargo: 'Tech Lead',
-      periodo: 'Jul 2023 – Presente',
-      fechaInicio: '2023-07-01',
-      fechaFin: null,
+      Empresa: 'NTT DATA',
+      Cargo: 'Tech Lead',
+      Periodo: 'Jul 2023 – Presente',
+      FechaInicio: '2023-07-01',
+      FechaFin: null,
     });
     expect(json['Experiencia laboral'][1]).toEqual({
-      empresa: 'Jalasoft',
-      cargo: 'Desarrollador Senior',
-      periodo: 'Ene 2021 – Jun 2023',
-      fechaInicio: '2021-01-04',
-      fechaFin: '2023-06-30',
+      Empresa: 'Jalasoft',
+      Cargo: 'Desarrollador Senior',
+      Periodo: 'Ene 2021 – Jun 2023',
+      FechaInicio: '2021-01-04',
+      FechaFin: '2023-06-30',
     });
     expect(json.Certificaciones[0]).toEqual({
-      nombre: 'AWS Solutions Architect',
-      entidad: 'Amazon Web Services',
-      anio: 2022,
-      grado: 'Profesional',
+      Nombre: 'AWS Solutions Architect',
+      Entidad: 'Amazon Web Services',
+      Anio: 2022,
+      Grado: 'Profesional',
     });
   });
 
@@ -55,7 +55,7 @@ describe('build-profile-json', () => {
       education: [{ ...PROFILE_RECORDS_MOCK.education[0], backupFile: undefined }],
     };
 
-    expect(buildProfileJson(profileHeader, records, date)['Formación académica'][0].respaldo).toBeNull();
+    expect(buildProfileJson(profileHeader, records, date)['Formación académica'][0].Respaldo).toBeNull();
   });
 
   it('devuelve listas vacías cuando las secciones no tienen registros', () => {

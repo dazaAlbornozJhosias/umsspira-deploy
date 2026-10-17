@@ -138,7 +138,13 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
           onErroresChange={setErroresFormacion}
           onAgregar={async (formacion) => {
             // Solo se agrega al estado lo que la API guardó (201), con su id real
-            addEducation(await crearFormacion(formacion));
+            const creada = await crearFormacion(formacion);
+            // El respaldo de la formación se guarda junto al registro (foto JPG del título)
+            addEducation({
+              ...creada,
+              backupFile: formacion.respaldo?.name,
+              backupUrl: urlDeArchivo(formacion.respaldo),
+            });
           }}
         />
       </SeccionAcordeon>

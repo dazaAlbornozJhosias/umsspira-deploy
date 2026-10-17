@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { GraduationCap, Plus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Camera, CloudUpload, GraduationCap, Image as ImageIcon, Plus, Trash2 } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
 import {
   LARGO_MAXIMO_FORMACION,
   validarAnioEgreso,
   validarFormacionDuplicada,
+  validarRespaldo,
 } from '@/modules/profile/validation/reglas-perfil';
 import { ApiError } from '@/shared/services/api-client';
 
@@ -17,6 +18,8 @@ export type FormacionAcademica = {
   titulo: string;
   anioEgreso: string;
   grado: string;
+  // Foto JPG de respaldo (opcional), igual que en certificaciones
+  respaldo?: File | null;
 };
 
 type FormacionAcademicaFormProps = {
@@ -27,12 +30,14 @@ type FormacionAcademicaFormProps = {
   onErroresChange?: (errores: number) => void;
 };
 
-const VACIO: FormacionAcademica = { institucion: '', titulo: '', anioEgreso: '', grado: '' };
+const VACIO: FormacionAcademica = { institucion: '', titulo: '', anioEgreso: '', grado: '', respaldo: null };
 
 const subtituloClase = 'text-xs font-bold uppercase tracking-wide text-[#2C3B4D]';
 const labelClase = 'block text-xs font-semibold text-[#2C3B4D]';
 // Campo obligatorio: asterisco igual al de Experiencia laboral (no forma parte del texto de la etiqueta)
 const labelObligatorioClase = `${labelClase} after:ml-1 after:text-[#A35139] after:content-['*']`;
+const botonRespaldoClase =
+  'inline-flex h-9 items-center gap-1.5 rounded-md border border-[#C9C1B1] bg-white px-3 text-xs font-semibold text-[#2C3B4D] hover:bg-[#FAF8F4]';
 const inputClase =
   'mt-1.5 h-11 w-full rounded-md border border-[#C9C1B1] bg-white px-3 text-sm text-[#2C3B4D] placeholder:text-[#2C3B4D]/40 focus:border-[#FFB162] focus:outline-none';
 
@@ -44,8 +49,11 @@ export function FormacionAcademicaForm({ formaciones, onAgregar, onErroresChange
   const [errorDuplicada, setErrorDuplicada] = useState<string>();
   // Mensaje del backend al guardar, tal como lo envía; se quita al cambiar cualquier campo
   const [errorGuardar, setErrorGuardar] = useState<string>();
+  // Archivo rechazado (no es JPG o supera 5 MB): no se adjunta y se explica junto al campo
+  const [errorRespaldo, setErrorRespaldo] = useState<string>();
+  const fotoRef = useRef<HTMLInputElement>(null);
 
-  const cantidadErrores = [errorAnio, errorDuplicada, errorGuardar].filter(Boolean).length;
+  const cantidadErrores = [errorAnio, errorDuplicada, errorGuardar, errorRespaldo].filter(Boolean).length;
   useEffect(() => onErroresChange?.(cantidadErrores), [cantidadErrores, onErroresChange]);
   const [guardando, setGuardando] = useState(false);
 
@@ -54,6 +62,16 @@ export function FormacionAcademicaForm({ formaciones, onAgregar, onErroresChange
     setErrorDuplicada(undefined);
     setErrorGuardar(undefined);
     if (campo === 'anioEgreso' && errorAnio) setErrorAnio(validarAnioEgreso(valor));
+  }
+
+  function elegirRespaldo(evento: React.ChangeEvent<HTMLInputElement>) {
+    const archivo = evento.target.files?.[0];
+    evento.target.value = '';
+    if (!archivo) return;
+    // El atributo accept se puede saltar eligiendo "Todos los archivos"
+    const error = validarRespaldo(archivo);
+    setErrorRespaldo(error);
+    if (!error) setDatos({ ...datos, respaldo: archivo });
   }
 
   async function agregar(evento: React.FormEvent<HTMLFormElement>) {
@@ -72,8 +90,10 @@ export function FormacionAcademicaForm({ formaciones, onAgregar, onErroresChange
         titulo: datos.titulo.trim(),
         anioEgreso: datos.anioEgreso,
         grado: datos.grado,
+        respaldo: datos.respaldo ?? null,
       });
       setDatos(VACIO);
+      setErrorRespaldo(undefined);
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       setErrorGuardar(error.message);
@@ -178,6 +198,50 @@ export function FormacionAcademicaForm({ formaciones, onAgregar, onErroresChange
               ))}
             </select>
           </div>
+        </div>
+
+        <div>
+          <span className={labelClase}>Respaldo de formación</span>
+          <div
+            className={claseCampo(
+              'mt-1.5 flex flex-col items-center gap-3 rounded-md border-2 border-dashed border-[#C9C1B1] bg-[#EEE9DF] px-4 py-6 text-center',
+              errorRespaldo,
+            )}
+          >
+            {datos.respaldo ? (
+              <div className="flex max-w-full flex-wrap items-center justify-center gap-2 text-sm font-medium text-[#2C3B4D]">
+                <ImageIcon className="h-4 w-4 shrink-0 text-[#A35139]" />
+                <span className="truncate">{datos.respaldo.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setDatos({ ...datos, respaldo: null })}
+                  className="inline-flex items-center gap-1 rounded-md border border-[#C9C1B1] bg-white px-2 py-1 text-xs font-semibold text-[#A35139] hover:bg-[#FFF3EC]"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  Quitar imagen
+                </button>
+              </div>
+            ) : (
+              <>
+                <CloudUpload className="h-6 w-6 text-[#A35139]" />
+                <p className="text-sm text-[#2C3B4D]">Adjunta una foto en JPG de tu título o diploma</p>
+              </>
+            )}
+            <button type="button" onClick={() => fotoRef.current?.click()} className={botonRespaldoClase}>
+              <Camera className="h-4 w-4" />
+              Subir foto
+            </button>
+            <p className="text-xs text-[#2C3B4D]/70">Solo JPG, máximo 5 MB</p>
+          </div>
+          <MensajeError id="error-respaldo-formacion" mensaje={errorRespaldo} />
+          <input
+            ref={fotoRef}
+            type="file"
+            accept="image/jpeg"
+            aria-label="Subir foto de la formación"
+            className="hidden"
+            onChange={elegirRespaldo}
+          />
         </div>
 
         <MensajeError id="error-formacion-duplicada" mensaje={errorDuplicada} />

@@ -23,6 +23,22 @@ describe('FormacionAcademicaForm', () => {
     }
   });
 
+  it('permite adjuntar una foto JPG como respaldo y quitarla', () => {
+    render(<FormacionAcademicaForm formaciones={[]} onAgregar={jest.fn()} />);
+    const input = screen.getByLabelText('Subir foto de la formación');
+    expect(input).toHaveAttribute('accept', 'image/jpeg');
+
+    fireEvent.change(input, { target: { files: [new File(['x'], 'titulo.png', { type: 'image/png' })] } });
+    expect(screen.getByText('Formato no permitido. Solo JPG')).toBeInTheDocument();
+
+    fireEvent.change(input, { target: { files: [new File(['x'], 'titulo.jpg', { type: 'image/jpeg' })] } });
+    expect(screen.getByText('titulo.jpg')).toBeInTheDocument();
+    expect(screen.queryByText('Formato no permitido. Solo JPG')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar imagen' }));
+    expect(screen.queryByText('titulo.jpg')).not.toBeInTheDocument();
+  });
+
   it('marca con asterisco los 4 campos obligatorios', () => {
     const { container } = render(<FormacionAcademicaForm formaciones={[]} onAgregar={jest.fn()} />);
 
@@ -57,6 +73,7 @@ describe('FormacionAcademicaForm', () => {
       titulo: 'Ingeniería de Sistemas',
       anioEgreso: '2022',
       grado: 'Licenciatura',
+      respaldo: null,
     });
     await waitFor(() => expect(screen.getByLabelText('Institución')).toHaveValue(''));
   });

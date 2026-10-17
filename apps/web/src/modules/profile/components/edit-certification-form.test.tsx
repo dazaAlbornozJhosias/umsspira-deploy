@@ -53,6 +53,32 @@ describe('EditCertificationForm', () => {
     expect(screen.getByTestId('nombre-guardado')).toHaveTextContent('AWS Solutions Architect Pro');
   });
 
+  it('rechaza un respaldo que no es JPG o supera 5 MB y no lo adjunta (BUG-HU2-004 en edición)', () => {
+    renderForm();
+    const input = screen.getByLabelText('Subir foto');
+    const png = new File(['x'], 'certificado.png', { type: 'image/png' });
+    const grande = new File(['x'], 'grande.jpg', { type: 'image/jpeg' });
+    Object.defineProperty(grande, 'size', { value: 6 * 1024 * 1024 });
+
+    fireEvent.change(input, { target: { files: [png] } });
+    expect(screen.getByRole('alert')).toHaveTextContent('Formato no permitido. Solo JPG');
+    expect(screen.queryByText('certificado.png')).not.toBeInTheDocument();
+
+    fireEvent.change(input, { target: { files: [grande] } });
+    expect(screen.getByRole('alert')).toHaveTextContent('El archivo no puede superar 5 MB');
+    expect(screen.queryByText('grande.jpg')).not.toBeInTheDocument();
+  });
+
+  it('adjunta un respaldo JPG válido', () => {
+    renderForm();
+    const jpg = new File(['x'], 'certificado.jpg', { type: 'image/jpeg' });
+
+    fireEvent.change(screen.getByLabelText('Subir foto'), { target: { files: [jpg] } });
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText('certificado.jpg')).toBeInTheDocument();
+  });
+
   it('Cancelar vuelve a Gestionar registros', () => {
     renderForm();
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));

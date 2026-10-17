@@ -23,6 +23,14 @@ describe('FormacionAcademicaForm', () => {
     }
   });
 
+  it('marca con asterisco los 4 campos obligatorios', () => {
+    const { container } = render(<FormacionAcademicaForm formaciones={[]} onAgregar={jest.fn()} />);
+
+    for (const id of ['institucion', 'titulo', 'anioEgreso', 'grado']) {
+      expect(container.querySelector(`label[for="${id}"]`)?.className).toContain("after:content-['*']");
+    }
+  });
+
   it('limita institución y título a 150 caracteres (HU5-01)', () => {
     render(<FormacionAcademicaForm formaciones={[]} onAgregar={jest.fn()} />);
 

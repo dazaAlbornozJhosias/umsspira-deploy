@@ -24,6 +24,10 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
   const { records, addEducation, addExperience, addCertification } = useProfileStore();
   const router = useRouter();
   const [avisoBorrador, setAvisoBorrador] = useState(false);
+  // Errores sin corregir por sección, para el contador del encabezado (HU-02, AC 6)
+  const [erroresFormacion, setErroresFormacion] = useState(0);
+  const [erroresExperiencia, setErroresExperiencia] = useState(0);
+  const [erroresCertificaciones, setErroresCertificaciones] = useState(0);
 
   useEffect(() => {
     if (!avisoBorrador) return;
@@ -127,9 +131,11 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
         titulo="Formación académica"
         descripcion="Tu formación académica principal"
         cantidad={formaciones.length}
+        errores={erroresFormacion}
       >
         <FormacionAcademicaForm
           formaciones={formaciones}
+          onErroresChange={setErroresFormacion}
           onAgregar={async (formacion) => {
             // Solo se agrega al estado lo que la API guardó (201), con su id real
             addEducation(await crearFormacion(formacion));
@@ -141,9 +147,11 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
         titulo="Experiencia laboral"
         descripcion="Tu experiencia profesional más relevante"
         cantidad={experiencias.length}
+        errores={erroresExperiencia}
       >
         <FormularioExperiencia
           experiencias={experiencias}
+          onErroresChange={setErroresExperiencia}
           onAgregar={async (experiencia) => {
             // Solo se agrega al estado lo que la API guardó (201), con su id real
             addExperience(await crearExperiencia(experiencia));
@@ -155,9 +163,11 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
         titulo="Certificaciones"
         descripcion="Credenciales que respaldan tu perfil"
         cantidad={certificaciones.length}
+        errores={erroresCertificaciones}
       >
         <FormularioCertificaciones
           certificaciones={certificaciones}
+          onErroresChange={setErroresCertificaciones}
           onAgregar={(certificacion) =>
             addCertification({
               name: certificacion.nombre,

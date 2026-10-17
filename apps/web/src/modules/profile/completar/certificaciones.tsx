@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Award, Camera, CloudUpload, FileText, Plus } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
 import { validarRespaldo } from '@/modules/profile/validation/reglas-perfil';
@@ -18,23 +18,27 @@ export type Certificacion = {
 type FormularioCertificacionesProps = {
   certificaciones: Certificacion[];
   onAgregar: (certificacion: Certificacion) => void;
+  // Avisa cuántos errores hay a la vista, para el contador del encabezado de la sección (HU-02, AC 6)
+  onErroresChange?: (errores: number) => void;
 };
 
 const VACIO: Certificacion = { nombre: '', entidadEmisora: '', anioEmision: '', grado: '', respaldo: null };
 
 const subtituloClase = 'text-xs font-bold uppercase tracking-wide text-[#2C3B4D]';
 const labelClase = 'block text-xs font-semibold text-[#2C3B4D]';
+// Campo obligatorio: asterisco igual al de Experiencia laboral (no forma parte del texto de la etiqueta)
+const labelObligatorioClase = `${labelClase} after:ml-1 after:text-[#A35139] after:content-['*']`;
 const inputClase =
   'mt-1.5 h-11 w-full rounded-md border border-[#C9C1B1] bg-white px-3 text-sm text-[#2C3B4D] placeholder:text-[#2C3B4D]/40 focus:border-[#FFB162] focus:outline-none';
 const botonRespaldoClase =
   'inline-flex h-9 items-center gap-1.5 rounded-md border border-[#C9C1B1] bg-white px-3 text-xs font-semibold text-[#2C3B4D] hover:bg-[#FAF8F4]';
 
-export function FormularioCertificaciones({ certificaciones, onAgregar }: FormularioCertificacionesProps) {
+export function FormularioCertificaciones({ certificaciones, onAgregar, onErroresChange }: FormularioCertificacionesProps) {
   const [datos, setDatos] = useState<Certificacion>(VACIO);
   const fotoRef = useRef<HTMLInputElement>(null);
-  const documentoRef = useRef<HTMLInputElement>(null);
   // Archivo rechazado (no es JPG o supera 5 MB): no se adjunta y se explica junto al campo
   const [errorRespaldo, setErrorRespaldo] = useState<string>();
+  useEffect(() => onErroresChange?.(errorRespaldo ? 1 : 0), [errorRespaldo, onErroresChange]);
 
   function cambiar(campo: 'nombre' | 'entidadEmisora' | 'anioEmision' | 'grado', valor: string) {
     setDatos({ ...datos, [campo]: valor });
@@ -94,7 +98,7 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
 
       <form onSubmit={agregar} className="mt-4 space-y-4">
         <div>
-          <label htmlFor="nombreCertificacion" className={labelClase}>Nombre de certificación</label>
+          <label htmlFor="nombreCertificacion" className={labelObligatorioClase}>Nombre de certificación</label>
           <input
             id="nombreCertificacion"
             type="text"
@@ -107,7 +111,7 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
         </div>
 
         <div>
-          <label htmlFor="entidadEmisora" className={labelClase}>Entidad emisora</label>
+          <label htmlFor="entidadEmisora" className={labelObligatorioClase}>Entidad emisora</label>
           <input
             id="entidadEmisora"
             type="text"
@@ -121,7 +125,7 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label htmlFor="anioEmision" className={labelClase}>Año</label>
+            <label htmlFor="anioEmision" className={labelObligatorioClase}>Año</label>
             <input
               id="anioEmision"
               type="text"
@@ -139,7 +143,7 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
           </div>
 
           <div>
-            <label htmlFor="gradoCertificacion" className={labelClase}>Grado</label>
+            <label htmlFor="gradoCertificacion" className={labelObligatorioClase}>Grado</label>
             <select
               id="gradoCertificacion"
               required
@@ -171,17 +175,13 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
             ) : (
               <>
                 <CloudUpload className="h-6 w-6 text-[#A35139]" />
-                <p className="text-sm text-[#2C3B4D]">Adjunta una foto o un documento de tu certificación</p>
+                <p className="text-sm text-[#2C3B4D]">Adjunta una foto en JPG de tu certificación</p>
               </>
             )}
             <div className="flex flex-wrap justify-center gap-2">
               <button type="button" onClick={() => fotoRef.current?.click()} className={botonRespaldoClase}>
                 <Camera className="h-4 w-4" />
                 Subir foto
-              </button>
-              <button type="button" onClick={() => documentoRef.current?.click()} className={botonRespaldoClase}>
-                <FileText className="h-4 w-4" />
-                Subir documento
               </button>
             </div>
             {/* Decisión del equipo: el backend y el almacenamiento solo aceptan JPG (BUG-HU2-007) */}
@@ -194,14 +194,6 @@ export function FormularioCertificaciones({ certificaciones, onAgregar }: Formul
             type="file"
             accept="image/jpeg"
             aria-label="Subir foto"
-            className="hidden"
-            onChange={elegirRespaldo}
-          />
-          <input
-            ref={documentoRef}
-            type="file"
-            accept="image/jpeg"
-            aria-label="Subir documento"
             className="hidden"
             onChange={elegirRespaldo}
           />

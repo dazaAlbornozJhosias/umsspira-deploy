@@ -1,0 +1,19 @@
+meta {
+  name: Consultar sesión persistida
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/auth/session
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: umsspira_refresh={{refreshToken}}
+}
+
+docs {
+  Usa el valor manual de refreshToken, obtenido de la cookie umsspira_refresh del login. No utiliza el access token.
+}

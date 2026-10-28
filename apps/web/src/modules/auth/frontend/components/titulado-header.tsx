@@ -10,6 +10,9 @@ export function TituladoHeader() {
       <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between px-6">
         <span className="font-display text-lg font-bold text-white">UMSSPIRA</span>
         <nav aria-label="Navegacion del titulado" className="flex items-center gap-6">
+          <Link href="/mentorship" className="text-sm font-medium text-white/90 hover:text-white">
+            Mentorías
+          </Link>
           <Link href="/profile" className="text-sm font-medium text-white/90 hover:text-white">
             Mi perfil profesional
           </Link>

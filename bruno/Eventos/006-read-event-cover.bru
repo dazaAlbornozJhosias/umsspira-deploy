@@ -1,0 +1,19 @@
+meta {
+  name: Leer portada
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/v1/events/covers/{{eventCoverId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Completa eventCoverId. El Bearer permite previsualizar cargas y borradores propios. Para una portada publicada puedes cambiar Auth a No Auth en este mismo archivo.
+}

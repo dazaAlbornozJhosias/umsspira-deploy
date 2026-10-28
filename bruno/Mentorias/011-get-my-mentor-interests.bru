@@ -1,0 +1,21 @@
+meta {
+  name: Consultar intereses propios
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/v1/mentorship/interests/mine
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Consulta los intereses que tiene seleccionados el mentor propio.
+
+  Permiso: mentores:self:write.
+}

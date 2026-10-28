@@ -1,0 +1,21 @@
+meta {
+  name: Consultar perfil profesional
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/perfil
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Usa el accessToken de un titulado. Devuelve formación, experiencia y certificaciones del perfil propio.
+
+  Permiso: perfil:self:read.
+}

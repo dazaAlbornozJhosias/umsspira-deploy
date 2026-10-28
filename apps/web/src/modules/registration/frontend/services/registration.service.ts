@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+import { readApiError } from '@/shared/services/api-contract';
+
+const API_BASE_URL = '/api/v1';
 
 const CONNECTION_ERROR_MESSAGE = 'No se pudo conectar con el servidor. Intenta nuevamente en unos minutos.';
 
@@ -35,8 +37,7 @@ async function readJson<T>(response: Response): Promise<T | null> {
 }
 
 function getErrorMessage(body: ApiErrorBody | null, fallback: string): string {
-  if (!body?.message) return fallback;
-  return Array.isArray(body.message) ? body.message[0] ?? fallback : body.message;
+  return readApiError(body, fallback).message;
 }
 
 // Catalogo de carreras registradas en la base de datos (no se usan valores inventados).
@@ -71,7 +72,7 @@ export async function createRegistrationSession(data: Record<string, unknown>): 
     return {
       ok: false,
       message: getErrorMessage(body, 'No se pudo procesar el registro. Intenta nuevamente.'),
-      errors: Array.isArray(body?.errors) ? body.errors : [],
+      errors: readApiError(body, '').errors,
     };
   }
 
@@ -102,5 +103,23 @@ export async function checkRegistrationSession(sessionToken: string): Promise<Se
     return { status: 'unknown' };
   } catch {
     return { status: 'unknown' };
+  }
+}
+
+
+export async function updateRegistrationSession(sessionToken: string, data: Record<string, unknown>): Promise<
+  { ok: true; verifiedEmail: string | null } | { ok: false; message: string }
+> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/registrations/sessions/${encodeURIComponent(sessionToken)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const body = await readJson<{ data?: { verifiedEmail: string | null } } & ApiErrorBody>(response);
+    if (!response.ok || !body?.data) return { ok: false, message: getErrorMessage(body, 'No se pudieron guardar los cambios.') };
+    return { ok: true, verifiedEmail: body.data.verifiedEmail };
+  } catch {
+    return { ok: false, message: CONNECTION_ERROR_MESSAGE };
   }
 }

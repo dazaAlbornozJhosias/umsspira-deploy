@@ -1,0 +1,21 @@
+meta {
+  name: Consultar información profesional
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/mentorship/my-profile/information
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Consulta descripción, experiencia, información complementaria y foto del mentor propio.
+
+  Permiso: mentores:self:write.
+}

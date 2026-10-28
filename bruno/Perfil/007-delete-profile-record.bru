@@ -1,0 +1,21 @@
+meta {
+  name: Eliminar registro del perfil
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/perfil/{{profileSection}}/{{profileRecordId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Elimina el registro propio indicado por profileSection y profileRecordId. Responde 204 sin cuerpo.
+
+  Permiso: perfil:self:write.
+}

@@ -57,6 +57,16 @@
 .activityItem>svg { flex-shrink:0; margin-top:2px; }
 .activityItem strong { display:block; font-size:12px; }
 .activityItem small { display:block; font-size:11px; line-height:1.7; margin-top:5px; }
+/* HU-10: insignia con el total y filas del panel de mensajes */
+.countBadge { position:absolute; top:3px; right:-8px; min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:#ffb162; color:#0F172A; font-size:10px; font-weight:700; line-height:17px; text-align:center; box-sizing:border-box; pointer-events:none; }
+.messageAvatar { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; width:34px; height:34px; border-radius:50%; background:#0F172A; color:#fff; font-size:11px; font-weight:700; }
+.messageCopy { display:flex; flex-direction:column; min-width:0; flex:1; gap:2px; }
+.messageHeading { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+.messageHeading strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.messageHeading time { flex-shrink:0; font-size:10px; color:#727b81; }
+.activityItem small.messageRole { margin:0; font-size:10px; color:#727b81; text-transform:capitalize; }
+.activityItem small.messagePreview { margin:0; font-weight:700; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.itemCount { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; align-self:center; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:#b06c30; color:#fff; font-size:10px; font-weight:700; box-sizing:border-box; }
 .unread { flex-shrink:0; width:6px; height:6px; border-radius:50%; background:#b06c30; margin:5px 0 0 auto; }
 .activityEmpty { display:flex; align-items:center; flex-direction:column; gap:15px; padding:28px 20px; color:#727b81; }
 .activityEmpty p { font-size:12px; }
@@ -105,7 +115,6 @@
   .logo img { width:130px; height:46px; }
   .actions { gap:10px; padding-left:8px; }
   .root .iconButton { width:25px; }
-  .messageAction { display:none; }
   .avatar { width:34px; height:34px; font-size:10px; }
   .root .login { font-size:11px; padding:8px; min-height:38px; border:0; }
   .authActions>.register { display:none; }
@@ -115,3 +124,9 @@
   .searchHeading h2 { font-size:19px; }
 }
 @media(prefers-reduced-motion:reduce) { .root * { transition:none!important; } }
+
+/* Barra pública en azul (mismo azul del portal). Bloque aislado: se puede quitar sin afectar el resto. */
+.public { --navbar-bg:#0F172A; --navbar-ink:#f1f5f9; --navbar-muted:#cbd5e1; border-bottom-color:#1e293b; }
+.public .active, .public .topLink:hover, .public .trigger:hover { color:#ffb162; }
+.root.public .login { color:#f1f5f9; border-color:#475569; }
+.root.public .login:hover { background:#1e293b; }

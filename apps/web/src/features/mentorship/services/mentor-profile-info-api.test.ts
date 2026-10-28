@@ -38,7 +38,7 @@ describe('mentor-profile-info-api', () => {
     };
     fetchMock.mockResolvedValue({
       ok: true,
-      json: async () => mockState,
+      json: async () => ({ data: mockState }),
     });
 
     const result = await getMentorProfileInformation();
@@ -66,7 +66,7 @@ describe('mentor-profile-info-api', () => {
     };
     fetchMock.mockResolvedValue({
       ok: true,
-      json: async () => mockState,
+      json: async () => ({ data: mockState }),
     });
 
     const result = await updateMentorProfileInformation(payload);
@@ -87,7 +87,7 @@ describe('mentor-profile-info-api', () => {
     };
     fetchMock.mockResolvedValue({
       ok: true,
-      json: async () => mockState,
+      json: async () => ({ data: mockState }),
     });
 
     const result = await deleteMentorProfileInformation();

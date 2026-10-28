@@ -21,7 +21,7 @@
 .portal-view {
   min-height: 100vh;
   min-height: 100dvh;
-  background-color: #ffffff;
+  background-color: #EEE9DF;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;

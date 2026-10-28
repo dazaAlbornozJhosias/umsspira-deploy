@@ -1,0 +1,21 @@
+meta {
+  name: Obtener indicadores de la bandeja
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/v1/applications/metrics
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Requiere administrador. Devuelve las cuatro cifras de la bandeja: receivedToday (recibidas hoy), pending (pendientes), urgent (pendientes de más de 48 h) y resolvedToday (solicitudes dictaminadas hoy).
+  "Hoy" se calcula con la hora de Bolivia (America/La_Paz). Los totales cubren todas las solicitudes de las carreras del administrador, no solo la página actual.
+  Permiso: solicitudes:read.
+}

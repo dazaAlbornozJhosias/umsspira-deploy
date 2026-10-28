@@ -1,0 +1,71 @@
+meta {
+  name: Extraer keywords - 200 Alias cortos y terminos compuestos (CA-HU5-05)
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "text": "Gobierno de TI con ML y JS"
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Respuesta envuelta en data", function() {
+    expect(res.body).to.have.property("data").that.is.an("object");
+  });
+
+  test("gobierno de ti reconocido como termino compuesto (incluye stopword 'de')", function() {
+    var keywords = res.body.data.keywords;
+    var gdt = keywords.find(function(k) { return k.term === "gobierno de ti"; });
+    expect(gdt, "Debe encontrar 'gobierno de ti'").to.exist;
+  });
+
+  test("ml se resuelve al termino canonico machine learning", function() {
+    var keywords = res.body.data.keywords;
+    var ml = keywords.find(function(k) { return k.term === "machine learning"; });
+    expect(ml, "El alias ml debe resolverse a 'machine learning'").to.exist;
+  });
+
+  test("js se resuelve al termino canonico javascript", function() {
+    var keywords = res.body.data.keywords;
+    var js = keywords.find(function(k) { return k.term === "javascript"; });
+    expect(js, "El alias js debe resolverse a 'javascript'").to.exist;
+  });
+
+  test("No se eliminan stopwords ni palabras cortas ANTES de buscar", function() {
+    var keywords = res.body.data.keywords;
+    var terms = keywords.map(function(k) { return k.term; });
+    expect(terms).to.include("gobierno de ti",
+      "La palabra 'de' no debe eliminar el termino compuesto");
+  });
+}
+
+docs {
+  HU-5 · T1.7 — Alias cortos y terminos compuestos con stopwords internas.
+  "gobierno de ti" se reconoce aunque "de" sea stopword.
+  "ml" -> "machine learning", "js" -> "javascript" (alias del diccionario).
+  Las stopwords y palabras cortas NO se eliminan ANTES de buscar coincidencias.
+
+  CA-HU5-05: terminos compuestos con alias cortos ml y js, y "de" dentro de un termino.
+
+  Permiso: nlp:extract.
+}

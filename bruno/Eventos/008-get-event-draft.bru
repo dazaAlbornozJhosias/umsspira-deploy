@@ -1,0 +1,21 @@
+meta {
+  name: Consultar borrador
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/v1/events/drafts/{{eventId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Consulta un evento propio que todavía está en BORRADOR.
+
+  Permiso: eventos:manage.
+}

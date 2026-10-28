@@ -1,0 +1,34 @@
+meta {
+  name: Crear borrador de registro
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/sessions
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombres": "María Fernanda",
+    "apellidos": "Pérez López",
+    "ci": "8123456",
+    "complementoCi": "",
+    "expedidoEn": "CB",
+    "correo": "{{registrationEmail}}",
+    "telefono": "70000000",
+    "carreraId": "{{careerId}}",
+    "anioEgreso": 2025,
+    "codigoSis": "202012345"
+  }
+}
+
+docs {
+  Completa careerId y registrationEmail; adapta los datos de ejemplo al egresado. Copia data.sessionToken a sessionToken. El registro todavía no crea una cuenta activa.
+}

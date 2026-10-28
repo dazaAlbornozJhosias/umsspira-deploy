@@ -77,12 +77,12 @@ describe("LoginForm", () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it("redirige al administrador a la bandeja de solicitudes (CA-05.2)", async () => {
+  it("HU-004: redirige al administrador a reportes institucionales", async () => {
     render(<LoginForm />);
 
     fillAndSubmit("admin@umss.edu.bo", "admin1234");
 
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/applications"));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/reports"));
   });
 
   it("redirige al titulado al portal (decisión de coordinación; CA-05.3 pendiente del PO)", async () => {
@@ -128,6 +128,20 @@ describe("LoginForm", () => {
     fillAndSubmit("titulado@umss.edu.bo", "titulado1234");
     await waitFor(() =>
       expect(mockSaveSession).toHaveBeenCalledWith("token-titulado", "titulado", true),
+    );
+  });
+});
+
+describe("HU-004: mensaje de acceso a reportes", () => {
+  afterEach(() => {
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("explica por qué se redirigió a un visitante a iniciar sesión", async () => {
+    window.history.pushState({}, "", "/login?reportes=requiere-sesion");
+    render(<LoginForm />);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Debe iniciar sesión para acceder a este módulo",
     );
   });
 });

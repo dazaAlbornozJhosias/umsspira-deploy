@@ -1,0 +1,47 @@
+meta {
+  name: Extraer keywords - 403 Sin permiso nlp:extract
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessTokenSinPermiso}}
+}
+
+body:json {
+  {
+    "text": "Node.js TypeScript PostgreSQL"
+  }
+}
+
+tests {
+  test("Status 403 sin permiso nlp:extract", function() {
+    expect(res.status).to.equal(403);
+  });
+}
+
+docs {
+  HU-1 · T1.7 — Token válido pero sin el permiso nlp:extract
+  (p.ej. rol empresa o titulado sin el permiso asignado).
+  Debe responder 403 Forbidden.
+
+  CA-HU5-06: con token sin permiso nlp:extract → 403 Forbidden.
+
+  ⚠ CONFIGURACIÓN MANUAL REQUERIDA:
+  La variable {{accessTokenSinPermiso}} debe ser configurada manualmente
+  antes de ejecutar este test. Pasos:
+    1. Iniciar sesión con un usuario que NO tenga el permiso nlp:extract.
+    2. Copiar el accessToken obtenido.
+    3. Pegarlo en la variable de entorno/colección "accessTokenSinPermiso".
+  Si la variable está vacía, este test fallará con 401, no con 403.
+}

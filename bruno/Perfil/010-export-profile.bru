@@ -1,0 +1,21 @@
+meta {
+  name: Exportar perfil a JSON
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/v1/perfil/exportar-json
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Descarga el perfil profesional propio como archivo JSON.
+
+  Permiso: perfil:self:read.
+}

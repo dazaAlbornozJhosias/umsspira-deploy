@@ -1,0 +1,47 @@
+meta {
+  name: Extraer keywords - 400 Campo text ausente (CA-HU5-19)
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {}
+}
+
+tests {
+  test("Status 400 cuando el campo text esta ausente", function() {
+    expect(res.status).to.equal(400);
+  });
+
+  test("Respuesta usa formato de error { error: { code, message } }", function() {
+    expect(res.body).to.have.property("error").that.is.an("object");
+    expect(res.body.error).to.have.property("message");
+  });
+}
+
+docs {
+  HU-5 · T1.7 — Validacion del cuerpo: campo text ausente.
+  Un cuerpo {} sin el campo text debe responder 400 Bad Request.
+
+  CA-HU5-19: el endpoint acepta UNICAMENTE el campo text; si falta -> 400.
+  CA-HU5-20: formato de error { error: { code, message } }.
+
+  Ver test 013 para type incorrecto (numero).
+  Ver test 015 para campos extra en el cuerpo.
+
+  Permiso: nlp:extract.
+}

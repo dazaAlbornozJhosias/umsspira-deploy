@@ -1,0 +1,26 @@
+meta {
+  name: 002 - Rechazar acceso con token invalido
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/registrations/observed/access
+  body: none
+  auth: none
+}
+
+headers {
+  X-Correction-Token: {{invalidCorrectionToken}}
+}
+
+tests {
+  test("Acceso denegado con 404 generico", function() {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody().error.code).to.equal("TOKEN_NOT_FOUND");
+  });
+}
+
+docs {
+  Verifica que un token inexistente devuelva HTTP 404 con mensaje generico para evitar enumeracion o discriminacion de estado.
+}

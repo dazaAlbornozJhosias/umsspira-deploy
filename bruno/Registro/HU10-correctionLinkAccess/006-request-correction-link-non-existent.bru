@@ -1,0 +1,34 @@
+meta {
+  name: 006 - Pedir enlace nuevo (solicitud inexistente)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/observed/request-link
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "ci": "99999999",
+    "complemento": "",
+    "expedidoEn": "LP"
+  }
+}
+
+tests {
+  test("Respuesta identica a la exitosa para evitar enumeracion", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().data.message).to.equal("Si los datos corresponden a una solicitud observada, se enviará un enlace de corrección al correo registrado");
+  });
+}
+
+docs {
+  Demuestra que ante una identificacion que no corresponde a ninguna solicitud observada, la respuesta es indistinguible e inmediata (CA-10.6), evitando la enumeracion de datos personales.
+}

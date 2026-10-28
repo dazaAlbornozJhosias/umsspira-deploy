@@ -1,14 +1,27 @@
 import { CURRENT_GRADUATE_ID } from '@/modules/profile/data/profile-records-data';
 import type { CertificationRecord } from '@/modules/profile/types/profile-record';
 import { ApiError } from '@/shared/services/api-client';
+import { clearAccessToken, setAccessToken } from '@/shared/services/auth-session';
 
-import { crearExperiencia, crearFormacion, obtenerPerfil, type PerfilApi } from './perfil-api';
+import {
+  crearCertificacion,
+  crearExperiencia,
+  crearFormacion,
+  enlaceDeDescarga,
+  guardarDescripcion,
+  obtenerPerfil,
+  obtenerResumenPerfil,
+  subirRespaldo,
+  type PerfilApi,
+} from './perfil-api';
 
 // jsdom no trae fetch: se simula con la forma mínima que usa apiFetch
 const fetchMock = jest.fn();
 
 function responder(status: number, cuerpo: unknown) {
-  fetchMock.mockResolvedValue({ ok: status >= 200 && status < 300, status, json: async () => cuerpo });
+  // La API responde { data } cuando todo sale bien y el error tal cual cuando falla
+  const ok = status >= 200 && status < 300;
+  fetchMock.mockResolvedValue({ ok, status, json: async () => (ok ? { data: cuerpo } : cuerpo) });
 }
 
 const base = { idTitulado: '9bab2c02-d99b-4e06-a16c-ba5ee762654e', fechaCreacion: '2026-10-01' };
@@ -30,17 +43,20 @@ const PERFIL_API: PerfilApi = {
       { ...base, id: 'c-2', nombre: 'PSM I', entidadEmisora: 'Scrum.org', grado: 'Asociado', anioEmision: 2021, respaldo: { tieneRespaldo: false } },
     ],
   },
+  descripcionProfesional: '',
 };
 
 describe('obtenerPerfil', () => {
   beforeEach(() => {
     fetchMock.mockReset();
     global.fetch = fetchMock;
+    setAccessToken('test-token');
   });
 
   afterEach(() => {
     // @ts-expect-error se vuelve al entorno de jsdom, que no tiene fetch
     delete global.fetch;
+    clearAccessToken();
   });
 
   it('consulta GET /api/v1/perfil', async () => {
@@ -77,6 +93,21 @@ describe('obtenerPerfil', () => {
     ]);
   });
 
+  it('incluye la descripción profesional en el resumen del perfil', async () => {
+    responder(200, { ...PERFIL_API, descripcionProfesional: '  Ingeniero de sistemas.  ' });
+
+    const resumen = await obtenerResumenPerfil();
+
+    expect(resumen.description).toBe('Ingeniero de sistemas.');
+    expect(resumen.records.education).toHaveLength(1);
+  });
+
+  it('deja la descripción vacía si el egresado aún no la registró', async () => {
+    responder(200, PERFIL_API);
+
+    expect((await obtenerResumenPerfil()).description).toBe('');
+  });
+
   it('propaga el error de la API con su estado y mensaje', async () => {
     responder(403, { statusCode: 403, message: 'El usuario no es un titulado' });
 
@@ -87,17 +118,52 @@ describe('obtenerPerfil', () => {
   });
 });
 
+describe('guardarDescripcion', () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+    global.fetch = fetchMock;
+    setAccessToken('test-token');
+  });
+
+  afterEach(() => {
+    // @ts-expect-error se vuelve al entorno de jsdom, que no tiene fetch
+    delete global.fetch;
+    clearAccessToken();
+  });
+
+  it('envía PUT a la descripción del egresado con sesión y devuelve la guardada', async () => {
+    responder(200, { descripcionProfesional: 'Analista de datos', fechaActualizacion: '2026-10-24T12:00:00.000Z' });
+
+    const guardada = await guardarDescripcion('Analista de datos');
+
+    const [url, opciones] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/api\/v1\/perfil\/descripcion-profesional$/);
+    expect(opciones.method).toBe('PUT');
+    expect(JSON.parse(opciones.body)).toEqual({ descripcionProfesional: 'Analista de datos' });
+    expect(guardada).toBe('Analista de datos');
+  });
+
+  it('400: rechaza con el mensaje del backend', async () => {
+    const mensaje = 'La descripción no puede superar 5000 caracteres';
+    responder(400, { statusCode: 400, message: [mensaje], error: mensaje });
+
+    await expect(guardarDescripcion('a')).rejects.toMatchObject({ status: 400, message: mensaje });
+  });
+});
+
 describe('crearFormacion', () => {
   const formacion = { institucion: '  UMSS ', titulo: ' Ingeniería de Sistemas ', anioEgreso: '2018', grado: 'Licenciatura' };
 
   beforeEach(() => {
     fetchMock.mockReset();
     global.fetch = fetchMock;
+    setAccessToken('test-token');
   });
 
   afterEach(() => {
     // @ts-expect-error se vuelve al entorno de jsdom, que no tiene fetch
     delete global.fetch;
+    clearAccessToken();
   });
 
   it('envía POST con el año como número y los textos sin espacios', async () => {
@@ -152,11 +218,13 @@ describe('crearExperiencia', () => {
   beforeEach(() => {
     fetchMock.mockReset();
     global.fetch = fetchMock;
+    setAccessToken('test-token');
   });
 
   afterEach(() => {
     // @ts-expect-error se vuelve al entorno de jsdom, que no tiene fetch
     delete global.fetch;
+    clearAccessToken();
   });
 
   it('envía POST con las fechas y los textos sin espacios', async () => {
@@ -196,5 +264,138 @@ describe('crearExperiencia', () => {
     responder(400, { statusCode: 400, message: [mensaje], error: mensaje });
 
     await expect(crearExperiencia(experiencia)).rejects.toMatchObject({ status: 400, message: mensaje });
+  });
+});
+
+describe('crearCertificacion', () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+    global.fetch = fetchMock;
+    setAccessToken('test-token');
+  });
+
+  afterEach(() => {
+    // @ts-expect-error se vuelve al entorno de jsdom, que no tiene fetch
+    delete global.fetch;
+    clearAccessToken();
+  });
+
+  it('envía POST con el año numérico y sin grado vacío', async () => {
+    responder(201, {
+      ...base,
+      id: 'c-9',
+      nombre: 'AWS',
+      entidadEmisora: 'Amazon Web Services',
+      grado: 'Profesional',
+      anioEmision: 2022,
+    });
+
+    const creada = await crearCertificacion({
+      nombre: ' AWS ',
+      entidadEmisora: 'Amazon Web Services ',
+      anioEmision: '2022',
+      grado: '',
+      respaldo: null,
+    });
+
+    const [url, opciones] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/api\/v1\/perfil\/certificaciones$/);
+    expect(opciones.method).toBe('POST');
+    expect(JSON.parse(opciones.body)).toEqual({
+      nombre: 'AWS',
+      entidadEmisora: 'Amazon Web Services',
+      anioEmision: 2022,
+    });
+    expect(creada.id).toBe('c-9');
+    expect(creada.degree).toBe('Profesional');
+  });
+});
+
+describe('subirRespaldo', () => {
+  // XMLHttpRequest mínimo para controlar la respuesta desde el test
+  class XhrFalso {
+    static instancia: XhrFalso;
+    metodo = '';
+    url = '';
+    cabeceras: Record<string, string> = {};
+    cuerpo: unknown;
+    status = 0;
+    responseText = '';
+    upload: { onprogress?: (evento: { lengthComputable: boolean; loaded: number; total: number }) => void } = {};
+    onload?: () => void;
+    onerror?: () => void;
+    constructor() {
+      XhrFalso.instancia = this;
+    }
+    open(metodo: string, url: string) {
+      this.metodo = metodo;
+      this.url = url;
+    }
+    setRequestHeader(nombre: string, valor: string) {
+      this.cabeceras[nombre] = valor;
+    }
+    send(cuerpo: unknown) {
+      this.cuerpo = cuerpo;
+    }
+  }
+
+  const xhrOriginal = global.XMLHttpRequest;
+  const archivo = () => new File(['contenido'], 'respaldo.jpg', { type: 'image/jpeg' });
+
+  beforeEach(() => {
+    Object.assign(global, { XMLHttpRequest: XhrFalso });
+    setAccessToken('test-token');
+  });
+
+  afterEach(() => {
+    Object.assign(global, { XMLHttpRequest: xhrOriginal });
+    clearAccessToken();
+  });
+
+  it('envía el archivo como multipart con el token y avisa el avance', async () => {
+    const avances: number[] = [];
+    const promesa = subirRespaldo('c-1', archivo(), (porcentaje) => avances.push(porcentaje));
+    const xhr = XhrFalso.instancia;
+
+    expect(xhr.metodo).toBe('POST');
+    expect(xhr.url).toMatch(/\/api\/v1\/perfil\/certificaciones\/c-1\/respaldo$/);
+    expect(xhr.cabeceras.Authorization).toBe('Bearer test-token');
+    expect((xhr.cuerpo as FormData).get('archivo')).toBeInstanceOf(File);
+
+    xhr.upload.onprogress?.({ lengthComputable: true, loaded: 50, total: 100 });
+    xhr.status = 200;
+    xhr.onload?.();
+
+    await expect(promesa).resolves.toBeUndefined();
+    expect(avances).toEqual([50, 100]);
+  });
+
+  it('rechaza con ApiError y el mensaje del backend', async () => {
+    const promesa = subirRespaldo('c-1', archivo());
+    const xhr = XhrFalso.instancia;
+    xhr.status = 400;
+    xhr.responseText = JSON.stringify({ error: { message: 'Formato no permitido' } });
+    xhr.onload?.();
+
+    await expect(promesa).rejects.toMatchObject({ status: 400, message: 'Formato no permitido' });
+  });
+
+  // Deploy personal: sin conexión el respaldo queda solo en el navegador (datos de prueba)
+  it('sin conexión termina sin error y marca la subida completa', async () => {
+    const onProgreso = jest.fn();
+    const promesa = subirRespaldo('c-1', archivo(), onProgreso);
+    XhrFalso.instancia.onerror?.();
+
+    await expect(promesa).resolves.toBeUndefined();
+    expect(onProgreso).toHaveBeenLastCalledWith(100);
+  });
+});
+
+describe('enlaceDeDescarga', () => {
+  it('agrega descargar=1 respetando los parámetros del enlace firmado', () => {
+    expect(enlaceDeDescarga('/api/v1/perfil/respaldos/c-1/archivo?expira=1&firma=x')).toBe(
+      '/api/v1/perfil/respaldos/c-1/archivo?expira=1&firma=x&descargar=1',
+    );
+    expect(enlaceDeDescarga('/archivo')).toBe('/archivo?descargar=1');
   });
 });

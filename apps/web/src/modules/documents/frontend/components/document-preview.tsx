@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, type ChangeEvent } from 'react';
-import { BadgeCheck, FileText, ImageIcon, RefreshCw } from 'lucide-react';
+import { BadgeCheck, FileText, ImageIcon, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/shared/components/button';
 import { ACCEPTED_DOCUMENT_TYPES, formatFileSize, type PreviewKind } from '../validation/document-file';
 
@@ -10,6 +10,7 @@ export interface DocumentPreviewProps {
   previewUrl: string;
   previewKind: PreviewKind;
   onReplace: (file: File) => void;
+  onRemove: () => void;
   disabled?: boolean;
 }
 
@@ -17,7 +18,7 @@ export interface DocumentPreviewProps {
  * Tarjeta del documento adjunto con su vista previa local y el boton "Reemplazar archivo" (CA-03.4).
  * El archivo no se sube al servidor hasta que el titulado finaliza la solicitud.
  */
-export function DocumentPreview({ file, previewUrl, previewKind, onReplace, disabled }: DocumentPreviewProps) {
+export function DocumentPreview({ file, previewUrl, previewKind, onReplace, onRemove, disabled }: DocumentPreviewProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const Icon = previewKind === 'pdf' ? FileText : ImageIcon;
 
@@ -50,22 +51,38 @@ export function DocumentPreview({ file, previewUrl, previewKind, onReplace, disa
             </p>
           </div>
         </div>
-        <Button
-          type="button"
-          variant="secondary"
-          className="inline-flex shrink-0 items-center justify-center gap-2 bg-white"
-          disabled={disabled}
-          onClick={() => inputRef.current?.click()}
-        >
-          <RefreshCw aria-hidden="true" className="h-4 w-4" />
-          Reemplazar archivo
-        </Button>
+
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="button"
+            variant="secondary"
+            className="inline-flex shrink-0 items-center justify-center gap-2 bg-white"
+            disabled={disabled}
+            onClick={() => inputRef.current?.click()}
+          >
+            <RefreshCw aria-hidden="true" className="h-4 w-4" />
+            Cambiar archivo
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            className="inline-flex shrink-0 items-center justify-center gap-2 bg-white text-truffle-trouble"
+            disabled={disabled}
+            onClick={onRemove}
+          >
+            <Trash2 aria-hidden="true" className="h-4 w-4" />
+            Quitar
+          </Button>
+        </div>
+
         <input
           ref={inputRef}
           type="file"
           accept={ACCEPTED_DOCUMENT_TYPES}
           className="hidden"
           data-testid="replace-document-input"
+          disabled={disabled}
           onChange={handleChange}
         />
       </div>
@@ -87,7 +104,12 @@ export function DocumentPreview({ file, previewUrl, previewKind, onReplace, disa
           >
             <p className="p-4 text-center text-sm text-abyssal-blue">
               Tu navegador no puede mostrar el PDF aquí.{' '}
-              <a href={previewUrl} target="_blank" rel="noreferrer" className="font-semibold text-truffle-trouble underline">
+              <a
+                href={previewUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-truffle-trouble underline"
+              >
                 Abrir vista previa
               </a>
             </p>

@@ -58,3 +58,40 @@ export function validarRespaldo(archivo: File): string | undefined {
   if (archivo.size > TAMANIO_MAXIMO_RESPALDO) return MENSAJE_RESPALDO_TAMANIO;
   return undefined;
 }
+
+// Certificaciones (HU-08, T8.3): los 4 campos son obligatorios y el año va de 1980 al año actual
+export const MENSAJE_CAMPO_OBLIGATORIO = 'Este campo es obligatorio';
+export const MENSAJE_RESPALDO_OBLIGATORIO = 'Adjunta el respaldo de la certificación (JPG de hasta 5 MB)';
+export const ANIO_MINIMO_CERTIFICACION = 1980;
+
+export function mensajeAnioCertificacion(): string {
+  return `El año debe estar entre ${ANIO_MINIMO_CERTIFICACION} y ${new Date().getFullYear()}`;
+}
+
+// Año de emisión (AAAA): obligatorio y dentro del rango
+export function validarAnioCertificacion(anio: string): string | undefined {
+  if (!anio.trim()) return MENSAJE_CAMPO_OBLIGATORIO;
+  const numero = Number(anio);
+  if (!/^\d{4}$/.test(anio) || numero < ANIO_MINIMO_CERTIFICACION || numero > new Date().getFullYear()) {
+    return mensajeAnioCertificacion();
+  }
+  return undefined;
+}
+
+type CertificacionValidable = { nombre: string; entidadEmisora: string; anioEmision: string; respaldo: File | null };
+export type ErroresCertificacion = Partial<Record<keyof CertificacionValidable, string>>;
+
+// Devuelve un mensaje por cada campo con problema; un objeto vacío significa que se puede guardar
+export function validarCertificacion(datos: CertificacionValidable): ErroresCertificacion {
+  const errores: ErroresCertificacion = {};
+  if (!datos.nombre.trim()) errores.nombre = MENSAJE_CAMPO_OBLIGATORIO;
+  if (!datos.entidadEmisora.trim()) errores.entidadEmisora = MENSAJE_CAMPO_OBLIGATORIO;
+  const errorAnio = validarAnioCertificacion(datos.anioEmision);
+  if (errorAnio) errores.anioEmision = errorAnio;
+  if (!datos.respaldo) errores.respaldo = MENSAJE_RESPALDO_OBLIGATORIO;
+  else {
+    const errorRespaldo = validarRespaldo(datos.respaldo);
+    if (errorRespaldo) errores.respaldo = errorRespaldo;
+  }
+  return errores;
+}

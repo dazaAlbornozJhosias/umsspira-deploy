@@ -1,0 +1,37 @@
+meta {
+  name: Editar borrador desde el resumen
+  type: http
+  seq: 12
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/registrations/sessions/{{sessionToken}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombres": "María Fernanda",
+    "apellidos": "Pérez López",
+    "ci": "8123456",
+    "complementoCi": "",
+    "expedidoEn": "CB",
+    "correo": "{{registrationEmail}}",
+    "telefono": "71111111",
+    "carreraId": "{{careerId}}",
+    "anioEgreso": 2025,
+    "codigoSis": "202012345"
+  }
+}
+
+docs {
+  Usa los datos del borrador creado y cambia únicamente los campos a probar.
+  Una dirección distinta invalida el OTP anterior y requiere emitir y verificar uno nuevo.
+  data.verifiedEmail contiene el último correo verificado, que puede diferir del actual.
+  El archivo y el token se conservan. Un borrador vencido o entregado devuelve 410.
+}

@@ -1,7 +1,8 @@
 import type { MentorState } from '@umsspira/shared-types';
 import { getAccessToken, clearAccessToken } from '@/shared/services/auth-session';
+import { authenticatedFetch, ensureAccessToken } from '@/shared/services/auth-session';
+import { readApiError } from '@/shared/services/api-contract';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000').replace(/\/+$/, '');
 const MISSING_PROFILE = Symbol('missing-profile');
 
 function isMentorResponse(value: unknown): value is { esta_activo: boolean | null } {
@@ -11,9 +12,9 @@ function isMentorResponse(value: unknown): value is { esta_activo: boolean | nul
 }
 
 async function request(path: string, options: RequestInit, allowMissingProfile = false): Promise<unknown> {
-  const token = getAccessToken();
+  const token = getAccessToken() ?? await ensureAccessToken();
   if (!token) throw new Error('Inicia sesión para consultar tu participación como mentor.');
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await authenticatedFetch(path, {
     ...options,
     credentials: 'omit',
     cache: 'no-store',
@@ -23,8 +24,7 @@ async function request(path: string, options: RequestInit, allowMissingProfile =
     if (response.status === 401 && getAccessToken() === token) clearAccessToken();
     if (allowMissingProfile && response.status === 404) {
       const error: unknown = await response.json();
-      if (error && typeof error === 'object' && 'message' in error
-        && error.message === 'El usuario no tiene perfil de mentor') return MISSING_PROFILE;
+      if (readApiError(error, '').code === 'MENTOR_NOT_FOUND') return MISSING_PROFILE;
     }
     const messages: Record<number, string> = {
       401: 'Inicia sesión para consultar tu participación como mentor.',
@@ -33,12 +33,12 @@ async function request(path: string, options: RequestInit, allowMissingProfile =
     };
     throw new Error(messages[response.status] || `El backend respondió con un error (HTTP ${response.status}).`);
   }
-  const data: unknown = await response.json();
+  const data: unknown = (await response.json()).data;
   return data;
 }
 
 async function getEligibility(signal?: AbortSignal): Promise<boolean> {
-  const data = await request('/mentorship/eligibility', { method: 'POST', signal });
+  const data = await request('/api/v1/mentorship/eligibility', { method: 'GET', signal });
   if (!data || typeof data !== 'object' || !('eligible' in data) || typeof data.eligible !== 'boolean') {
     throw new Error('El backend devolvió la elegibilidad con un formato inválido.');
   }
@@ -52,14 +52,14 @@ function toMentorState(data: unknown, eligible: boolean): MentorState {
 
 export async function getMentorProfile(signal?: AbortSignal): Promise<MentorState> {
   const eligible = await getEligibility(signal);
-  const data = await request('/mentorship/my-profile', { method: 'GET', signal }, true);
+  const data = await request('/api/v1/mentorship/my-profile', { method: 'GET', signal }, true);
   if (data === MISSING_PROFILE) return { isActive: false, requirements: { egresado: eligible } };
   return toMentorState(data, eligible);
 }
 
 export async function updateMentorParticipation(isActive: boolean, signal?: AbortSignal): Promise<MentorState> {
   const eligible = await getEligibility(signal);
-  const data = await request('/mentorship/my-profile/participation', {
+  const data = await request('/api/v1/mentorship/my-profile/participation', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ esta_activo: isActive }),

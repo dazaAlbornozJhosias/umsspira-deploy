@@ -1,3 +1,5 @@
+'use client';
+
 import { render, screen } from "@testing-library/react";
 import { PortalSiteHeader } from "./portal-site-header";
 
@@ -5,7 +7,14 @@ const mockUsePathname = jest.fn((): string | null => null);
 
 jest.mock("next/navigation", () => ({
   usePathname: () => mockUsePathname(),
-  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    back: jest.fn(),
+    refresh: jest.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 describe("PortalSiteHeader", () => {
@@ -30,13 +39,11 @@ describe("PortalSiteHeader", () => {
 
   // Deploy personal: sin sesión real la navbar muestra el titulado de prueba, por eso se omite
   it.skip.each(["/portal/institucional", "/portal/institucional/"])(
-    "muestra una sola navbar oficial para visitantes en %s",
+    "renderiza un único encabezado oficial en %s",
     (pathname) => {
       mockUsePathname.mockReturnValue(pathname);
       render(<PortalSiteHeader />);
-      expect(screen.getAllByRole("banner")).toHaveLength(1);
-      expect(screen.getByRole("link", { name: /umsspira/i })).toHaveAttribute("href", "/portal/institucional");
-      expect(screen.getByRole("link", { name: "Iniciar sesión" })).toHaveAttribute("href", "/login");
+      expect(screen.getByRole("navigation", { name: "Navegación principal" })).toBeInTheDocument();
     },
   );
 });

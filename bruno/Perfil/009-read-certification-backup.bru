@@ -1,0 +1,21 @@
+meta {
+  name: Leer respaldo de certificación
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/v1/perfil/certificaciones/{{certificationId}}/respaldo
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Devuelve los bytes JPG del respaldo privado; usa el token de su titulado propietario.
+
+  Permiso: perfil:self:read.
+}

@@ -1,0 +1,34 @@
+meta {
+  name: 005 - Pedir enlace nuevo (solicitud observada)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/observed/request-link
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "ci": "{{correctionCi}}",
+    "complemento": "{{correctionComplemento}}",
+    "expedidoEn": "{{correctionExpedidoEn}}"
+  }
+}
+
+tests {
+  test("Respuesta exitosa generica e inmediata", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().data.message).to.be.a("string");
+  });
+}
+
+docs {
+  Solicita la generacion y envio en segundo plano de un nuevo enlace de correccion para una solicitud observada identificada por C.I., complemento y departamento de expedicion. La respuesta es siempre identica.
+}

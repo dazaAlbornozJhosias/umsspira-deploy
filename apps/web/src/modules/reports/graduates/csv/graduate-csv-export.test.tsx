@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { GraduateCsvExport } from './graduate-csv-export';
+import { setAccessToken, clearAccessToken } from '@/shared/services/auth-session';
 
 const fetchMock = jest.fn();
 const createObjectUrlMock = jest.fn(() => 'blob:graduate-csv');
@@ -49,10 +50,13 @@ beforeAll(() => {
 
 beforeEach(() => {
   fetchMock.mockReset();
+  setAccessToken('admin-token');
   createObjectUrlMock.mockClear();
   revokeObjectUrlMock.mockClear();
   anchorClickMock.mockClear();
 });
+
+afterEach(() => clearAccessToken());
 
 afterAll(() => {
   jest.restoreAllMocks();
@@ -205,8 +209,8 @@ test('conserva estado y búsqueda, descarga el CSV y notifica el nombre final', 
 
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3000/graduates-report/csv?status=OBSERVADO&search=quispe',
-      { method: 'GET' },
+      'http://localhost:3000/api/v1/reports/graduates/csv?status=OBSERVADA&search=quispe',
+      { method: 'GET', headers: { Authorization: 'Bearer admin-token' } },
     );
   });
 
@@ -227,7 +231,7 @@ test('conserva estado y búsqueda, descarga el CSV y notifica el nombre final', 
   ).not.toBeInTheDocument();
 });
 
-test('TODOS se envía al backend para exportar la misma vista sin filtro de estado', async () => {
+test('TODOS omite el filtro de estado al exportar', async () => {
   fetchMock.mockResolvedValue(
     successfulResponse('nomina-egresados-07102026.csv'),
   );
@@ -246,8 +250,8 @@ test('TODOS se envía al backend para exportar la misma vista sin filtro de esta
 
   await waitFor(() => {
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://localhost:3000/graduates-report/csv?status=TODOS',
-      { method: 'GET' },
+      'http://localhost:3000/api/v1/reports/graduates/csv?',
+      { method: 'GET', headers: { Authorization: 'Bearer admin-token' } },
     );
   });
 });

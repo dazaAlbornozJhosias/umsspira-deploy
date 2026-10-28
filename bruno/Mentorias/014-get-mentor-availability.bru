@@ -1,0 +1,21 @@
+meta {
+  name: Consultar disponibilidad
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/api/v1/mentorship/availability
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Requiere participación activa. Sin configuración devuelve disponibilidad null.
+
+  Permiso: mentores:self:write.
+}

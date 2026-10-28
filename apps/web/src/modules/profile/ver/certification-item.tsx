@@ -1,6 +1,7 @@
-import type { KeyboardEvent, ReactNode } from 'react';
-import { ChevronDown, Download, Image as ImageIcon } from 'lucide-react';
+import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { ChevronDown, Download, Eye, Image as ImageIcon } from 'lucide-react';
 
+import { BackupViewerModal } from '@/modules/profile/components/backup-viewer-modal';
 import type { TimelineItem } from '@/modules/profile/data/profile-data';
 
 type CertificationItemProps = {
@@ -28,6 +29,7 @@ export default function CertificationItem({
   onToggle,
   status,
 }: CertificationItemProps) {
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
   const detailId = `certificacion-${item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
   // Enter se maneja aquí para no depender del clic implícito del navegador; Espacio queda nativo
@@ -83,6 +85,26 @@ export default function CertificationItem({
             {item.document}
           </span>
         ))}
+
+      {/* Visor de la foto real (HU-10): solo si el registro existe en la API y tiene respaldo */}
+      {item.document && item.id && (
+        <button
+          type="button"
+          onClick={() => setIsViewerOpen(true)}
+          className="inline-flex w-fit items-center gap-1.5 rounded-md bg-abyssal-blue px-2 py-1.5 text-[11px] font-semibold text-white transition hover:brightness-110"
+        >
+          <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+          Ver respaldo
+        </button>
+      )}
+
+      {isViewerOpen && item.id && (
+        <BackupViewerModal
+          certificationId={item.id}
+          certificationName={item.title}
+          onClose={() => setIsViewerOpen(false)}
+        />
+      )}
 
       {isOpen && (
         <div id={detailId} className="space-y-3 rounded-[10px] bg-palladian px-[14px] py-3">

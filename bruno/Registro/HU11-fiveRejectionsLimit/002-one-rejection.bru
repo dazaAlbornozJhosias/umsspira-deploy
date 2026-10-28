@@ -1,0 +1,48 @@
+meta {
+  name: HU-11 - Registro con un rechazo
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/sessions
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombres": "{{hu11Nombres}}",
+    "apellidos": "{{hu11Apellidos}}",
+    "ci": "{{hu11Ci}}",
+    "complementoCi": "{{hu11ComplementoCi}}",
+    "expedidoEn": "{{hu11ExpedidoEn}}",
+    "correo": "{{hu11Correo}}",
+    "telefono": "{{hu11Telefono}}",
+    "carreraId": "{{hu11CarreraId}}",
+    "anioEgreso": {{hu11AnioEgreso}},
+    "codigoSis": "{{hu11CodigoSis}}"
+  }
+}
+
+tests {
+  const body = res.getBody();
+
+  test("HU-11: permite registro con un rechazo", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("HU-11: genera un borrador nuevo", function () {
+    expect(body?.data?.sessionToken).to.be.a("string");
+  });
+
+  test("HU-11: no bloquea antes del limite", function () {
+    expect(body?.error?.code).not.to.equal(
+      "REJECTION_LIMIT_REACHED"
+    );
+  });
+}

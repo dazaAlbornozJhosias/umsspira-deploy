@@ -1,6 +1,7 @@
 import { clearAccessToken, getAccessToken } from '@/shared/services/auth-session';
+import { authenticatedFetch, ensureAccessToken, SessionError } from '@/shared/services/auth-session';
 
-export const mentorAvailabilityStatuses = ['AVAILABLE', 'PAUSED', 'UNAVAILABLE'] as const;
+export const mentorAvailabilityStatuses = ['DISPONIBLE', 'EN_PAUSA', 'NO_DISPONIBLE'] as const;
 
 export type MentorAvailabilityStatus = typeof mentorAvailabilityStatuses[number];
 
@@ -9,7 +10,7 @@ export interface MentorAvailability {
   fecha_actualizacion: string | null;
 }
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000').replace(/\/+$/, '');
+const API_URL = '';
 
 export class MentorAvailabilityError extends Error {
   constructor(message: string, public readonly status: number) {
@@ -38,20 +39,21 @@ function parseAvailability(value: unknown): MentorAvailability {
 }
 
 async function requestAvailability(options: RequestInit, action: 'consultar' | 'actualizar') {
-  const token = getAccessToken();
+  const token = getAccessToken() ?? await ensureAccessToken();
   if (!token) {
     throw new MentorAvailabilityError('Inicia sesión para configurar tu disponibilidad.', 401);
   }
 
   let response: Response;
   try {
-    response = await fetch(`${API_URL}/mentorship/availability`, {
+    response = await authenticatedFetch(`${API_URL}/api/v1/mentorship/availability`, {
       ...options,
       credentials: 'omit',
       cache: 'no-store',
       headers: { Accept: 'application/json', ...options.headers, Authorization: `Bearer ${token}` },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof SessionError) throw new MentorAvailabilityError(error.message, error.status);
     throw new MentorAvailabilityError(
       action === 'actualizar'
         ? 'No se pudo actualizar la disponibilidad. Inténtalo de nuevo.'
@@ -77,7 +79,7 @@ async function requestAvailability(options: RequestInit, action: 'consultar' | '
   }
 
   try {
-    return parseAvailability(await response.json());
+    return parseAvailability((await response.json()).data);
   } catch (error) {
     if (error instanceof MentorAvailabilityError) throw error;
     throw new Error('El servidor devolvió un estado de disponibilidad con formato inválido.');

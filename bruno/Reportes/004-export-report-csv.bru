@@ -1,0 +1,27 @@
+meta {
+  name: Descargar reporte CSV
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/reports/graduates/csv
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~careerId: {{careerId}}
+  ~status: {{reportStatus}}
+  ~search:
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Descarga CSV de los registros filtrados. Guarda la respuesta desde Bruno. Para aprobados o rechazados, habilita status y completa reportStatus con APROBADA o RECHAZADA.
+
+  Permiso: reportes:read.
+}

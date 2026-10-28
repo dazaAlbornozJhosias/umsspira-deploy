@@ -1,0 +1,34 @@
+meta {
+  name: Actualizar registro del perfil
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/api/v1/perfil/{{profileSection}}/{{profileRecordId}}
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "institucion": "Universidad Mayor de San Simón",
+    "titulo": "Ingeniería de Sistemas",
+    "grado": "Licenciatura",
+    "anioEgreso": 2025
+  }
+}
+
+docs {
+  El body inicial corresponde a formacion-academica. Si cambias profileSection, utiliza los mismos campos del archivo Agregar experiencia laboral o Agregar certificación. El cuerpo contiene los campos del registro directamente.
+
+  Permiso: perfil:self:write.
+}

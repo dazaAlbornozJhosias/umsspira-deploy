@@ -1,0 +1,15 @@
+meta {
+  name: Consultar catálogo de eventos
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/events/catalog
+  body: none
+  auth: none
+}
+
+docs {
+  Catálogo público de eventos publicados vigentes. Copia un UUID de evento a eventId.
+}

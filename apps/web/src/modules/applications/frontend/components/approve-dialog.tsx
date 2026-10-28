@@ -28,7 +28,7 @@ export function ApproveDialog({
   if (!open) return null;
 
   async function handleConfirm() {
-    const ok = await submitReview({ decision: "APPROVED" });
+    const ok = await submitReview({ decision: "APROBADA" });
     if (ok) onClose();
   }
 

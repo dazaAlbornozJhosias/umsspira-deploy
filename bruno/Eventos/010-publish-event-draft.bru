@@ -1,0 +1,21 @@
+meta {
+  name: Publicar borrador
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/events/drafts/{{eventId}}/publish
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Publica el borrador del creador autenticado. Después de publicarlo deja de admitir la edición de borrador.
+
+  Permiso: eventos:manage.
+}

@@ -1,0 +1,34 @@
+meta {
+  name: Extraer keywords - 401 Sin token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "text": "Node.js TypeScript PostgreSQL"
+  }
+}
+
+tests {
+  test("Status 401 sin token", function() {
+    expect(res.status).to.equal(401);
+  });
+}
+
+docs {
+  HU-1 · T1.7 — Petición sin Authorization header.
+  Debe responder 401 Unauthorized.
+
+  CA-HU5-06: sin token → 401 Unauthorized.
+}

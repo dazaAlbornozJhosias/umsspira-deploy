@@ -1,0 +1,4405 @@
+{
+  "info": {
+    "name": "UMSSPIRA",
+    "description": "",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Estado del servidor",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Salud del servidor. Esta ruta no utiliza el prefijo /api/v1.",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "NLP",
+      "item": [
+        {
+          "name": "Extraer keywords",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Sobre data con keywords y unmapped\", () => {",
+                  "  pm.expect(body.data).to.be.an(\"object\");",
+                  "  pm.expect(body.data.keywords).to.be.an(\"array\");",
+                  "  pm.expect(body.data.unmapped).to.be.an(\"array\");",
+                  "  for (const item of [...body.data.keywords, ...body.data.unmapped]) {",
+                  "    pm.expect(item.term).to.be.a(\"string\");",
+                  "    pm.expect(item.term.length).to.be.above(0);",
+                  "    pm.expect(item.count).to.be.a(\"number\");",
+                  "    pm.expect(item.count).to.be.above(0);",
+                  "  }",
+                  "});",
+                  "pm.test(\"Resuelve variantes de Node.js\", () => {",
+                  "  const item = body.data.keywords.find((keyword) => keyword.term === \"node.js\");",
+                  "  pm.expect(item.count).to.eql(2);",
+                  "});",
+                  "pm.test(\"Conserva símbolos técnicos\", () => {",
+                  "  const terms = body.data.keywords.map((keyword) => keyword.term);",
+                  "  pm.expect(terms).to.include(\"c++\");",
+                  "  pm.expect(terms).to.include(\"c#\");",
+                  "  pm.expect(terms).to.include(\"ci cd\");",
+                  "});",
+                  "pm.test(\"Consolida la misma mención\", () => {",
+                  "  const item = body.data.keywords.find((keyword) => keyword.term === \"amazon web services\");",
+                  "  pm.expect(item.count).to.eql(1);",
+                  "});",
+                  "pm.test(\"Devuelve no mapeadas\", () => {",
+                  "  const item = body.data.unmapped.find((keyword) => keyword.term === \"observabilidad\");",
+                  "  pm.expect(item.count).to.eql(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Usa el accessToken de un titulado o administrador. Normaliza alias, símbolos y la misma mención; deja las palabras desconocidas en unmapped.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Node.JS y nodejs\\nC++ y C#\\nCI/CD\\nAmazon Web Services (AWS)\\nGobierno de TI\\nObservabilidad\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 401\", () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Esquema de error\", () => {",
+                  "  pm.expect(body.error).to.be.an(\"object\");",
+                  "  pm.expect(body.error.code).to.be.a(\"string\");",
+                  "  pm.expect(body.error.code.length).to.be.above(0);",
+                  "  pm.expect(body.error.message).to.be.a(\"string\");",
+                  "  pm.expect(body.error.message.length).to.be.above(0);",
+                  "});",
+                  "pm.test(\"Código UNAUTHENTICATED\", () => pm.expect(body.error.code).to.eql(\"UNAUTHENTICATED\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Sin Authorization debe responder 401.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"JavaScript\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Empresa sin permiso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 403\", () => pm.response.to.have.status(403));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Esquema de error\", () => {",
+                  "  pm.expect(body.error).to.be.an(\"object\");",
+                  "  pm.expect(body.error.code).to.be.a(\"string\");",
+                  "  pm.expect(body.error.code.length).to.be.above(0);",
+                  "  pm.expect(body.error.message).to.be.a(\"string\");",
+                  "  pm.expect(body.error.message.length).to.be.above(0);",
+                  "});",
+                  "pm.test(\"Código FORBIDDEN\", () => pm.expect(body.error.code).to.eql(\"FORBIDDEN\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Usa el accessToken de empresa@umss.edu.bo. El rol empresa no tiene nlp:extract y debe recibir 403.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"JavaScript\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Texto vacío",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Listas vacías\", () => {",
+                  "  pm.expect(body.data.keywords).to.eql([]);",
+                  "  pm.expect(body.data.unmapped).to.eql([]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Un texto vacío responde 200 con listas vacías.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Límite de 5000 caracteres",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Sobre data con keywords y unmapped\", () => {",
+                  "  pm.expect(body.data).to.be.an(\"object\");",
+                  "  pm.expect(body.data.keywords).to.be.an(\"array\");",
+                  "  pm.expect(body.data.unmapped).to.be.an(\"array\");",
+                  "  for (const item of [...body.data.keywords, ...body.data.unmapped]) {",
+                  "    pm.expect(item.term).to.be.a(\"string\");",
+                  "    pm.expect(item.term.length).to.be.above(0);",
+                  "    pm.expect(item.count).to.be.a(\"number\");",
+                  "    pm.expect(item.count).to.be.above(0);",
+                  "  }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Un texto de exactamente 5000 caracteres responde 200.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Límite superado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 400\", () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Esquema de error\", () => {",
+                  "  pm.expect(body.error).to.be.an(\"object\");",
+                  "  pm.expect(body.error.code).to.be.a(\"string\");",
+                  "  pm.expect(body.error.code.length).to.be.above(0);",
+                  "  pm.expect(body.error.message).to.be.a(\"string\");",
+                  "  pm.expect(body.error.message.length).to.be.above(0);",
+                  "});",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => pm.expect(body.error.code).to.eql(\"VALIDATION_ERROR\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Un texto de 5001 caracteres responde 400 con VALIDATION_ERROR.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Campo extra",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 400\", () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Esquema de error\", () => {",
+                  "  pm.expect(body.error).to.be.an(\"object\");",
+                  "  pm.expect(body.error.code).to.be.a(\"string\");",
+                  "  pm.expect(body.error.code.length).to.be.above(0);",
+                  "  pm.expect(body.error.message).to.be.a(\"string\");",
+                  "  pm.expect(body.error.message.length).to.be.above(0);",
+                  "});",
+                  "pm.test(\"Error de validación\", () => pm.expect(body.error.code).to.eql(\"VALIDATION_ERROR\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "El schema es estricto: cualquier campo adicional responde 400.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"JavaScript\",\n  \"extra\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Text no es cadena",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 400\", () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Esquema de error\", () => {",
+                  "  pm.expect(body.error).to.be.an(\"object\");",
+                  "  pm.expect(body.error.code).to.be.a(\"string\");",
+                  "  pm.expect(body.error.code.length).to.be.above(0);",
+                  "  pm.expect(body.error.message).to.be.a(\"string\");",
+                  "  pm.expect(body.error.message.length).to.be.above(0);",
+                  "});",
+                  "pm.test(\"Error de validación\", () => pm.expect(body.error.code).to.eql(\"VALIDATION_ERROR\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "text debe ser una cadena; un número responde 400.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": 42\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Iniciar sesión",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Completa email y password en Auth/folder.bru. Copia manualmente data.accessToken a accessToken. Para sesión persistida, copia umsspira_refresh y umsspira_csrf desde las cookies de la respuesta a refreshToken y csrfToken.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@umss.edu.bo\",\n  \"password\": \"admin1234\",\n  \"remember\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Usuario autenticado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Consulta identidad, permisos y scopes del token actual.\n\nPermiso: user:self:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar sesión persistida",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "umsspira_refresh={{refreshToken}}",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Usa el valor manual de refreshToken, obtenido de la cookie umsspira_refresh del login. No utiliza el access token.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/session",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "session"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Renovar sesión",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "umsspira_refresh={{refreshToken}}",
+                "disabled": false,
+                "type": "default"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Completa refreshToken y csrfToken con las cookies del login. Después de renovar, copia el nuevo data.accessToken y las nuevas cookies a sus variables. El refresh token anterior queda consumido.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Listar sesiones propias",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Copia manualmente el UUID de una sesión a sessionId para revocarla.\n\nPermiso: auth:sessions:self.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/sessions",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "sessions"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Revocar una sesión",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Completa sessionId con el UUID de una sesión propia.\n\nPermiso: auth:sessions:self.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/sessions/{{sessionId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "sessions",
+                "{{sessionId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Cambiar contraseña",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "newPassword debe tener de 15 a 128 caracteres y ser diferente. Esta operación revoca las sesiones; vuelve a iniciar sesión con la nueva contraseña.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/password",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "password"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{password}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cerrar sesión actual",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Invalida la sesión del accessToken actual. Responde 204 sin cuerpo.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Cerrar todas las sesiones",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Invalida todas las sesiones del usuario autenticado. Responde 204 sin cuerpo.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout-all",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout-all"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Consultar mi usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Consulta el usuario actual, sus permisos y sus scopes. companyId y careerId se toman de esos scopes cuando correspondan.\n\nPermiso: user:self:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/user/me",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "user",
+                "me"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Eventos",
+      "item": [
+        {
+          "name": "Consultar catálogo de eventos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Catálogo público de eventos publicados vigentes. Copia un UUID de evento a eventId.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/catalog",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "catalog"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar evento publicado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Detalle público de un evento publicado.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/{{eventId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "{{eventId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Listar eventos propios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Usa el accessToken de un administrador. Lista sus eventos en cualquier estado.\n\nPermiso: eventos:manage.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/owned",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "owned"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar evento propio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Consulta un evento del creador autenticado, en cualquier estado.\n\nPermiso: eventos:manage.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/owned/{{eventId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "owned",
+                "{{eventId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Cargar portada",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Adjunta JPG, PNG o WebP de hasta 5 MiB. Copia data.id a eventCoverId. Puedes agregar imageUrl con la ruta devuelta al body de Crear evento o Actualizar borrador.\n\nPermiso: eventos:manage.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/covers",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "covers"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "disabled": false,
+                  "type": "file",
+                  "src": "{{eventCoverFilePath}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Leer portada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Completa eventCoverId. El Bearer permite previsualizar cargas y borradores propios. Para una portada publicada puedes cambiar Auth a No Auth en este mismo archivo.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/covers/{{eventCoverId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "covers",
+                "{{eventCoverId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Crear evento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Completa eventStartDate y eventEndDate como ISO con zona horaria, por ejemplo 2027-01-20T09:00:00-04:00. Copia data.id a eventId. Para portada, agrega imageUrl: /api/v1/events/covers/<eventCoverId> usando la referencia de Cargar portada.\n\nPermiso: eventos:manage.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Encuentro de titulados\",\n  \"description\": \"Encuentro universitario de intercambio profesional.\",\n  \"startDate\": \"{{eventStartDate}}\",\n  \"endDate\": \"{{eventEndDate}}\",\n  \"maxCapacity\": 100,\n  \"location\": \"Auditorio UMSS\",\n  \"status\": \"BORRADOR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Consultar borrador",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Consulta un evento propio que todavía está en BORRADOR.\n\nPermiso: eventos:manage.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/drafts/{{eventId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "drafts",
+                "{{eventId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Actualizar borrador",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Reemplaza los campos editables del borrador propio. Para adjuntar portada agrega imageUrl con la ruta devuelta al cargarla; null la desvincula y omitir el campo la conserva.\n\nPermiso: eventos:manage.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/drafts/{{eventId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "drafts",
+                "{{eventId}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Encuentro de titulados\",\n  \"description\": \"Encuentro universitario de intercambio profesional.\",\n  \"startDate\": \"{{eventStartDate}}\",\n  \"endDate\": \"{{eventEndDate}}\",\n  \"maxCapacity\": 100,\n  \"location\": \"Auditorio UMSS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Publicar borrador",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Publica el borrador del creador autenticado. Después de publicarlo deja de admitir la edición de borrador.\n\nPermiso: eventos:manage.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/drafts/{{eventId}}/publish",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "drafts",
+                "{{eventId}}",
+                "publish"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Eliminar portada sin vincular",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Elimina una carga propia que todavía no se utiliza en un evento. Responde 204 sin cuerpo.\n\nPermiso: eventos:manage.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/covers/{{eventCoverId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "covers",
+                "{{eventCoverId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Inscribirse a evento",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Confirma la inscripción del Titulado autenticado. El evento debe estar PUBLICADO, vigente y con cupo. No envíes userId ni body.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/events/{{eventId}}/registrations",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "events",
+                "{{eventId}}",
+                "registrations"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Backoffice",
+      "item": [
+        {
+          "name": "Listar solicitudes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Requiere administrador. Los filtros desmarcados son opcionales; career filtra por texto del nombre de carrera. Copia el UUID de una solicitud a applicationId.\n\nPermiso: solicitudes:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/applications?page=1&pageSize=15",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "applications?page=1&pageSize=15"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "15"
+                },
+                {
+                  "key": "career",
+                  "value": ""
+                },
+                {
+                  "key": "status",
+                  "value": "PENDIENTE"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "age",
+                  "value": "over48"
+                }
+              ],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar solicitud",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Requiere administrador de la carrera de la solicitud.\n\nPermiso: solicitudes:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/applications/{{applicationId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "applications",
+                "{{applicationId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar referencia del documento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Devuelve la ruta autenticada del documento. Para abrir sus bytes utiliza Leer documento.\n\nPermiso: solicitudes:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/applications/{{applicationId}}/document",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "applications",
+                "{{applicationId}}",
+                "document"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Leer documento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Devuelve los bytes del documento privado. Puedes visualizar o guardar la respuesta desde Bruno.\n\nPermiso: solicitudes:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/applications/{{applicationId}}/document/content",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "applications",
+                "{{applicationId}}",
+                "document",
+                "content"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Emitir dictamen",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Requiere administrador de la carrera. En este mismo archivo puedes cambiar decision por OBSERVADA o RECHAZADA y agregar category y note; note requiere de 10 a 500 caracteres. APROBADA envía el código de activación por correo.\n\nPermiso: solicitudes:review.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/applications/{{applicationId}}/review",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "applications",
+                "{{applicationId}}",
+                "review"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"APROBADA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reenviar activación",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Reenvía el código de una solicitud aprobada cuya cuenta todavía no se activó. Copia el nuevo código del correo a activationCode.\n\nPermiso: solicitudes:review.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/applications/{{applicationId}}/activation",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "applications",
+                "{{applicationId}}",
+                "activation"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mentorias",
+      "item": [
+        {
+          "name": "Consultar directorio de mentores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Directorio público de mentores activos visibles. Copia el UUID de un mentor a mentorId para la gestión administrativa.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/profiles",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "profiles"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar elegibilidad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Usa el accessToken del titulado que desea participar como mentor.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/eligibility",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "eligibility"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Cambiar participación",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Activa la participación propia; false la desactiva. Copia el UUID del perfil a mentorId. Mentor y usuario tienen UUID distintos.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/my-profile/participation",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "my-profile",
+                "participation"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"esta_activo\": true,\n  \"experiencia\": \"Desarrollo de aplicaciones y trabajo en equipos de software.\",\n  \"anios_exp\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Consultar participación propia",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Consulta el perfil de mentor vinculado al titulado autenticado.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/my-profile",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "my-profile"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar información profesional",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Consulta descripción, experiencia, información complementaria y foto del mentor propio.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/my-profile/information",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "my-profile",
+                "information"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Guardar información profesional",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Guarda información propia. foto_perfil admite una URL HTTP/HTTPS o null. experiencia es obligatoria.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/my-profile/information",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "my-profile",
+                "information"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Mentoría en desarrollo profesional\",\n  \"experiencia\": \"Experiencia en desarrollo de aplicaciones y equipos de software.\",\n  \"informacion_relevante\": \"Disponibilidad para compartir experiencias profesionales.\",\n  \"foto_perfil\": null,\n  \"anios_exp\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Limpiar información profesional",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Limpia los campos descriptivos del mentor propio. Conserva participación, años, áreas y disponibilidad.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/my-profile/information",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "my-profile",
+                "information"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar áreas de especialidad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Requiere participación activa. Copia un UUID del catálogo a mentorAreaId.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/my-profile/areas",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "my-profile",
+                "areas"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Seleccionar áreas de especialidad",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Requiere participación activa. Reemplaza la selección por entre una y cinco áreas raíz activas. Puedes agregar otros UUID al arreglo de este archivo.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/my-profile/areas",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "my-profile",
+                "areas"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"areaIds\": [\n    \"{{mentorAreaId}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Consultar catálogo de intereses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Muestra intereses de las áreas seleccionadas. Copia un UUID de interés a mentorInterestId.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/interests/catalog",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "interests",
+                "catalog"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar intereses propios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Consulta los intereses que tiene seleccionados el mentor propio.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/interests/mine",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "interests",
+                "mine"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Agregar intereses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Agrega intereses de las áreas ya seleccionadas. Puedes añadir varios UUID al mismo arreglo.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/interests",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "interests"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\n    \"{{mentorInterestId}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Quitar interés",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Quita un interés del mentor propio; no recibe el UUID del área raíz.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/interests/{{mentorInterestId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "interests",
+                "{{mentorInterestId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar disponibilidad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Requiere participación activa. Sin configuración devuelve disponibilidad null.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/availability",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "availability"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Cambiar disponibilidad",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Requiere participación activa. Cambia el valor de este archivo a DISPONIBLE, EN_PAUSA o NO_DISPONIBLE según corresponda.\n\nPermiso: mentores:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/availability",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "availability"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"availabilityStatus\": \"DISPONIBLE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Desactivar mentor desde administración",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Usa el token de un administrador de la carrera del mentor. mentorId es el UUID del mentor, no el del usuario.\n\nPermiso: mentores:manage.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/mentorship/profiles/{{mentorId}}/deactivate",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "mentorship",
+                "profiles",
+                "{{mentorId}}",
+                "deactivate"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Empresas",
+      "item": [
+        {
+          "name": "Consultar encabezado de empresa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Usa el accessToken de una empresa. Copia companyId de data.scopes.companyIds en Me.\n\nPermiso: empresas:self:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/header",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "companies",
+                "{{companyId}}",
+                "header"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar contacto de empresa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Consulta datos de contacto de una empresa vinculada a la cuenta autenticada.\n\nPermiso: empresas:self:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/contact",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "companies",
+                "{{companyId}}",
+                "contact"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Actualizar perfil de empresa",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Actualiza los campos enviados de la empresa propia. Puedes quitar campos del ejemplo para conservar sus valores actuales.\n\nPermiso: empresas:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/profile",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "companies",
+                "{{companyId}}",
+                "profile"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razonSocial\": \"Empresa de ejemplo\",\n  \"eslogan\": \"Conectamos talento\",\n  \"descripcionLarga\": \"Empresa dedicada al desarrollo de soluciones tecnológicas.\",\n  \"tamanoEmpresa\": \"Mediana\",\n  \"sitioWeb\": \"https://ejemplo.org\",\n  \"correo\": \"contacto@ejemplo.org\",\n  \"telefono\": \"+591 70000000\",\n  \"direccion\": \"Av. Principal 123, Cochabamba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vacantes",
+      "item": [
+        {
+          "name": "Publicar vacante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Usa el token de la empresa y un companyId de sus scopes. modalidad admite PRESENCIAL, HIBRIDO o REMOTO; la descripción técnica requiere al menos 50 caracteres.\n\nPermiso: vacantes:create.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/job-postings",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-postings"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresaId\": \"{{companyId}}\",\n  \"titulo\": \"Desarrollador de software\",\n  \"modalidad\": \"REMOTO\",\n  \"nivelExperiencia\": \"Junior\",\n  \"descripcionTecnica\": \"Desarrollo y mantenimiento de aplicaciones web utilizando TypeScript, PostgreSQL y prácticas de trabajo colaborativo.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Perfil",
+      "item": [
+        {
+          "name": "Consultar perfil profesional",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Usa el accessToken de un titulado. Devuelve formación, experiencia y certificaciones del perfil propio.\n\nPermiso: perfil:self:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/perfil",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "perfil"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Agregar formación académica",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Copia el UUID del registro creado a profileRecordId y usa profileSection=formacion-academica para consultarlo, editarlo o eliminarlo.\n\nPermiso: perfil:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/perfil/formacion-academica",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "perfil",
+                "formacion-academica"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"institucion\": \"Universidad Mayor de San Simón\",\n  \"titulo\": \"Ingeniería de Sistemas\",\n  \"grado\": \"Licenciatura\",\n  \"anioEgreso\": 2025\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Agregar experiencia laboral",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Copia el UUID creado a profileRecordId y usa profileSection=experiencia-laboral. fechaFin=null indica experiencia vigente.\n\nPermiso: perfil:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/perfil/experiencia-laboral",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "perfil",
+                "experiencia-laboral"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": \"Empresa de ejemplo\",\n  \"cargo\": \"Desarrollador de software\",\n  \"fechaInicio\": \"2024-02-01\",\n  \"fechaFin\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Agregar certificación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Copia el UUID creado a certificationId para su respaldo y a profileRecordId para operaciones genéricas; usa profileSection=certificaciones.\n\nPermiso: perfil:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/perfil/certificaciones",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "perfil",
+                "certificaciones"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Desarrollo de aplicaciones\",\n  \"entidadEmisora\": \"Instituto de formación\",\n  \"grado\": \"Certificación\",\n  \"anioEmision\": 2025\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Consultar registro del perfil",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "profileSection admite formacion-academica, experiencia-laboral o certificaciones. Completa profileRecordId con el registro correspondiente.\n\nPermiso: perfil:self:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/perfil/{{profileSection}}/{{profileRecordId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "perfil",
+                "{{profileSection}}",
+                "{{profileRecordId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Actualizar registro del perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "El body inicial corresponde a formacion-academica. Si cambias profileSection, utiliza los mismos campos del archivo Agregar experiencia laboral o Agregar certificación. El cuerpo contiene los campos del registro directamente.\n\nPermiso: perfil:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/perfil/{{profileSection}}/{{profileRecordId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "perfil",
+                "{{profileSection}}",
+                "{{profileRecordId}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"institucion\": \"Universidad Mayor de San Simón\",\n  \"titulo\": \"Ingeniería de Sistemas\",\n  \"grado\": \"Licenciatura\",\n  \"anioEgreso\": 2025\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar registro del perfil",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Elimina el registro propio indicado por profileSection y profileRecordId. Responde 204 sin cuerpo.\n\nPermiso: perfil:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/perfil/{{profileSection}}/{{profileRecordId}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "perfil",
+                "{{profileSection}}",
+                "{{profileRecordId}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Cargar respaldo de certificación",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Completa certificationId y certificationFilePath. Adjunta un JPG de hasta 5 MiB; sustituye el respaldo anterior de esa certificación.\n\nPermiso: perfil:self:write.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/perfil/certificaciones/{{certificationId}}/respaldo",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "perfil",
+                "certificaciones",
+                "{{certificationId}}",
+                "respaldo"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "archivo",
+                  "disabled": false,
+                  "type": "file",
+                  "src": "{{certificationFilePath}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Leer respaldo de certificación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Devuelve los bytes JPG del respaldo privado; usa el token de su titulado propietario.\n\nPermiso: perfil:self:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/perfil/certificaciones/{{certificationId}}/respaldo",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "perfil",
+                "certificaciones",
+                "{{certificationId}}",
+                "respaldo"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Exportar perfil a JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Descarga el perfil profesional propio como archivo JSON.\n\nPermiso: perfil:self:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/perfil/exportar-json",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "perfil",
+                "exportar-json"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Registro",
+      "item": [
+        {
+          "name": "Listar carreras",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Copia manualmente un UUID del catálogo a careerId.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/registrations/careers",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "registrations",
+                "careers"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Crear borrador de registro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Completa careerId y registrationEmail; adapta los datos de ejemplo al egresado. Copia data.sessionToken a sessionToken. El registro todavía no crea una cuenta activa.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/registrations/sessions",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "registrations",
+                "sessions"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Pérez López\",\n  \"ci\": \"8123456\",\n  \"complementoCi\": \"\",\n  \"expedidoEn\": \"CB\",\n  \"correo\": \"{{registrationEmail}}\",\n  \"telefono\": \"70000000\",\n  \"carreraId\": \"{{careerId}}\",\n  \"anioEgreso\": 2025,\n  \"codigoSis\": \"202012345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Consultar borrador",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Usa el sessionToken del borrador de registro, que es distinto de un token de autenticación.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/registrations/sessions/{{sessionToken}}",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "registrations",
+                "sessions",
+                "{{sessionToken}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Solicitar código de correo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "El campo registrationId recibe el mismo sessionToken del borrador. Lee el correo y copia sus seis dígitos a registrationCode. En desarrollo, Mailpit está en http://localhost:8025.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/email-verification/resend",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "email-verification",
+                "resend"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"registrationId\": \"{{sessionToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Verificar correo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Completa registrationCode con el código recibido por correo para este borrador.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/email-verification/verify",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "email-verification",
+                "verify"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"registrationId\": \"{{sessionToken}}\",\n  \"code\": \"{{registrationCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cargar documento de respaldo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Borrador con correo verificado. registrationFilePath es la ruta local a un PDF, PNG o JPG de hasta 5 MiB. Copia data.path a documentId y data.sizeBytes a documentSizeBytes.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/documents",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "documents"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "sessionToken",
+                  "disabled": false,
+                  "type": "text",
+                  "value": "{{sessionToken}}"
+                },
+                {
+                  "key": "tipoDocumento",
+                  "disabled": false,
+                  "type": "text",
+                  "value": "{{documentType}}"
+                },
+                {
+                  "key": "archivo",
+                  "disabled": false,
+                  "type": "file",
+                  "src": "{{registrationFilePath}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Enviar solicitud documental",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Completa documentId y documentSizeBytes con los valores de la carga. rutaStorage recibe el UUID del archivo, no una URL ni una ruta local. Copia data.idSolicitud a applicationId.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/registrations/submit",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "registrations",
+                "submit"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionToken\": \"{{sessionToken}}\",\n  \"fechaTitulacion\": \"2025-05-01\",\n  \"fechaIngreso\": \"2020-02-01\",\n  \"deseaMentor\": false,\n  \"tipoDocumento\": \"{{documentType}}\",\n  \"rutaStorage\": \"{{documentId}}\",\n  \"sizeBytes\": {{documentSizeBytes}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Activar cuenta aprobada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Después de la aprobación, completa activationCode con el código del correo y newPassword con una contraseña de 15 a 128 caracteres. Luego utiliza Login con el correo registrado.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/registrations/activate",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "registrations",
+                "activate"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": \"{{applicationId}}\",\n  \"code\": \"{{activationCode}}\",\n  \"password\": \"{{newPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "item": [
+        {
+          "name": "Consultar indicadores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Usa el token de un administrador. Sin filtro incluye todas sus carreras asignadas.\n\nPermiso: reportes:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/metrics",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reports",
+                "metrics"
+              ],
+              "query": [
+                {
+                  "key": "careerId",
+                  "value": "{{careerId}}"
+                }
+              ],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Listar solicitudes para reportes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Listado paginado. Habilita los filtros opcionales que necesites; reportStatus admite PENDIENTE, APROBADA, OBSERVADA o RECHAZADA.\n\nPermiso: reportes:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/graduates?page=1&limit=10",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reports",
+                "graduates?page=1&limit=10"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "careerId",
+                  "value": "{{careerId}}"
+                },
+                {
+                  "key": "status",
+                  "value": "{{reportStatus}}"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Consultar vista previa del reporte",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Datos del reporte sin paginación, con los filtros seleccionados y las carreras autorizadas del administrador.\n\nPermiso: reportes:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/graduates/report",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reports",
+                "graduates",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "careerId",
+                  "value": "{{careerId}}"
+                },
+                {
+                  "key": "status",
+                  "value": "{{reportStatus}}"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Descargar reporte CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Descarga CSV de los registros filtrados. Guarda la respuesta desde Bruno. Para aprobados o rechazados, habilita status y completa reportStatus con APROBADA o RECHAZADA.\n\nPermiso: reportes:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/graduates/csv",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reports",
+                "graduates",
+                "csv"
+              ],
+              "query": [
+                {
+                  "key": "careerId",
+                  "value": "{{careerId}}"
+                },
+                {
+                  "key": "status",
+                  "value": "{{reportStatus}}"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Descargar reporte PDF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Descarga PDF institucional de los registros filtrados. Guarda o visualiza la respuesta desde Bruno. Los filtros son iguales a los de CSV y vista previa.\n\nPermiso: reportes:read.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/graduates/pdf",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reports",
+                "graduates",
+                "pdf"
+              ],
+              "query": [
+                {
+                  "key": "careerId",
+                  "value": "{{careerId}}"
+                },
+                {
+                  "key": "status",
+                  "value": "{{reportStatus}}"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ],
+              "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "NLP",
+      "description": "HU-1 · T1.6 — Carpeta NLP para POST /nlp/extract.\nPermiso requerido: nlp:extract. Máximo 5 000 caracteres.\nVariables usadas: {{baseUrl}}, {{accessToken}}.",
+      "item": [
+        {
+          "name": "Extraer keywords — 200 OK",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Extrae keywords del texto del perfil. Requiere JWT con permiso nlp:extract.\n\nEspera 200 con { keywords: [{term, count}], unmapped: [{term, count}] }.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Desarrollador Backend con Node.js y TypeScript. Experiencia en API REST, PostgreSQL y Docker. Certificación AWS Certified Solutions Architect - Associate de Amazon Web Services.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Esquema de respuesta correcto', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('keywords').that.is.an('array');",
+                  "  pm.expect(json).to.have.property('unmapped').that.is.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Cada keyword tiene term y count', function () {",
+                  "  var json = pm.response.json();",
+                  "  json.keywords.forEach(function(k) {",
+                  "    pm.expect(k).to.have.property('term').that.is.a('string');",
+                  "    pm.expect(k).to.have.property('count').that.is.a('number');",
+                  "  });",
+                  "});",
+                  "",
+                  "pm.test('Tiempo de respuesta menor a 1 000 ms', function () {",
+                  "  pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Extraer keywords — 401 Sin token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Petición sin Authorization header. Debe responder 401 Unauthorized.\n\nCA-10: sin token → 401.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Node.js TypeScript PostgreSQL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401 sin token', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Extraer keywords — 403 Sin permiso nlp:extract",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessTokenSinPermiso}}",
+                "type": "string"
+              }
+            },
+            "description": "Token válido pero sin el permiso nlp:extract (p.ej. rol empresa o titulado sin el permiso asignado). Debe responder 403 Forbidden.\n\nCA-10: con token sin permiso nlp:extract → 403.\n\nVariable: {{accessTokenSinPermiso}} — reemplazar con un token que no tenga nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Node.js TypeScript PostgreSQL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403 sin permiso nlp:extract', function () {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Extraer keywords — 400 Texto supera 5 000 caracteres",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Texto de 5 001 caracteres. Debe responder 400 Bad Request con mensaje de validación.\n\nCA-6: texto > 5 000 caracteres → 400.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"{{textoLargo5001}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Genera un texto de 5 001 caracteres (supera el límite de 5 000)",
+                  "var texto = 'a'.repeat(5001);",
+                  "pm.variables.set('textoLargo5001', texto);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400 por texto mayor a 5 000 caracteres', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta contiene mensaje de error', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Extraer keywords — 400 Texto vacío",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Texto vacío o ausente. Debe responder 400 Bad Request.\n\nCA-6: texto faltante o vacío → 400.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400 por texto vacío', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Extraer keywords — 200 Sin keywords mapeadas (lista vacía)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Texto sin palabras que coincidan con el diccionario. keywords debe ser [] y unmapped puede tener candidatos.\n\nCA-7: perfil sin keywords mapeadas → keywords es lista vacía.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Vendedor en tienda de barrio. Atención al cliente y caja registradora.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('keywords es lista vacía cuando no hay coincidencias', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.keywords).to.be.an('array').that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "008 - Extraer keywords - 200 Solo espacios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 con texto de solo espacios', function () { pm.response.to.have.status(200); });",
+                  "pm.test('data.keywords es lista vacia', function () { pm.expect(pm.response.json().data.keywords).to.be.an('array').that.is.empty; });",
+                  "pm.test('data.unmapped es lista vacia', function () { pm.expect(pm.response.json().data.unmapped).to.be.an('array').that.is.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "HU-5 T1.7 - Texto compuesto solo por espacios.\n\nCA-HU5-10: texto vacio o solo espacios -> HTTP 200 con listas vacias.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"     \"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "009 - Extraer keywords - 200 Normalizacion mayusculas tildes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('node.js reconocido con count 2', function () { var kws = pm.response.json().data.keywords; var n = kws.find(function(k){return k.term==='node.js';}); pm.expect(n, 'Debe encontrar node.js').to.exist; pm.expect(n.count).to.equal(2); });",
+                  "pm.test('typescript reconocido con count 2', function () { var kws = pm.response.json().data.keywords; var t = kws.find(function(k){return k.term==='typescript';}); pm.expect(t, 'Debe encontrar typescript').to.exist; pm.expect(t.count).to.equal(2); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "HU-5 T1.7 - Normalizacion de mayusculas, minusculas y tildes.\n\nCA-HU5-02: variantes -> termino canonico unificado con count sumado.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"Node.JS nodejs TypeScript TYPESCRIPT\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "010 - Extraer keywords - 200 Simbolos tecnicos C++ C# Node.js",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('c++ se conserva como termino', function () { var kws = pm.response.json().data.keywords; pm.expect(kws.find(function(k){return k.term==='c++';}), 'Debe encontrar c++').to.exist; });",
+                  "pm.test('c# se conserva como termino', function () { var kws = pm.response.json().data.keywords; pm.expect(kws.find(function(k){return k.term==='c#';}), 'Debe encontrar c#').to.exist; });",
+                  "pm.test('node.js se conserva', function () { var kws = pm.response.json().data.keywords; pm.expect(kws.find(function(k){return k.term==='node.js';}), 'Debe encontrar node.js').to.exist; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "HU-5 T1.7 - Tratamiento de simbolos tecnicos.\n\nCA-HU5-03: + y # finales se conservan; punto interno en node.js se conserva.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"Experiencia en C++ y C#. Desarrollo con Node.js en entornos CI/CD.\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "011 - Extraer keywords - 200 Alias cortos y terminos compuestos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('gobierno de ti reconocido', function () { var kws = pm.response.json().data.keywords; pm.expect(kws.find(function(k){return k.term==='gobierno de ti';}), 'Debe encontrar gobierno de ti').to.exist; });",
+                  "pm.test('ml -> machine learning', function () { var kws = pm.response.json().data.keywords; pm.expect(kws.find(function(k){return k.term==='machine learning';}), 'ml debe resolverse a machine learning').to.exist; });",
+                  "pm.test('js -> javascript', function () { var kws = pm.response.json().data.keywords; pm.expect(kws.find(function(k){return k.term==='javascript';}), 'js debe resolverse a javascript').to.exist; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "HU-5 T1.7 - Alias cortos ml->machine learning, js->javascript y termino compuesto 'gobierno de ti'.\n\nCA-HU5-05: terminos compuestos con alias cortos y stopwords internas.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"Gobierno de TI con ML y JS\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "012 - Extraer keywords - 200 Sin cruce entre segmentos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('gobierno de ti NO aparece (no hay cruce de segmento)', function () { var kws = pm.response.json().data.keywords; pm.expect(kws.find(function(k){return k.term==='gobierno de ti';})).to.be.undefined; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "HU-5 T1.7 - Los n-gramas no cruzan el limite de segmento (salto de linea).\n\nCA-HU5-11: 'gobierno de\\nti' no debe reconocerse como 'gobierno de ti'.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"gobierno de\\nti\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "013 - Extraer keywords - 400 Tipo de campo incorrecto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400 cuando text es numero', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Formato { error: { code, message } }', function () { var json = pm.response.json(); pm.expect(json).to.have.property('error').that.is.an('object'); pm.expect(json.error).to.have.property('message'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "HU-5 T1.7 - text con tipo numerico -> 400.\n\nCA-HU5-19: el endpoint acepta UNICAMENTE text de tipo texto.\nCA-HU5-20: formato de error { error: { code, message } }.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": 12345}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "014 - Extraer keywords - 400 Campo text ausente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400 cuando falta el campo text', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Formato { error: { code, message } }', function () { var json = pm.response.json(); pm.expect(json).to.have.property('error').that.is.an('object'); pm.expect(json.error).to.have.property('message'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "HU-5 T1.7 - Cuerpo sin el campo text -> 400.\n\nCA-HU5-19: campo text requerido.\nCA-HU5-20: formato de error { error: { code, message } }.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "015 - Extraer keywords - 400 Campos extra en el cuerpo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400 cuando hay campos extra', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Formato { error: { code, message } }', function () { var json = pm.response.json(); pm.expect(json).to.have.property('error').that.is.an('object'); pm.expect(json.error).to.have.property('message'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "HU-5 T1.7 - Cuerpo con campos extra -> 400 (schema Zod estricto).\n\nCA-HU5-19: el endpoint acepta UNICAMENTE el campo text.\nCA-HU5-20: formato de error { error: { code, message } }.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"Node.js\", \"campoExtra\": \"valor no permitido\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "016 - Extraer keywords - 200 Orden y limite unmapped",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('data.unmapped no supera 50 terminos', function () { pm.expect(pm.response.json().data.unmapped.length).to.be.at.most(50); });",
+                  "pm.test('data.keywords ordenada de mayor a menor count', function () { var kws = pm.response.json().data.keywords; for(var i=0;i<kws.length-1;i++){pm.expect(kws[i].count).to.be.at.least(kws[i+1].count);} });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "HU-5 T1.7 - Orden descendente por count y limite de 50 en unmapped.\n\nCA-HU5-08: keywords y unmapped ordenados de mayor a menor count; empate -> alfabetico; unmapped max 50.\n\nPermiso: nlp:extract.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/nlp/extract",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "nlp",
+                "extract"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\": \"alpha beta gamma alpha beta alpha delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega foo bar baz qux quux quuz corge grault garply waldo fred plugh xyzzy thud slug flux knob blip drip drum frog toad crow hawk dove rook wren lark swift finch hawk dove rook wren lark swift\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "default"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "email",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "password",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "csrfToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "newPassword",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "applicationId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "eventCoverFilePath",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "eventCoverId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "eventStartDate",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "eventEndDate",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "companyId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "profileSection",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "profileRecordId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "certificationId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "certificationFilePath",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "mentorAreaId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "mentorInterestId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "mentorId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "registrationEmail",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "careerId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "sessionToken",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "registrationCode",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "documentType",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "registrationFilePath",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "documentId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "documentSizeBytes",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "activationCode",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "reportStatus",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "accessTokenSinPermiso",
+      "value": "",
+      "type": "default",
+      "description": "Token JWT válido pero sin el permiso nlp:extract. Usar para el caso 403 de la carpeta NLP. NO guardar tokens reales aquí."
+    }
+  ]
+}

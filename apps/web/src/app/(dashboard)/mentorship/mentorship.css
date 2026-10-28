@@ -150,6 +150,23 @@
   letter-spacing: .5px;
 }
 
+.mentor-card-button + .mentor-card-button {
+  margin-top: .625rem;
+}
+
+.mentor-requests-access-note {
+  margin-top: .625rem;
+  color: var(--ink-70);
+  font-size: .75rem;
+  line-height: 1.25rem;
+}
+
+.mentor-requests-access-note a {
+  color: var(--navy);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 @media (min-width: 640px) {
   .mentorship-shell {
     padding: 2.5rem 1.5rem;

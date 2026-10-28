@@ -1,0 +1,26 @@
+meta {
+  name: 004 - Rechazar acceso cuando solicitud no esta observada
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/registrations/observed/access
+  body: none
+  auth: none
+}
+
+headers {
+  X-Correction-Token: token-solicitud-aprobada
+}
+
+tests {
+  test("Acceso denegado con 404 generico si solicitud ya no esta observada", function() {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody().error.code).to.equal("TOKEN_NOT_FOUND");
+  });
+}
+
+docs {
+  Si la solicitud asociada al token cambio de estado a Aprobada, Rechazada o Pendiente, el endpoint devuelve el mismo error 404 generico sin filtrar el estado actual del expediente.
+}

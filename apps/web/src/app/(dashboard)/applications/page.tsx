@@ -1,41 +1,76 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/shared/components/button';
 import { ApplicationDrawer } from '@/modules/applications/frontend/components/application-drawer';
 import {
   fetchApplicationsBoard,
   type BoardPage,
 } from '@/modules/applications/frontend/services/applications-board.service';
+import {
+  changeFilters,
+  changePage,
+  changePageSize,
+  clampPage,
+  parseApplicationsUrl,
+  toApplicationsParams,
+  type ApplicationsUrlState,
+} from '@/modules/applications/frontend/services/application-query';
 import { EMPTY_FILTERS, RequestsFilters, type BoardFilters } from './_components/requests-filters';
-import { PAGE_SIZE, RequestsTable } from './_components/requests-table';
+import { RequestsTable } from './_components/requests-table';
 
-const CAREERS_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/registrations/careers`;
+const CAREERS_URL = '/api/v1/registrations/careers';
+const SEARCH_DELAY_MS = 400;
 
 // Bandeja de solicitudes del backoffice (HU-04): lista, filtros, expediente y dictamen.
-export default function ApplicationsPage() {
-  const [filters, setFilters] = useState<BoardFilters>(EMPTY_FILTERS);
-  const [searchInput, setSearchInput] = useState('');
-  const [page, setPage] = useState(1);
+function ApplicationsBoardView() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const queryString = searchParams.toString();
+  const query = useMemo(
+    () => parseApplicationsUrl(new URLSearchParams(queryString)),
+    [queryString],
+  );
+  const queryRef = useRef<ApplicationsUrlState>(query);
+  queryRef.current = query;
+
+  const [searchInput, setSearchInput] = useState(query.search);
   const [board, setBoard] = useState<BoardPage | null>(null);
   const [careers, setCareers] = useState<{ id: string; nombre: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const requestId = useRef(0);
 
-  const loadBoard = useCallback(async (activeFilters: BoardFilters, activePage: number) => {
+  const updateQuery = useCallback((next: ApplicationsUrlState) => {
+    queryRef.current = next;
+    const params = toApplicationsParams(next).toString();
+    router.replace(params ? `${pathname}?${params}` : pathname, { scroll: false });
+  }, [pathname, router]);
+
+  const loadBoard = useCallback(async (activeQuery: ApplicationsUrlState) => {
+    const currentRequestId = ++requestId.current;
     setIsLoading(true);
     setError(null);
     const result = await fetchApplicationsBoard({
-      page: activePage,
-      pageSize: PAGE_SIZE,
-      career: activeFilters.career || undefined,
-      status: activeFilters.status || undefined,
-      search: activeFilters.search || undefined,
+      page: activeQuery.page,
+      pageSize: activeQuery.pageSize,
+      career: activeQuery.career || undefined,
+      status: activeQuery.status || undefined,
+      search: activeQuery.search || undefined,
     });
+    if (currentRequestId !== requestId.current) return;
+
     if (result.ok) {
+      const clampedQuery = clampPage(activeQuery, result.data.total);
+      if (clampedQuery.page !== activeQuery.page) {
+        updateQuery(clampedQuery);
+        return;
+      }
       setBoard(result.data);
       setNeedsLogin(false);
     } else {
@@ -43,23 +78,23 @@ export default function ApplicationsPage() {
       setError(result.message);
     }
     setIsLoading(false);
-  }, []);
+  }, [updateQuery]);
 
-  // El buscador espera 400 ms después de dejar de escribir (CA-04.2: búsqueda en tiempo real).
   useEffect(() => {
+    setSearchInput(query.search);
+  }, [query.search]);
+
+  useEffect(() => {
+    if (query.search === searchInput.trim()) return;
     const timer = setTimeout(() => {
-      setFilters((current) => {
-        if (current.search === searchInput) return current;
-        setPage(1);
-        return { ...current, search: searchInput };
-      });
-    }, 400);
+      updateQuery(changeFilters(queryRef.current, { search: searchInput }));
+    }, SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [query.search, searchInput, updateQuery]);
 
   useEffect(() => {
-    loadBoard(filters, page);
-  }, [filters, page, loadBoard]);
+    void loadBoard(query);
+  }, [query, loadBoard]);
 
   useEffect(() => {
     fetch(CAREERS_URL, { cache: 'no-store' })
@@ -72,8 +107,14 @@ export default function ApplicationsPage() {
 
   function handleFiltersChange(next: BoardFilters) {
     setSearchInput(next.search);
-    setFilters({ ...next, search: '' });
-    setPage(1);
+    const currentQuery = queryRef.current;
+    if (next.career !== currentQuery.career || next.status !== currentQuery.status) {
+      updateQuery(changeFilters(currentQuery, {
+        search: next.search,
+        career: next.career,
+        status: next.status,
+      }));
+    }
   }
 
   if (needsLogin) {
@@ -106,13 +147,12 @@ export default function ApplicationsPage() {
       </header>
 
       <RequestsFilters
-        filters={{ ...filters, search: searchInput }}
+        filters={{ ...query, search: searchInput }}
         careers={careers}
         onChange={handleFiltersChange}
         onClear={() => {
           setSearchInput('');
-          setFilters(EMPTY_FILTERS);
-          setPage(1);
+          updateQuery(changeFilters(queryRef.current, EMPTY_FILTERS));
         }}
       />
 
@@ -133,7 +173,10 @@ export default function ApplicationsPage() {
             total={board.total}
             page={board.page}
             pageSize={board.pageSize}
-            onPageChange={setPage}
+            onPageChange={(page) => updateQuery(changePage(queryRef.current, page))}
+            onPageSizeChange={(pageSize) =>
+              updateQuery(changePageSize(queryRef.current, pageSize))
+            }
             onSelect={setSelectedId}
           />
         )
@@ -145,9 +188,17 @@ export default function ApplicationsPage() {
         onClose={() => setSelectedId(null)}
         onReviewed={() => {
           setSelectedId(null);
-          loadBoard(filters, page);
+          void loadBoard(queryRef.current);
         }}
       />
     </main>
+  );
+}
+
+export default function ApplicationsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ApplicationsBoardView />
+    </Suspense>
   );
 }

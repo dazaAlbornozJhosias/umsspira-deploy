@@ -1,0 +1,21 @@
+meta {
+  name: Listar eventos propios
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/events/owned
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Usa el accessToken de un administrador. Lista sus eventos en cualquier estado.
+
+  Permiso: eventos:manage.
+}

@@ -1,0 +1,25 @@
+meta {
+  name: Consultar indicadores
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/reports/metrics
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~careerId: {{careerId}}
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Usa el token de un administrador. Sin filtro incluye todas sus carreras asignadas.
+
+  Permiso: reportes:read.
+}

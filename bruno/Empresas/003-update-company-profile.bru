@@ -1,0 +1,38 @@
+meta {
+  name: Actualizar perfil de empresa
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/v1/companies/{{companyId}}/profile
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "razonSocial": "Empresa de ejemplo",
+    "eslogan": "Conectamos talento",
+    "descripcionLarga": "Empresa dedicada al desarrollo de soluciones tecnológicas.",
+    "tamanoEmpresa": "Mediana",
+    "sitioWeb": "https://ejemplo.org",
+    "correo": "contacto@ejemplo.org",
+    "telefono": "+591 70000000",
+    "direccion": "Av. Principal 123, Cochabamba"
+  }
+}
+
+docs {
+  Actualiza los campos enviados de la empresa propia. Puedes quitar campos del ejemplo para conservar sus valores actuales.
+
+  Permiso: empresas:self:write.
+}

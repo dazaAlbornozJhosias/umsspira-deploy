@@ -12,10 +12,10 @@ it('expone el estado HTTP para manejar acceso denegado', async () => {
 });
 it('conserva los intereses dependientes cuando la API los proporciona', async () => {
   const state = { areas: [{ id: '1', nombre: 'Backend', descripcion: null }], selectedIds: ['1'], intereses: [{ id_area: '1', nombre: 'APIs REST' }] };
-  fetchMock.mockResolvedValue({ ok: true, json: async () => state });
+  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: state }) });
   expect(await getMentorAreas()).toEqual(state);
 });
 it('no inventa intereses si el contrato actual no los devuelve', async () => {
-  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ areas: [], selectedIds: [] }) });
+  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: ({ areas: [], selectedIds: [] }) }) });
   expect((await getMentorAreas()).intereses).toBeUndefined();
 });

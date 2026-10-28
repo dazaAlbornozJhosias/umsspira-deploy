@@ -1,8 +1,16 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { uploadDocument, type DocumentType, type UploadDocumentResult } from '../services';
-import {DOCUMENT_ERROR_MESSAGES,validateDocumentFile,type PreviewKind } from '../validation/document-file';
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  uploadDocument,
+  type DocumentType,
+  type UploadDocumentResult,
+} from "../services";
+import {
+  DOCUMENT_ERROR_MESSAGES,
+  validateDocumentFile,
+  type PreviewKind,
+} from "../validation/document-file";
 
 interface SelectedDocument {
   file: File;
@@ -35,53 +43,68 @@ export function useDocumentUpload() {
    * anterior y se muestra el mensaje de CA-03.3.
    */
 
-  const selectFile = useCallback(async (file: File | null | undefined): Promise<boolean> => {
-    if (!file) return false;
+  const selectFile = useCallback(
+    async (file: File | null | undefined): Promise<boolean> => {
+      if (!file) {
+        validationId.current += 1;
+        setSelected(null);
+        setFileError(null);
+        setIsValidating(false);
+        return true;
+      }
 
-    const currentId = ++validationId.current;
-    setIsValidating(true);
+      const currentId = ++validationId.current;
+      setIsValidating(true);
 
-    let previewKind: PreviewKind | null = null;
+      let previewKind: PreviewKind | null = null;
 
-    try {
-      previewKind = await validateDocumentFile(file);
-    } catch {
-      previewKind = null;
-    }
+      try {
+        previewKind = await validateDocumentFile(file);
+      } catch {
+        previewKind = null;
+      }
 
-    // Ignorar resultados de una selección anterior.
-    if (currentId !== validationId.current) {
-      return false;
-    }
+      // Ignorar resultados de una selección anterior.
+      if (currentId !== validationId.current) {
+        return false;
+      }
 
-    setIsValidating(false);
+      setIsValidating(false);
 
-    if (!previewKind) {
-      setFileError(DOCUMENT_ERROR_MESSAGES.invalidFile);
-    return false;
-    }
+      if (!previewKind) {
+        setFileError(DOCUMENT_ERROR_MESSAGES.invalidFile);
+        return false;
+      }
 
-    setFileError(null);
+      setFileError(null);
 
-    setSelected({
-      file,
-      previewKind,
-      previewUrl: URL.createObjectURL(file),
-    });
+      setSelected({
+        file,
+        previewKind,
+        previewUrl: URL.createObjectURL(file),
+      });
 
-    return true;
-  }, []);
-
+      return true;
+    },
+    [],
+  );
 
   const upload = useCallback(
-    async (sessionToken: string, tipoDocumento: DocumentType): Promise<UploadDocumentResult | null> => {
+    async (
+      sessionToken: string,
+      tipoDocumento: DocumentType,
+    ): Promise<UploadDocumentResult | null> => {
       if (!selected) {
         setFileError(DOCUMENT_ERROR_MESSAGES.missingFile);
         return null;
       }
       setIsUploading(true);
       try {
-        return await uploadDocument({ sessionToken, tipoDocumento, file: selected.file });
+        return await uploadDocument({
+          sessionToken,
+          tipoDocumento,
+          file: selected.file,
+        });
       } finally {
         setIsUploading(false);
       }

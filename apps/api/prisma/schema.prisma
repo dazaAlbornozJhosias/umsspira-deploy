@@ -1,0 +1,1334 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TipoRespaldo {
+  FOTO
+  QR
+  DOCUMENTO
+
+  @@map("enum(FOTO,QR,DOCUMENTO)")
+}
+
+enum DepartamentoExpedicion {
+  LP
+  CB
+  SC
+  OR
+  PT
+  TJ
+  CH
+  BE
+  PD
+  Extranjero
+
+  @@map("enum(LP,CB,SC,OR,PT,TJ,CH,BE,PD,Extranjero)")
+}
+
+model Usuario {
+  portadas_evento       PortadaEvento[]
+  revisiones            Dictamen[]            @relation("dictamen_revisor")
+  nombre                String?               @db.VarChar
+  rol                   String?               @db.VarChar
+  usuario_id            String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  correo                String?               @unique @db.VarChar(254)
+  estado                EstadoUsuario         @default(PENDIENTE)
+  cuenta_acceso         CuentaAcceso?
+  sesiones_acceso       SesionAcceso[]
+  administrador_sistema AdministradorSistema?
+  auditoria_registros   Auditoria[]
+
+  administrador_de_carrera_registros  AdministradorDeCarrera[]   @relation("administrador_de_carrera_id_usuario_usuario")
+  empresa_registros                   Empresa[]                  @relation("empresa_id_usuario_usuario")
+  titulado                            Titulado?                  @relation("titulado_id_usuario_usuario")
+  mentoria_solicitud_registros        MentoriaSolicitud[]        @relation("mentoria_solicitud_id_usuario_usuario")
+  postulacion_registros               Postulacion[]              @relation("postulacion_id_usuario_usuario")
+  evento_registros                    Evento[]                   @relation("evento_id_usuario_usuario")
+  inscripcion_evento_registros        InscripcionEvento[]        @relation("inscripcion_evento_id_usuario_usuario")
+  usuario_solicitud_registros         UsuarioSolicitud[]         @relation("usuario_solicitud_id_usuario_usuario")
+  notificacion_registros              Notificacion[]             @relation("notificacion_id_usuario_usuario")
+  dispositivo_registros               Dispositivo[]              @relation("dispositivo_usuario_id_usuario")
+  conversacion_registros              Conversacion[]             @relation("conversacion_creado_por_usuario")
+  participante_conversacion_registros ParticipanteConversacion[] @relation("participante_conversacion_usuario_id_usuario")
+  mensaje_registros                   Mensaje[]                  @relation("mensaje_emisor_id_usuario")
+  mensaje_estado_registros            MensajeEstado[]            @relation("mensaje_estado_usuario_id_usuario")
+
+  password_reset_token_registros      PasswordResetToken[]
+  password_reset_solicitud_registros  PasswordResetSolicitud[]
+  password_reset_evento_registros     PasswordResetEvento[]
+
+  @@map("usuario")
+}
+
+enum EstadoUsuario {
+  PENDIENTE
+  ACTIVO
+  BLOQUEADO
+  ELIMINADO
+
+  @@map("estado_usuario")
+}
+
+enum EstadoSolicitudMentoria {
+  PENDIENTE @map("pendiente")
+  ACEPTADO  @map("aceptado")
+  RECHAZADO @map("rechazado")
+  CANCELADO @map("cancelado")
+
+  @@map("estado_solicitud_mentoria")
+}
+
+enum EstadoConexionMentoria {
+  ACTIVA     @map("activa")
+  FINALIZADA @map("finalizada")
+
+  @@map("estado_conexion_mentoria")
+}
+
+enum EstadoSesionMentoria {
+  PROGRAMADO @map("programado")
+  COMPLETADO @map("completado")
+  CANCELADO  @map("cancelado")
+
+  @@map("estado_sesion_mentoria")
+}
+
+model CuentaAcceso {
+  id_usuario     String   @id @db.Uuid
+  password_hash  String   @db.Text
+  version        Int      @default(1)
+  actualizada_en DateTime @default(now()) @db.Timestamptz(6)
+  usuario        Usuario  @relation(fields: [id_usuario], references: [usuario_id], onDelete: Cascade)
+
+  @@map("cuenta_acceso")
+}
+
+model RolAcceso {
+  codigo     String       @id @db.VarChar(40)
+  habilitado Boolean      @default(true)
+  permisos   RolPermiso[]
+
+  @@map("rol_acceso")
+}
+
+model PermisoAcceso {
+  codigo     String       @id @db.VarChar(100)
+  habilitado Boolean      @default(true)
+  roles      RolPermiso[]
+
+  @@map("permiso_acceso")
+}
+
+model RolPermiso {
+  rol_codigo     String        @db.VarChar(40)
+  permiso_codigo String        @db.VarChar(100)
+  rol            RolAcceso     @relation(fields: [rol_codigo], references: [codigo], onDelete: Cascade)
+  permiso        PermisoAcceso @relation(fields: [permiso_codigo], references: [codigo], onDelete: Cascade)
+
+  @@id([rol_codigo, permiso_codigo])
+  @@map("rol_permiso")
+}
+
+model SesionAcceso {
+  id                   String             @id @db.Uuid
+  id_usuario           String             @db.Uuid
+  version_credenciales Int
+  csrf_hash            String             @db.Char(64)
+  creada_en            DateTime           @default(now()) @db.Timestamptz(6)
+  renovada_en          DateTime           @default(now()) @db.Timestamptz(6)
+  expira_en            DateTime           @db.Timestamptz(6)
+  revocada_en          DateTime?          @db.Timestamptz(6)
+  motivo_revocacion    String?            @db.VarChar(40)
+  recordar             Boolean            @default(false)
+  agente               String?            @db.VarChar(256)
+  usuario              Usuario            @relation(fields: [id_usuario], references: [usuario_id], onDelete: Cascade)
+  renovaciones         RenovacionAcceso[]
+
+  @@index([id_usuario, revocada_en, expira_en])
+  @@map("sesion_acceso")
+}
+
+model RenovacionAcceso {
+  hash         String       @id @db.Char(64)
+  id_sesion    String       @db.Uuid
+  creada_en    DateTime     @default(now()) @db.Timestamptz(6)
+  consumida_en DateTime?    @db.Timestamptz(6)
+  sesion       SesionAcceso @relation(fields: [id_sesion], references: [id], onDelete: Cascade)
+
+  @@index([id_sesion])
+  @@map("renovacion_acceso")
+}
+
+model Carrera {
+  nombre String? @db.VarChar
+  id     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  administrador_sistema_registros    AdministradorSistema[]   @relation("administrador_sistema_id_carrera_carrera")
+  administrador_de_carrera_registros AdministradorDeCarrera[] @relation("administrador_de_carrera_id_carrera_carrera")
+  reporte_registros                  Reporte[]                @relation("reporte_id_carrera_carrera")
+  encuesta_registros                 Encuesta[]               @relation("encuesta_id_carrera_carrera")
+  titulado_registros                 Titulado[]               @relation("titulado_id_carrera_carrera")
+  detalle_solicitud_registros        DetalleSolicitud[]       @relation("detalle_solicitud_id_carrera_carrera")
+
+  @@map("carrera")
+}
+
+model TipoArchivo {
+  nombre String? @db.VarChar
+  id     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  curriculum_vitae_registros   CurriculumVitae[]   @relation("curriculum_vitae_id_tipo_archivo_tipo_archivo")
+  documento_respaldo_registros DocumentoRespaldo[] @relation("documento_respaldo_id_tipo_archivo_tipo_archivo")
+
+  @@map("tipo_archivo")
+}
+
+model ModalidadTrabajo {
+  nombre String? @db.VarChar
+  id     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  requerimiento_laboral_registros RequerimientoLaboral[] @relation("requerimiento_laboral_id_modalidad_modalidad_trabajo")
+
+  @@map("modalidad_trabajo")
+}
+
+model Area {
+  nombre              String?   @db.VarChar
+  padre_id            String?   @db.Uuid
+  esta_activo         Boolean?
+  fecha_creacion      DateTime? @db.Date
+  fecha_actualizacion DateTime? @db.Date
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  padre                             Area?                    @relation("area_padre_id_area", fields: [padre_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "area_padre_id_fkey")
+  hijos                             Area[]                   @relation("area_padre_id_area")
+  perfil_area_registros             PerfilArea[]             @relation("perfil_area_area_id_area")
+  mentor_area_registros             MentorArea[]             @relation("mentor_area_id_area_area")
+  requerimiento_habilidad_registros RequerimientoHabilidad[] @relation("requerimiento_habilidad_id_area_area")
+  palabra_clave_area_registros      PalabraClaveArea[]
+  afinidad_radar_registros          AfinidadRadar[]
+
+  @@map("area")
+}
+
+model AdministradorSistema {
+  id_usuario String?  @unique @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  id_carrera String?  @db.Uuid
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  carrera                            Carrera?                  @relation("administrador_sistema_id_carrera_carrera", fields: [id_carrera], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "administrador_sistema_id_carrera_fkey")
+  dictamen_registros                 Dictamen[]                @relation("dictamen_id_administrador_sistema_administrador_sistema")
+  usuario                            Usuario?                  @relation(fields: [id_usuario], references: [usuario_id], onDelete: NoAction)
+  auditoria_dictamen_registros       AuditoriaDictamen[]
+  validacion_certificacion_registros ValidacionCertificacion[]
+
+  @@map("administrador_sistema")
+}
+
+model AdministradorDeCarrera {
+  id_usuario     String?   @db.Uuid
+  id_carrera     String?   @db.Uuid
+  estado         String?   @db.VarChar
+  fecha_registro DateTime? @db.Date
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  usuario            Usuario?   @relation("administrador_de_carrera_id_usuario_usuario", fields: [id_usuario], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "administrador_de_carrera_id_usuario_fkey")
+  carrera            Carrera?   @relation("administrador_de_carrera_id_carrera_carrera", fields: [id_carrera], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "administrador_de_carrera_id_carrera_fkey")
+  reporte_registros  Reporte[]  @relation("reporte_id_administrador_administrador_de_carrera")
+  encuesta_registros Encuesta[] @relation("encuesta_id_administrador_administrador_de_carrera")
+
+  @@map("administrador_de_carrera")
+}
+
+model TipoReporte {
+  nombre         String?  @db.VarChar
+  descripcion    String?  @db.VarChar
+  disponibilidad Boolean?
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  reporte_registros Reporte[] @relation("reporte_id_tipo_reporte_tipo_reporte")
+
+  @@map("tipo_reporte")
+}
+
+model Reporte {
+  id_administrador String?   @db.Uuid
+  id_tipo_reporte  String?   @db.Uuid
+  id_carrera       String?   @db.Uuid
+  fecha_creacion   DateTime? @db.Date
+  formato          String?   @db.VarChar
+  archivo_url      String?   @db.Text
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  administrador_de_carrera AdministradorDeCarrera? @relation("reporte_id_administrador_administrador_de_carrera", fields: [id_administrador], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reporte_id_administrador_fkey")
+  tipo_reporte             TipoReporte?            @relation("reporte_id_tipo_reporte_tipo_reporte", fields: [id_tipo_reporte], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reporte_id_tipo_reporte_fkey")
+  carrera                  Carrera?                @relation("reporte_id_carrera_carrera", fields: [id_carrera], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reporte_id_carrera_fkey")
+
+  @@map("reporte")
+}
+
+model Encuesta {
+  condicion_laboral Boolean?
+  cargo             String?   @db.VarChar(150)
+  empresa           String?   @db.VarChar(200)
+  area              String?   @db.VarChar(150)
+  modalidad         String?   @db.VarChar(20)
+  salario_mensual   String?   @db.VarChar(30)
+  tiempo_insercion  String?   @db.VarChar(40)
+  id_administrador  String?   @db.Uuid
+  id_carrera        String?   @db.Uuid
+  titulo            String?   @db.VarChar
+  fecha_inicio      DateTime? @db.Date
+  fecha_fin         DateTime? @db.Date
+  estado            String?   @db.VarChar
+  fecha_creacion    DateTime? @db.Date
+  formato           String?   @db.VarChar
+  direccion_url     String?   @db.Text
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  administrador_de_carrera AdministradorDeCarrera? @relation("encuesta_id_administrador_administrador_de_carrera", fields: [id_administrador], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "encuesta_id_administrador_fkey")
+  carrera                  Carrera?                @relation("encuesta_id_carrera_carrera", fields: [id_carrera], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "encuesta_id_carrera_fkey")
+
+  @@map("encuesta")
+}
+
+model Empresa {
+  id_usuario          String?   @db.Uuid
+  razon_social        String?   @db.VarChar
+  nit                 String?   @db.VarChar
+  descripcion         String?   @db.VarChar
+  correo              String?   @db.VarChar
+  sitio_web           String?   @db.VarChar
+  fecha_registro      DateTime? @db.Timestamp(6)
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eslogan             String?   @db.VarChar
+  logo_url            String?   @db.Text
+  banner_url          String?   @db.Text
+  tamano_empresa      String?   @db.VarChar
+  descripcion_larga   String?   @db.Text
+  fecha_actualizacion DateTime? @default(now()) @db.Timestamp(6)
+
+  usuario                         Usuario?               @relation("empresa_id_usuario_usuario", fields: [id_usuario], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "empresa_id_usuario_fkey")
+  telefono_empresa_registros      TelefonoEmpresa[]      @relation("telefono_empresa_id_empresa_empresa")
+  sector_empresa_registros        SectorEmpresa[]        @relation("sector_empresa_id_empresa_empresa")
+  direccion_empresa_registros     DireccionEmpresa[]     @relation("direccion_empresa_id_empresa_empresa")
+  perfil_empresa_registros        PerfilEmpresa[]        @relation("perfil_empresa_id_empresa_empresa")
+  requerimiento_laboral_registros RequerimientoLaboral[] @relation("requerimiento_laboral_id_empresa_empresa")
+  vacante_registros               Vacante[]              @relation("vacante_id_empresa_empresa")
+
+  @@map("empresa")
+}
+
+model TelefonoEmpresa {
+  id_empresa String? @db.Uuid
+  numero     String? @db.VarChar
+  tipo       String? @db.VarChar
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  empresa Empresa? @relation("telefono_empresa_id_empresa_empresa", fields: [id_empresa], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "telefono_empresa_id_empresa_fkey")
+
+  @@map("telefono_empresa")
+}
+
+model SectorEmpresa {
+  id_empresa  String? @db.Uuid
+  nombre      String? @db.VarChar
+  descripcion String? @db.VarChar
+  estado      String? @db.VarChar
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  empresa Empresa? @relation("sector_empresa_id_empresa_empresa", fields: [id_empresa], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "sector_empresa_id_empresa_fkey")
+
+  @@map("sector_empresa")
+}
+
+model DireccionEmpresa {
+  id_empresa   String? @db.Uuid
+  departamento String? @db.VarChar
+  direccion    String? @db.VarChar
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  empresa Empresa? @relation("direccion_empresa_id_empresa_empresa", fields: [id_empresa], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "direccion_empresa_id_empresa_fkey")
+
+  @@map("direccion_empresa")
+}
+
+model PerfilEmpresa {
+  id_empresa     String?   @db.Uuid
+  nombre         String?   @db.VarChar
+  apellido       String?   @db.VarChar
+  correo         String?   @db.VarChar
+  contrasenia    String?   @db.VarChar
+  cargo          String?   @db.VarChar
+  estado         String?   @db.VarChar
+  fecha_creacion DateTime? @db.Timestamp(6)
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  empresa Empresa? @relation("perfil_empresa_id_empresa_empresa", fields: [id_empresa], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "perfil_empresa_id_empresa_fkey")
+
+  @@map("perfil_empresa")
+}
+
+model Titulado {
+  anio_egreso         Int?     @db.SmallInt
+  expedido_en         String?  @db.VarChar(20)
+  rechazos_acumulados Int      @default(0) @db.SmallInt
+  bloqueado           Boolean  @default(false)
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  mentor              Mentor?
+  id_descripcion      String?  @db.Uuid
+  apellido            String?  @db.VarChar
+  cod_sis             Decimal? @db.Decimal
+  id_carrera          String?  @db.Uuid
+  ci                  String?  @db.VarChar
+  extension_ci        String?  @db.VarChar
+  anio_ingreso        Int?     @db.SmallInt
+  grado               String?  @db.VarChar
+  id_usuario          String?  @unique @db.Uuid
+  nombre              String?  @db.VarChar
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  carrera                            Carrera?                @relation("titulado_id_carrera_carrera", fields: [id_carrera], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "titulado_id_carrera_fkey")
+  usuario                            Usuario?                @relation("titulado_id_usuario_usuario", fields: [id_usuario], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "titulado_id_usuario_fkey")
+  curriculum_vitae                   CurriculumVitae?        @relation("curriculum_vitae_id_titulado_titulado")
+  formacion_academica_registros      FormacionAcademica[]    @relation("formacion_academica_id_titulado_titulado")
+  experiencia_laboral_registros      ExperienciaLaboral[]    @relation("experiencia_laboral_id_titulado_titulado")
+  certificacion_registros            Certificacion[]         @relation("certificacion_id_titulado_titulado")
+  perfil_area_registros              PerfilArea[]            @relation("perfil_area_id_titulado_titulado")
+  solicitud_registros                Solicitud[]             @relation("solicitud_titulado")
+  calculo_radar_registros            CalculoRadar[]
+  palabra_clave_no_mapeada_registros PalabraClaveNoMapeada[]
+
+  @@map("titulado")
+}
+
+model CurriculumVitae {
+  id_tipo_archivo String?  @db.Uuid
+  ruta            String?  @db.Text
+  valido          Boolean?
+  id_titulado     String?  @unique @db.Uuid
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  tipo_archivo TipoArchivo? @relation("curriculum_vitae_id_tipo_archivo_tipo_archivo", fields: [id_tipo_archivo], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "curriculum_vitae_id_tipo_archivo_fkey")
+  titulado     Titulado?    @relation("curriculum_vitae_id_titulado_titulado", fields: [id_titulado], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "curriculum_vitae_id_titulado_fkey")
+
+  @@map("curriculum_vitae")
+}
+
+model FormacionAcademica {
+  institucion    String    @db.VarChar(150)
+  titulo         String    @db.VarChar(150)
+  anio_egreso    Int       @db.SmallInt
+  fecha_creacion DateTime? @default(now()) @db.Timestamp(6)
+  grado          String?   @db.VarChar(50)
+  id_titulado    String    @db.Uuid
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  titulado           Titulado            @relation("formacion_academica_id_titulado_titulado", fields: [id_titulado], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "formacion_academica_id_titulado_fkey")
+  respaldo_registros FormacionRespaldo[]
+
+  @@map("formacion_academica")
+}
+
+model FormacionRespaldo {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_formacion String    @db.Uuid
+  tipo         String    @db.VarChar(20)
+  archivo_key  String    @db.VarChar(255)
+  fecha_subida DateTime? @default(now()) @db.Timestamp(6)
+
+  formacion FormacionAcademica @relation(fields: [id_formacion], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id_formacion])
+  @@map("formacion_respaldo")
+}
+
+model ExperienciaLaboral {
+  empresa        String    @db.VarChar(150)
+  cargo          String    @db.VarChar(100)
+  fecha_inicio   DateTime  @db.Date
+  fecha_fin      DateTime? @db.Date
+  fecha_creacion DateTime? @default(now()) @db.Timestamp(6)
+  id_titulado    String    @db.Uuid
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  titulado Titulado @relation("experiencia_laboral_id_titulado_titulado", fields: [id_titulado], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "experiencia_laboral_id_titulado_fkey")
+
+  @@map("experiencia_laboral")
+}
+
+model Certificacion {
+  nombre            String    @db.VarChar(150)
+  id_titulado       String    @db.Uuid
+  entidad_emisora   String    @db.VarChar(150)
+  grado             String    @db.VarChar(50)
+  anio_emision      Int?      @db.SmallInt
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fecha_creacion    DateTime? @default(now()) @db.Timestamp(6)
+  estado_validacion String    @default("sin_respaldo") @db.VarChar(20)
+
+  titulado                         Titulado                  @relation("certificacion_id_titulado_titulado", fields: [id_titulado], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "certificacion_id_titulado_fkey")
+  certificacion_respaldo_registros CertificacionRespaldo[]   @relation("certificacion_respaldo_id_certificacion_certificacion")
+  validacion_registros             ValidacionCertificacion[]
+
+  @@map("certificacion")
+}
+
+model CertificacionRespaldo {
+  archivo          ArchivoPerfil?
+  tipo             TipoRespaldo
+  archivo_key      String         @db.VarChar(255)
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fecha_subida     DateTime?      @default(now()) @db.Timestamp(6)
+  id_certificacion String         @db.Uuid
+
+  certificacion Certificacion @relation("certificacion_respaldo_id_certificacion_certificacion", fields: [id_certificacion], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "certificacion_respaldo_id_certificacion_fkey")
+
+  @@map("certificacion_respaldo")
+}
+
+model ValidacionCertificacion {
+  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_certificacion         String   @db.Uuid
+  id_administrador_sistema String   @db.Uuid
+  estado                   String   @db.VarChar(20)
+  justificacion            String?  @db.Text
+  fecha_creacion           DateTime @default(now()) @db.Timestamp(6)
+
+  certificacion         Certificacion        @relation(fields: [id_certificacion], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  administrador_sistema AdministradorSistema @relation(fields: [id_administrador_sistema], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id_certificacion, fecha_creacion])
+  @@index([id_administrador_sistema])
+  @@map("validacion_certificacion")
+}
+
+model Auditoria {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @map("Id") @db.Uuid
+  id_usuario     String?  @map("Id_usuario") @db.Uuid
+  nombre         String   @map("Nombre") @db.VarChar(100)
+  funcion        String   @map("Funcion") @db.VarChar(100)
+  tabla_afectada String   @map("Tabla_afectada") @db.VarChar(63)
+  id_registro    String?  @map("Id_registro") @db.Uuid
+  fecha_hora     DateTime @default(now()) @map("Fecha_hora") @db.Timestamp(6)
+
+  usuario Usuario? @relation(fields: [id_usuario], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id_usuario, fecha_hora])
+  @@index([tabla_afectada, id_registro])
+  @@map("auditoria")
+}
+
+model PerfilArea {
+  id_titulado             String?   @db.Uuid
+  area_id                 String?   @db.Uuid
+  descripcion_profesional String?   @db.Text
+  fecha_creacion          DateTime? @db.Date
+  fecha_actualizacion     DateTime? @db.Date
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  titulado Titulado? @relation("perfil_area_id_titulado_titulado", fields: [id_titulado], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "perfil_area_id_titulado_fkey")
+  area     Area?     @relation("perfil_area_area_id_area", fields: [area_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "perfil_area_area_id_fkey")
+
+  @@map("perfil_area")
+}
+
+model Mentor {
+  id_titulado           String    @unique @db.Uuid
+  titulado              Titulado  @relation(fields: [id_titulado], references: [id], onDelete: Restrict)
+  descripcion           String?   @db.VarChar(500)
+  informacion_relevante String?   @db.VarChar(500)
+  foto_perfil           String?   @db.Text
+  experiencia           String?   @db.Text
+  esta_activo           Boolean?
+  anios_exp             Int?      @db.Integer
+  fecha_creacion        DateTime? @db.Date
+  fecha_actualizacion   DateTime? @db.Date
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  mentor_area_registros               MentorArea[]              @relation("mentor_area_id_mentor_mentor")
+  disponibilidad_mentor_registros     DisponibilidadMentor[]    @relation("disponibilidad_mentor_id_mentor_mentor")
+  espacio_disponible_mentor_registros EspacioDisponibleMentor[] @relation("espacio_disponible_mentor_id_mentor_mentor")
+  mentoria_solicitud_registros        MentoriaSolicitud[]       @relation("mentoria_solicitud_id_mentor_mentor")
+
+  @@map("mentor")
+}
+
+model MentorArea {
+  id_mentor      String?   @db.Uuid
+  id_area        String?   @db.Uuid
+  fecha_creacion DateTime? @db.Date
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  mentor Mentor? @relation("mentor_area_id_mentor_mentor", fields: [id_mentor], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mentor_area_id_mentor_fkey")
+  area   Area?   @relation("mentor_area_id_area_area", fields: [id_area], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mentor_area_id_area_fkey")
+
+  @@map("mentor_area")
+}
+
+model DisponibilidadMentor {
+  id_mentor           String?   @db.Uuid
+  estado              String?   @db.VarChar
+  fecha_creacion      DateTime? @db.Date
+  fecha_actualizacion DateTime? @db.Date
+  hora_inicio         DateTime? @db.Time(6)
+  hora_fin            DateTime? @db.Time(6)
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  mentor Mentor? @relation("disponibilidad_mentor_id_mentor_mentor", fields: [id_mentor], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "disponibilidad_mentor_id_mentor_fkey")
+
+  @@map("disponibilidad_mentor")
+}
+
+model EspacioDisponibleMentor {
+  id_mentor           String?   @db.Uuid
+  dia_semana          Int?      @db.SmallInt
+  horario_inicio      DateTime? @db.Time(6)
+  horario_fin         DateTime? @db.Time(6)
+  esta_activo         Boolean?
+  fecha_creacion      DateTime? @db.Date
+  fecha_actualizacion DateTime? @db.Date
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  mentor Mentor? @relation("espacio_disponible_mentor_id_mentor_mentor", fields: [id_mentor], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "espacio_disponible_mentor_id_mentor_fkey")
+
+  @@map("espacio_disponible_mentor")
+}
+
+model MentoriaSolicitud {
+  id_mentor           String?                  @db.Uuid
+  id_usuario          String?                  @db.Uuid
+  solicitud_fecha     DateTime?                @db.Date
+  solicitud_inicio    DateTime?                @db.Time(6)
+  solicitud_fin       DateTime?                @db.Time(6)
+  mensaje             String?                  @db.Text
+  estado              EstadoSolicitudMentoria?
+  fecha_respuesta     DateTime?                @db.Date
+  fecha_creacion      DateTime?                @db.Date
+  fecha_actualizacion DateTime?                @db.Date
+  id                  String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  mentor             Mentor?    @relation("mentoria_solicitud_id_mentor_mentor", fields: [id_mentor], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mentoria_solicitud_id_mentor_fkey")
+  usuario            Usuario?   @relation("mentoria_solicitud_id_usuario_usuario", fields: [id_usuario], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "mentoria_solicitud_id_usuario_fkey")
+  conexion_registros Conexion[] @relation("conexion_id_mentoria_solicitud_mentoria_solicitud")
+
+  @@map("mentoria_solicitud")
+}
+
+model Conexion {
+  id_mentoria_solicitud String?                 @db.Uuid
+  estado                EstadoConexionMentoria?
+  fecha_inicio          DateTime?               @db.Date
+  fecha_fin             DateTime?               @db.Date
+  fecha_creacion        DateTime?               @db.Date
+  fecha_actualizacion   DateTime?               @db.Date
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  mentoria_solicitud MentoriaSolicitud? @relation("conexion_id_mentoria_solicitud_mentoria_solicitud", fields: [id_mentoria_solicitud], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "conexion_id_mentoria_solicitud_fkey")
+  sesion_registros   Sesion[]           @relation("sesion_id_conexion_conexion")
+
+  @@map("conexion")
+}
+
+model Sesion {
+  id_conexion         String?               @db.Uuid
+  fecha_programada    DateTime?             @db.Date
+  tiempo_inicio       DateTime?             @db.Time(6)
+  tiempo_fin          DateTime?             @db.Time(6)
+  estado              EstadoSesionMentoria?
+  url_reunion         String?               @db.VarChar
+  fecha_creacion      DateTime?             @db.Date
+  fecha_actualizacion DateTime?             @db.Date
+  id                  String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  conexion Conexion? @relation("sesion_id_conexion_conexion", fields: [id_conexion], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "sesion_id_conexion_fkey")
+
+  @@map("sesion")
+}
+
+model RequerimientoLaboral {
+  id_empresa            String?   @db.Uuid
+  id_modalidad          String?   @db.Uuid
+  titulo                String?   @db.VarChar
+  descripcion           String?   @db.Text
+  experiencia_requerida String?   @db.VarChar
+  ubicacion             String?   @db.VarChar
+  fecha_publicacion     DateTime? @db.Timestamp(6)
+  fecha_cierre          DateTime? @db.Timestamp(6)
+  estado                String?   @db.VarChar
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  empresa                                 Empresa?                      @relation("requerimiento_laboral_id_empresa_empresa", fields: [id_empresa], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "requerimiento_laboral_id_empresa_fkey")
+  modalidad_trabajo                       ModalidadTrabajo?             @relation("requerimiento_laboral_id_modalidad_modalidad_trabajo", fields: [id_modalidad], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "requerimiento_laboral_id_modalidad_fkey")
+  requerimiento_habilidad_registros       RequerimientoHabilidad[]      @relation("requerimiento_habilidad_id_requerimiento_requerimiento_laboral")
+  vacante_requerimiento_laboral_registros VacanteRequerimientoLaboral[] @relation("vacante_requerimiento_laboral_id_requerimiento_laboral_requerimiento_laboral")
+
+  @@map("requerimiento_laboral")
+}
+
+model RequerimientoHabilidad {
+  id_area             String? @db.Uuid
+  id_requerimiento    String? @db.Uuid
+  nivel_requerimiento String? @db.VarChar
+  id                  String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  area                  Area?                 @relation("requerimiento_habilidad_id_area_area", fields: [id_area], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "requerimiento_habilidad_id_area_fkey")
+  requerimiento_laboral RequerimientoLaboral? @relation("requerimiento_habilidad_id_requerimiento_requerimiento_laboral", fields: [id_requerimiento], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "requerimiento_habilidad_id_requerimiento_fkey")
+
+  @@map("requerimiento_habilidad")
+}
+
+model Vacante {
+  id_empresa          String?   @db.Uuid
+  titulo              String?   @db.VarChar
+  salario             Decimal?  @db.Decimal
+  modalidad           String?   @db.VarChar
+  estado              String?   @db.VarChar
+  created_at          DateTime? @db.Timestamp(6)
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nivel_experiencia   String?   @db.VarChar
+  descripcion_tecnica String?   @db.Text
+
+  empresa                                 Empresa?                      @relation("vacante_id_empresa_empresa", fields: [id_empresa], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "vacante_id_empresa_fkey")
+  vacante_requerimiento_laboral_registros VacanteRequerimientoLaboral[] @relation("vacante_requerimiento_laboral_id_vacante_vacante")
+  postulacion_registros                   Postulacion[]                 @relation("postulacion_id_vacante_vacante")
+  notificacion_registros                  Notificacion[]                @relation("notificacion_id_vacante_vacante")
+
+  @@map("vacante")
+}
+
+model VacanteRequerimientoLaboral {
+  id_vacante               String @db.Uuid
+  id_requerimiento_laboral String @db.Uuid
+
+  vacante               Vacante              @relation("vacante_requerimiento_laboral_id_vacante_vacante", fields: [id_vacante], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "vacante_requerimiento_laboral_id_vacante_fkey")
+  requerimiento_laboral RequerimientoLaboral @relation("vacante_requerimiento_laboral_id_requerimiento_laboral_requerimiento_laboral", fields: [id_requerimiento_laboral], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "vacante_requerimiento_laboral_id_requerimiento_laboral_fkey")
+
+  @@id([id_vacante, id_requerimiento_laboral])
+  @@map("vacante_requerimiento_laboral")
+}
+
+model Postulacion {
+  id_usuario       String?   @db.Uuid
+  id_vacante       String?   @db.Uuid
+  porcentaje_match Decimal?  @db.Decimal
+  estado           String?   @db.VarChar
+  created_at       DateTime? @db.Timestamp(6)
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  usuario Usuario? @relation("postulacion_id_usuario_usuario", fields: [id_usuario], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "postulacion_id_usuario_fkey")
+  vacante Vacante? @relation("postulacion_id_vacante_vacante", fields: [id_vacante], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "postulacion_id_vacante_fkey")
+
+  @@map("postulacion")
+}
+
+model Evento {
+  archivado       Boolean        @default(false)
+  fecha_archivado DateTime?      @db.Timestamptz(6)
+  id_portada      String?        @unique @db.Uuid
+  portada         PortadaEvento? @relation(fields: [id_portada], references: [id], onDelete: Restrict)
+  id_usuario      String?        @db.Uuid
+  titulo          String?        @db.VarChar
+  descripcion     String?        @db.Text
+  fecha_inicio    DateTime?      @db.Timestamptz(6)
+  fecha_fin       DateTime?      @db.Timestamptz(6)
+  cupo_maximo     Int?           @db.Integer
+  ubicacion       String?        @db.VarChar
+  estado          String?        @db.VarChar
+  imagen_url      String?        @db.Text
+  fecha_creacion  DateTime?      @db.Timestamptz(6)
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  usuario                      Usuario?            @relation("evento_id_usuario_usuario", fields: [id_usuario], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "evento_id_usuario_fkey")
+  inscripcion_evento_registros InscripcionEvento[] @relation("inscripcion_evento_id_evento_evento")
+
+  @@map("evento")
+}
+
+model ArchivoPerfil {
+  id_respaldo String                @id @db.Uuid
+  nombre      String                @db.VarChar(255)
+  mime        String                @db.VarChar(50)
+  contenido   Bytes                 @db.ByteA
+  size_bytes  Int
+  respaldo    CertificacionRespaldo @relation(fields: [id_respaldo], references: [id], onDelete: Cascade)
+
+  @@map("archivo_perfil")
+}
+
+model PortadaEvento {
+  id         String   @id @default(uuid()) @db.Uuid
+  id_usuario String   @db.Uuid
+  nombre     String   @db.VarChar(255)
+  mime       String   @db.VarChar(50)
+  contenido  Bytes    @db.ByteA
+  size_bytes Int
+  creada_en  DateTime @default(now()) @db.Timestamptz(6)
+  usuario    Usuario  @relation(fields: [id_usuario], references: [usuario_id], onDelete: Restrict)
+  evento     Evento?
+
+  @@index([id_usuario])
+  @@map("portada_evento")
+}
+
+model InscripcionEvento {
+  id_evento         String?   @db.Uuid
+  id_usuario        String?   @db.Uuid
+  fecha_inscripcion DateTime? @db.Timestamptz(6)
+  estado            String?   @db.VarChar
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  evento  Evento?  @relation("inscripcion_evento_id_evento_evento", fields: [id_evento], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "inscripcion_evento_id_evento_fkey")
+  usuario Usuario? @relation("inscripcion_evento_id_usuario_usuario", fields: [id_usuario], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "inscripcion_evento_id_usuario_fkey")
+  pase_qr PaseQr?
+
+  @@map("inscripcion_evento")
+}
+
+model DetalleSolicitud {
+  created_at       DateTime                @default(now()) @db.Timestamptz(6)
+  id_carrera       String?                 @db.Uuid
+  nombre           String?                 @db.VarChar
+  apellido         String?                 @db.VarChar
+  telefono         String?                 @db.VarChar
+  email            String?                 @db.VarChar
+  fecha_titulacion DateTime?               @db.Date
+  fecha_ingreso    DateTime?               @db.Date
+  ci               String?                 @db.VarChar
+  extension_ci     String?                 @db.VarChar
+  anio_egreso      Int?                    @db.SmallInt
+  cod_sis          Decimal?                @db.Decimal
+  desea_mentor     Boolean?
+  id               String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expedido_en      DepartamentoExpedicion?
+
+  carrera                     Carrera?           @relation("detalle_solicitud_id_carrera_carrera", fields: [id_carrera], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "detalle_solicitud_id_carrera_fkey")
+  solicitud_registros         Solicitud[]        @relation("solicitud_id_detalle_solicitud_detalle_solicitud")
+  usuario_solicitud_registros UsuarioSolicitud[] @relation("usuario_solicitud_detalle_solicitud_id_detalle_solicitud")
+
+  @@map("detalle_solicitud")
+}
+
+model DocumentoRespaldo {
+  id_tipo_archivo String?   @db.Uuid
+  tamanio_mb      Int?      @db.Integer
+  ruta_storage    String?   @db.Text
+  fecha_creacion  DateTime? @db.Timestamp(6)
+  es_valido       Boolean?
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  tipo_archivo                TipoArchivo?       @relation("documento_respaldo_id_tipo_archivo_tipo_archivo", fields: [id_tipo_archivo], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "documento_respaldo_id_tipo_archivo_fkey")
+  solicitud_registros         Solicitud[]        @relation("solicitud_id_documento_respaldo_documento_respaldo")
+  solicitud_version_registros SolicitudVersion[]
+
+  @@map("documento_respaldo")
+}
+
+model Solicitud {
+  id_titulado           String?           @db.Uuid
+  codigo_tit            String?           @unique @db.VarChar
+  observaciones_count   Int               @default(0) @db.SmallInt
+  fecha_resolucion      DateTime?         @db.Timestamptz(6)
+  fecha_actualizacion   DateTime          @default(now()) @db.Timestamptz(6)
+  registro              BorradorRegistro?
+  activacion_hash       String?           @db.Char(64)
+  activacion_expira_en  DateTime?         @db.Timestamptz(6)
+  activacion_intentos   Int               @default(0)
+  activada_en           DateTime?         @db.Timestamptz(6)
+  id_detalle_solicitud  String?           @db.Uuid
+  id_documento_respaldo String?           @db.Uuid
+  estado                String?           @db.VarChar
+  fecha_creacion        DateTime?         @db.Timestamp(6)
+  id                    String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  detalle_solicitud            DetalleSolicitud?   @relation("solicitud_id_detalle_solicitud_detalle_solicitud", fields: [id_detalle_solicitud], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "solicitud_id_detalle_solicitud_fkey")
+  documento_respaldo           DocumentoRespaldo?  @relation("solicitud_id_documento_respaldo_documento_respaldo", fields: [id_documento_respaldo], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "solicitud_id_documento_respaldo_fkey")
+  usuario_solicitud_registros  UsuarioSolicitud[]  @relation("usuario_solicitud_id_solicitud_solicitud")
+  dictamen_registros           Dictamen[]          @relation("dictamen_id_solicitud_solicitud")
+  titulado                     Titulado?           @relation("solicitud_titulado", fields: [id_titulado], references: [id], onDelete: NoAction)
+  version_registros            SolicitudVersion[]
+  otp_activacion_registros     OtpActivacion[]
+  token_subsanacion_registros  TokenSubsanacion[]
+  correo_tramite_registros     CorreoTramite[]
+  auditoria_dictamen_registros AuditoriaDictamen[]
+  control_reenvio_otp          ControlReenvioOtp?
+
+  @@map("solicitud")
+}
+
+model UsuarioSolicitud {
+  id_usuario           String  @db.Uuid
+  id_solicitud         String  @db.Uuid
+  detalle_solicitud_id String? @db.Uuid
+
+  usuario           Usuario           @relation("usuario_solicitud_id_usuario_usuario", fields: [id_usuario], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "usuario_solicitud_id_usuario_fkey")
+  solicitud         Solicitud         @relation("usuario_solicitud_id_solicitud_solicitud", fields: [id_solicitud], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "usuario_solicitud_id_solicitud_fkey")
+  detalle_solicitud DetalleSolicitud? @relation("usuario_solicitud_detalle_solicitud_id_detalle_solicitud", fields: [detalle_solicitud_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "usuario_solicitud_detalle_solicitud_id_fkey")
+
+  @@id([id_usuario, id_solicitud])
+  @@map("usuario_solicitud")
+}
+
+model Dictamen {
+  revisor                  Usuario?  @relation("dictamen_revisor", fields: [revisor_id], references: [usuario_id], onDelete: NoAction)
+  revisor_id               String?   @db.Uuid
+  decision                 String?   @db.VarChar(20)
+  categoria                String?   @db.VarChar(100)
+  id_administrador_sistema String?   @db.Uuid
+  id_solicitud             String?   @db.Uuid
+  justificacion            String?   @db.Text
+  fecha_creacion           DateTime? @db.Timestamp(6)
+  fecha_actualizacion      DateTime? @db.Date
+  subsanada                Boolean?
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  administrador_sistema    AdministradorSistema? @relation("dictamen_id_administrador_sistema_administrador_sistema", fields: [id_administrador_sistema], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "dictamen_id_administrador_sistema_fkey")
+  solicitud                Solicitud?            @relation("dictamen_id_solicitud_solicitud", fields: [id_solicitud], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "dictamen_id_solicitud_fkey")
+  correo_tramite_registros CorreoTramite[]
+  auditoria_registros      AuditoriaDictamen[]
+
+  @@map("dictamen")
+}
+
+model BorradorRegistro {
+  id                String           @id @default(uuid()) @db.Uuid
+  token_hash        String           @unique @db.Char(64)
+  datos             Json
+  creado_en         DateTime         @default(now()) @db.Timestamptz(6)
+  expira_en         DateTime         @db.Timestamptz(6)
+  correo_verificado Boolean          @default(false)
+  codigo_hash       String?          @db.Char(64)
+  codigo_expira_en  DateTime?        @db.Timestamptz(6)
+  codigo_enviado_en DateTime?        @db.Timestamptz(6)
+  codigo_intentos   Int              @default(0)
+  id_solicitud      String?          @unique @db.Uuid
+  solicitud         Solicitud?       @relation(fields: [id_solicitud], references: [id])
+  archivo           ArchivoRegistro?
+
+  @@index([expira_en])
+  @@map("borrador_registro")
+}
+
+model ArchivoRegistro {
+  id             String           @id @default(uuid()) @db.Uuid
+  id_borrador    String           @unique @db.Uuid
+  tipo_documento String           @db.VarChar(40)
+  nombre         String           @db.VarChar(255)
+  mime           String           @db.VarChar(50)
+  contenido      Bytes            @db.ByteA
+  size_bytes     Int
+  borrador       BorradorRegistro @relation(fields: [id_borrador], references: [id], onDelete: Cascade)
+
+  @@map("archivo_registro")
+}
+
+model CorreoPendiente {
+  id         String    @id @default(uuid()) @db.Uuid
+  contenido  String    @db.Text
+  creado_en  DateTime  @default(now()) @db.Timestamptz(6)
+  expira_en  DateTime  @db.Timestamptz(6)
+  proximo_en DateTime  @default(now()) @db.Timestamptz(6)
+  intentos   Int       @default(0)
+  enviado_en DateTime? @db.Timestamptz(6)
+
+  @@index([enviado_en, proximo_en])
+  @@map("correo_pendiente")
+}
+
+model SolicitudVersion {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_solicitud          String   @db.Uuid
+  numero_version        Int
+  snapshot_detalle      Json     @db.JsonB
+  id_documento_respaldo String?  @db.Uuid
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+
+  solicitud          Solicitud          @relation(fields: [id_solicitud], references: [id], onDelete: NoAction)
+  documento_respaldo DocumentoRespaldo? @relation(fields: [id_documento_respaldo], references: [id], onDelete: NoAction)
+
+  @@unique([id_solicitud, numero_version])
+  @@index([id_documento_respaldo])
+  @@map("solicitud_version")
+}
+
+model OtpActivacion {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_solicitud      String   @db.Uuid
+  codigo_hash       String   @db.Text
+  expira_en         DateTime @db.Timestamptz(6)
+  intentos_fallidos Int      @default(0) @db.SmallInt
+  consumido         Boolean  @default(false)
+  invalidado        Boolean  @default(false)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+
+  solicitud Solicitud @relation(fields: [id_solicitud], references: [id], onDelete: NoAction)
+
+  @@index([id_solicitud, consumido, invalidado, expira_en])
+  @@index([id_solicitud, created_at(sort: Desc)], map: "ix_otp_solicitud_fecha")
+  @@map("otp_activacion")
+}
+
+model TokenSubsanacion {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_solicitud String   @db.Uuid
+  token_hash   String   @unique @db.Text
+  expira_en    DateTime @db.Timestamptz(6)
+  revocado     Boolean  @default(false)
+  usado        Boolean  @default(false)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  solicitud Solicitud @relation(fields: [id_solicitud], references: [id], onDelete: NoAction)
+
+  @@index([id_solicitud, revocado, usado, expira_en])
+  @@map("token_subsanacion")
+}
+
+model CorreoTramite {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_solicitud         String    @db.Uuid
+  id_dictamen          String?   @db.Uuid
+  tipo                 String    @db.VarChar(20)
+  email_destino        String    @db.VarChar
+  asunto               String?   @db.VarChar
+  cuerpo               String?   @db.Text
+  estado               String    @default("pendiente") @db.VarChar(20)
+  intentos             Int       @default(0) @db.SmallInt
+  ultimo_error         String?   @db.Text
+  fecha_envio          DateTime? @db.Timestamptz(6)
+  fecha_ultimo_intento DateTime? @db.Timestamptz(6)
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime  @default(now()) @db.Timestamptz(6)
+  max_intentos          Int       @default(3) @db.SmallInt
+  siguiente_intento_en  DateTime  @default(now()) @db.Timestamptz(6)
+  clave_evento          String?   @db.VarChar(200)
+
+  solicitud Solicitud @relation(fields: [id_solicitud], references: [id], onDelete: NoAction)
+  dictamen  Dictamen? @relation(fields: [id_dictamen], references: [id], onDelete: NoAction)
+
+
+
+  @@index([id_solicitud, created_at])
+  @@index([id_dictamen])
+  @@index([estado, siguiente_intento_en, created_at], map: "idx_correo_cola")
+  @@index([id_solicitud, created_at(sort: Desc)], map: "idx_correo_solicitud")
+  @@map("correo_tramite")
+}
+
+model AuditoriaDictamen {
+  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_dictamen              String?  @db.Uuid
+  id_solicitud             String   @db.Uuid
+  id_administrador_sistema String?  @db.Uuid
+  accion                   String   @db.VarChar(30)
+  estado_anterior          String?  @db.VarChar(20)
+  estado_nuevo             String?  @db.VarChar(20)
+  detalle                  Json?    @db.JsonB
+  resultado                String   @default("exitoso") @db.VarChar(10)
+  motivo_fallo             String?  @db.Text
+  created_at               DateTime @default(now()) @db.Timestamptz(6)
+
+  solicitud             Solicitud             @relation(fields: [id_solicitud], references: [id], onDelete: NoAction)
+  dictamen              Dictamen?             @relation(fields: [id_dictamen], references: [id], onDelete: NoAction)
+  administrador_sistema AdministradorSistema? @relation(fields: [id_administrador_sistema], references: [id], onDelete: NoAction)
+
+  @@index([id_solicitud, created_at])
+  @@index([id_dictamen])
+  @@index([id_administrador_sistema])
+  @@map("auditoria_dictamen")
+}
+
+model PaseQr {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_inscripcion   String    @unique @db.Uuid
+  token_hash       String    @unique @db.VarChar(255)
+  estado           String    @db.VarChar(20)
+  fecha_generacion DateTime  @default(now()) @db.Timestamptz(6)
+  fecha_expiracion DateTime? @db.Timestamptz(6)
+
+  inscripcion InscripcionEvento @relation(fields: [id_inscripcion], references: [id], onDelete: NoAction)
+
+  @@map("pase_qr")
+}
+
+model PalabraClave {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nombre              String   @db.VarChar
+  termino_normalizado String   @unique @db.VarChar
+  esta_activo         Boolean  @default(true)
+  fecha_creacion      DateTime @default(now()) @db.Timestamptz(6)
+
+  alias_registros AliasPalabraClave[]
+  area_registros  PalabraClaveArea[]
+
+  @@map("palabra_clave")
+}
+
+model AliasPalabraClave {
+  id                String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_palabra_clave  String @db.Uuid
+  alias             String @db.VarChar
+  alias_normalizado String @unique @db.VarChar
+
+  palabra_clave PalabraClave @relation(fields: [id_palabra_clave], references: [id], onDelete: NoAction)
+
+  @@index([id_palabra_clave])
+  @@map("alias_palabra_clave")
+}
+
+model PalabraClaveArea {
+  id               String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_palabra_clave String @db.Uuid
+  id_area          String @db.Uuid
+  peso             Int    @db.SmallInt
+
+  palabra_clave PalabraClave @relation(fields: [id_palabra_clave], references: [id], onDelete: NoAction)
+  area          Area         @relation(fields: [id_area], references: [id], onDelete: NoAction)
+
+  @@unique([id_palabra_clave, id_area])
+  @@index([id_area])
+  @@map("palabra_clave_area")
+}
+
+model PalabraClaveNoMapeada {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_titulado     String   @db.Uuid
+  termino         String   @db.VarChar
+  frecuencia      Int
+  fecha_deteccion DateTime @default(now()) @db.Timestamptz(6)
+
+  titulado Titulado @relation(fields: [id_titulado], references: [id], onDelete: NoAction)
+
+  @@unique([id_titulado, termino])
+  @@index([id_titulado, fecha_deteccion])
+  @@map("palabra_clave_no_mapeada")
+}
+
+model CalculoRadar {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_titulado       String   @db.Uuid
+  version_algoritmo String   @db.VarChar
+  hash_entrada      String?  @db.VarChar(64)
+  estado            String   @db.VarChar
+  fecha_calculo     DateTime @default(now()) @db.Timestamptz(6)
+
+  titulado           Titulado        @relation(fields: [id_titulado], references: [id], onDelete: NoAction)
+  afinidad_registros AfinidadRadar[]
+
+  @@index([id_titulado, fecha_calculo])
+  @@map("calculo_radar")
+}
+
+model AfinidadRadar {
+  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_calculo_radar   String  @db.Uuid
+  id_area            String  @db.Uuid
+  puntaje            Decimal @db.Decimal
+  porcentaje         Decimal @db.Decimal(5, 2)
+  palabras_clave_top Json?
+
+  calculo_radar CalculoRadar @relation(fields: [id_calculo_radar], references: [id], onDelete: NoAction)
+  area          Area         @relation(fields: [id_area], references: [id], onDelete: NoAction)
+
+  @@unique([id_calculo_radar, id_area])
+  @@index([id_area])
+  @@map("afinidad_radar")
+}
+
+model Notificacion {
+  id_usuario   String?   @db.Uuid
+  id_vacante   String?   @db.Uuid
+  tipo_mensaje String?   @db.VarChar
+  leida        Boolean?
+  created_at   DateTime? @db.Timestamp(6)
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  usuario Usuario? @relation("notificacion_id_usuario_usuario", fields: [id_usuario], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "notificacion_id_usuario_fkey")
+  vacante Vacante? @relation("notificacion_id_vacante_vacante", fields: [id_vacante], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "notificacion_id_vacante_fkey")
+
+  @@map("notificacion")
+}
+
+model Dispositivo {
+  usuario_id          String?   @db.Uuid
+  url_push            String?   @db.Text
+  llave_publica       String?   @db.Text
+  llave_secreta       String?   @db.Text
+  navegador           String?   @db.VarChar
+  plataforma          String?   @db.VarChar
+  fecha_creacion      DateTime? @db.Timestamp(6)
+  fecha_actualizacion DateTime? @db.Timestamp(6)
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  usuario Usuario? @relation("dispositivo_usuario_id_usuario", fields: [usuario_id], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "dispositivo_usuario_id_fkey")
+
+  @@map("dispositivo")
+}
+
+model Conversacion {
+  tipo                String?   @db.VarChar
+  nombre              String?   @db.VarChar
+  estado_conversacion String?   @db.VarChar
+  creado_por          String?   @db.Uuid
+  fecha_creacion      DateTime? @db.Timestamp(6)
+  fecha_actualizacion DateTime? @db.Timestamp(6)
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  usuario                             Usuario?                   @relation("conversacion_creado_por_usuario", fields: [creado_por], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "conversacion_creado_por_fkey")
+  participante_conversacion_registros ParticipanteConversacion[] @relation("participante_conversacion_conversacion_id_conversacion")
+  mensaje_registros                   Mensaje[]                  @relation("mensaje_id_conversacion_conversacion")
+
+  @@map("conversacion")
+}
+
+model ParticipanteConversacion {
+  conversacion_id String?   @db.Uuid
+  usuario_id      String?   @db.Uuid
+  rol_en_chat     String?   @db.VarChar
+  fecha_union     DateTime? @db.Date
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  conversacion Conversacion? @relation("participante_conversacion_conversacion_id_conversacion", fields: [conversacion_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "participante_conversacion_conversacion_id_fkey")
+  usuario      Usuario?      @relation("participante_conversacion_usuario_id_usuario", fields: [usuario_id], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "participante_conversacion_usuario_id_fkey")
+
+  @@map("participante_conversacion")
+}
+
+model Mensaje {
+  id_conversacion String?   @db.Uuid
+  emisor_id       String?   @db.Uuid
+  contenido       String?   @db.Text
+  tipo_contenido  String?   @db.VarChar
+  archivo_url     String?   @db.Text
+  estado_envio    String?   @db.VarChar
+  fecha_mensaje   DateTime? @db.Timestamp(6)
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  conversacion             Conversacion?   @relation("mensaje_id_conversacion_conversacion", fields: [id_conversacion], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mensaje_id_conversacion_fkey")
+  usuario                  Usuario?        @relation("mensaje_emisor_id_usuario", fields: [emisor_id], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "mensaje_emisor_id_fkey")
+  mensaje_estado_registros MensajeEstado[] @relation("mensaje_estado_id_mensaje_mensaje")
+
+  @@map("mensaje")
+}
+
+model MensajeEstado {
+  id_mensaje String?   @db.Uuid
+  usuario_id String?   @db.Uuid
+  estado     String?   @db.VarChar
+  fecha      DateTime? @db.Timestamp(6)
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  mensaje Mensaje? @relation("mensaje_estado_id_mensaje_mensaje", fields: [id_mensaje], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mensaje_estado_id_mensaje_fkey")
+  usuario Usuario? @relation("mensaje_estado_usuario_id_usuario", fields: [usuario_id], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "mensaje_estado_usuario_id_fkey")
+
+  @@map("mensaje_estado")
+}
+
+model RespuestaEncuesta {  
+  id               String   @id @default(uuid()) @db.Uuid
+  idEncuesta       String   @map("id_encuesta") @db.Uuid
+  idTitulado       String   @map("id_titulado") @db.Uuid
+  condicionLaboral String   @map("condicion_laboral")
+  cargo            String?  @db.VarChar(150)
+  empresa          String?  @db.VarChar(200)
+  area             String?  @db.VarChar(150)
+  modalidad        String?
+  salarioMensual   String?  @map("salario_mensual") @db.VarChar(30)
+  tiempoInsercion  String?  @map("tiempo_insercion") @db.VarChar(40)
+  fechaEnvio       DateTime @default(now()) @map("fecha_envio")
+
+  @@unique([idEncuesta, idTitulado], name: "uq_respuesta_encuesta_titulado")
+  @@map("respuesta_encuesta")
+}
+
+//
+// Recuperación de contraseña (HU-12)
+//
+
+model PasswordResetToken {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_usuario  String    @db.Uuid
+  token_hash  String    @unique @db.Text
+  expira_en   DateTime  @db.Timestamptz(6)
+  usado_en    DateTime? @db.Timestamptz(6)
+  revocado    Boolean   @default(false)
+  creado_en   DateTime  @default(now()) @db.Timestamptz(6)
+
+  usuario     Usuario               @relation(fields: [id_usuario], references: [usuario_id], onDelete: Cascade, onUpdate: NoAction)
+  correos     PasswordResetCorreo[]
+
+  @@index([id_usuario, creado_en(sort: Desc)], map: "idx_prt_usuario")
+  @@map("password_reset_token")
+}
+
+model PasswordResetSolicitud {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  correo_normalizado  String   @db.VarChar(255)
+  origen_hash         String   @db.VarChar(64)
+  usuario_id          String?  @db.Uuid
+  resultado           String   @default("solicitado") @db.VarChar(30)
+  creado_en           DateTime @default(now()) @db.Timestamptz(6)
+
+  usuario             Usuario? @relation(fields: [usuario_id], references: [usuario_id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([correo_normalizado, creado_en(sort: Desc)], map: "idx_prs_correo_ventana")
+  @@index([origen_hash, creado_en(sort: Desc)], map: "idx_prs_origen_ventana")
+  @@map("password_reset_solicitud")
+}
+
+model PasswordResetEvento {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuario_id          String?  @db.Uuid
+  correo_normalizado  String?  @db.VarChar(255)
+  tipo                String   @db.VarChar(30)
+  metadata            Json?    @db.JsonB
+  creado_en           DateTime @default(now()) @db.Timestamptz(6)
+
+  usuario             Usuario? @relation(fields: [usuario_id], references: [usuario_id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([usuario_id, creado_en(sort: Desc)], map: "idx_pre_usuario")
+  @@index([correo_normalizado, creado_en(sort: Desc)], map: "idx_pre_correo")
+  @@map("password_reset_evento")
+}
+
+model PasswordResetCorreo {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_token              String    @db.Uuid
+  email_destino         String    @db.VarChar(255)
+  asunto                String    @db.VarChar(255)
+  cuerpo                String?   @db.Text
+  estado                String    @default("pendiente") @db.VarChar(20)
+  intentos              Int       @default(0) @db.SmallInt
+  max_intentos          Int       @default(3) @db.SmallInt
+  siguiente_intento_en  DateTime  @default(now()) @db.Timestamptz(6)
+  smtp_message_id       String?   @db.VarChar(255)
+  ultimo_error          String?   @db.Text
+  fecha_envio           DateTime? @db.Timestamptz(6)
+  creado_en             DateTime  @default(now()) @db.Timestamptz(6)
+  actualizado_en        DateTime  @default(now()) @db.Timestamptz(6)
+
+  token                 PasswordResetToken @relation(fields: [id_token], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([id_token], map: "uq_prc_un_correo_por_token")
+  @@index([estado, siguiente_intento_en], map: "idx_prc_pendientes") 
+  @@map("password_reset_correo")
+}
+
+model ControlReenvioOtp {
+  id_solicitud        String    @id @db.Uuid
+  generaciones_ciclo  Int       @default(0) @db.SmallInt
+  nivel_bloqueo       Int       @default(0) @db.SmallInt
+  enfriamiento_hasta  DateTime? @db.Timestamptz(6)
+  bloqueado_hasta     DateTime? @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
+
+  solicitud           Solicitud @relation(fields: [id_solicitud], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("control_reenvio_otp")
+}

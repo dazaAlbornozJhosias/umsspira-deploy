@@ -10,7 +10,8 @@ import {
   MapPin,
   Sparkles,
 } from "lucide-react";
-import { ApiError, apiFetch, clearToken } from "@/shared/services/api-client";
+import { ApiError, clearToken } from "@/shared/services/api-client";
+import { createJobPosting } from "@/shared/services/job-postings";
 
 interface VacancyFormData {
   title: string;
@@ -82,14 +83,11 @@ export function PublishVacancyForm() {
     setLoading(true);
     setFeedback(null);
     try {
-      await apiFetch("/api/vacantes", {
-        method: "POST",
-        body: JSON.stringify({
+      await createJobPosting({
           titulo: formData.title.trim(),
           modalidad: formData.modality,
           nivelExperiencia: formData.experienceLevel,
           descripcionTecnica: formData.technicalDescription.trim(),
-        }),
       });
       setFormData(initialFormData);
       setErrors({});

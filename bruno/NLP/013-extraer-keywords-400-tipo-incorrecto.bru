@@ -1,0 +1,49 @@
+meta {
+  name: Extraer keywords - 400 Campo text ausente o tipo incorrecto (CA-HU5-19)
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "text": 12345
+  }
+}
+
+tests {
+  test("Status 400 cuando text es de tipo incorrecto (numero)", function() {
+    expect(res.status).to.equal(400);
+  });
+
+  test("Respuesta usa formato de error { error: { code, message } }", function() {
+    expect(res.body).to.have.property("error").that.is.an("object");
+    expect(res.body.error).to.have.property("message");
+  });
+}
+
+docs {
+  HU-5 · T1.7 — Validacion del campo text con tipo incorrecto (numero en lugar de string).
+  Debe responder 400 Bad Request con formato de error { error: { code, message } }.
+
+  CA-HU5-19: el endpoint acepta UNICAMENTE text de tipo texto; otro tipo -> 400.
+  CA-HU5-20: formato de error { error: { code, message } }.
+
+  Ver test 014 para campo text ausente.
+  Ver test 015 para campos extra en el cuerpo.
+
+  Permiso: nlp:extract.
+}

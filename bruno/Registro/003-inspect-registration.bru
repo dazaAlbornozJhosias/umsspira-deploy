@@ -1,0 +1,15 @@
+meta {
+  name: Consultar borrador
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/registrations/sessions/{{sessionToken}}
+  body: none
+  auth: none
+}
+
+docs {
+  Usa el sessionToken del borrador de registro, que es distinto de un token de autenticación.
+}

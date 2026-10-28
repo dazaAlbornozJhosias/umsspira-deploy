@@ -13,9 +13,9 @@ interface CompanyHeaderProps {
 /** HU-02: sin datos por defecto de otra empresa (CA6/CA9); imagenes rotas degradan en forma controlada (CA7). */
 export function CompanyHeader({
   companyName,
-  companySlogan,
+  companySlogan = "Innovando el futuro hoy",
   logoUrl,
-  bannerImageUrl,
+  bannerImageUrl = "https://images.griddo.ecija.com/sean-pollock-phyq704ffda-unsplash-scaled",
 }: CompanyHeaderProps) {
   const [logoFailed, setLogoFailed] = useState(false);
   const [bannerFailed, setBannerFailed] = useState(false);

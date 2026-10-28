@@ -1,13 +1,23 @@
 import { Module } from '@nestjs/common';
-import { ReportsController } from './reports.controller';
-import { ReportsService } from './reports.service';
-import { GraduatesReportModule } from './graduates/pdf/graduates-report.module';
-import { GraduateCsvModule } from './graduates/csv/graduate-csv.module';
+import { PrismaModule } from '../../shared/infrastructure/database/prisma.module';
+import { AuthModule } from '../auth/auth.module';
+import { reportsProviders } from './infrastructure/providers/reports.providers';
+import { ReportExportGuard } from './http/guards/report-export.guard';
+import { GetReportMetricsController } from './http/controllers/get-report-metrics.controller';
+import { ListReportGraduatesController } from './http/controllers/list-report-graduates.controller';
+import { GetGraduateReportController } from './http/controllers/get-graduate-report.controller';
+import { ExportReportCsvController } from './http/controllers/export-report-csv.controller';
+import { ExportReportPdfController } from './http/controllers/export-report-pdf.controller';
 
 @Module({
-  imports: [GraduatesReportModule, GraduateCsvModule],
-  controllers: [ReportsController],
-  providers: [ReportsService],
-  exports: [ReportsService],
+  imports: [PrismaModule, AuthModule],
+  controllers: [
+    GetReportMetricsController,
+    ListReportGraduatesController,
+    GetGraduateReportController,
+    ExportReportCsvController,
+    ExportReportPdfController,
+  ],
+  providers: [...reportsProviders, ReportExportGuard],
 })
 export class ReportsModule {}

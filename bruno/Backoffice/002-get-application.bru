@@ -1,0 +1,21 @@
+meta {
+  name: Consultar solicitud
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/applications/{{applicationId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Requiere administrador de la carrera de la solicitud.
+
+  Permiso: solicitudes:read.
+}

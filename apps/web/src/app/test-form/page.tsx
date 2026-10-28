@@ -3,6 +3,9 @@
 import { EditCompanyForm } from '@/shared/components/edit-company-form';
 import type { Company } from '@umsspira/shared-types';
 
+// 1. IMPORTA EL NUEVO NAVBAR CONECTADO DE LA EPIC 8 AQUÍ
+import { ConnectedNavbar } from '@/shared/components/navbar/index';
+
 export default function TestFormPage() {
   const company: Company = {
     id: '1',
@@ -17,17 +20,22 @@ export default function TestFormPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#EEE9DF] py-6">
-      <div className="max-w-7xl mx-auto px-6">
-        <EditCompanyForm
-          company={company}
-          onSubmit={async (data) => {
-            console.log('Payload:', data);
-            alert('Guardado (mock)');
-          }}
-          onCancel={() => alert('Cancelado')}
-        />
-      </div>
-    </main>
+    <>
+      {/* 2. COLOCA EL NUEVO NAVBAR JUSTO ARRIBA DEL CONTENEDOR PRINCIPAL SIN PROPS */}
+      <ConnectedNavbar />
+      
+      <main className="min-h-screen bg-[#EEE9DF] py-6">
+        <div className="max-w-7xl mx-auto px-6">
+          <EditCompanyForm
+            company={company}
+            onSubmit={async (data) => {
+              console.log('Payload:', data);
+              alert('Guardado (mock)');
+            }}
+            onCancel={() => alert('Cancelado')}
+          />
+        </div>
+      </main>
+    </>
   );
 }

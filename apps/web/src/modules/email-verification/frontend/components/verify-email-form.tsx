@@ -24,12 +24,16 @@ export interface VerifyEmailFormProps {
   onSuccess?: () => void;
   onEditData?: () => void;
   initialEmail?: string;
+  variant?: 'initial' | 'update';
+  onBackToReview?: () => void;
 }
 
 export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   onSuccess,
   onEditData,
   initialEmail,
+  variant = 'initial',
+  onBackToReview,
 }) => {
   const {
     maskedEmail,
@@ -52,6 +56,15 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
 
   const hasRequestedRef = useRef(false);
 
+  // La vigencia se actualiza con la respuesta del servidor al emitir el OTP.
+  const { formattedTime, reset: resetOtpTimer } = useCountdown({
+    initialSeconds: 300,
+    autoStart: true,
+    onExpire: () => {
+      setIsExpired(true);
+    },
+  });
+
   useEffect(() => {
     const regState = useRegistrationStore.getState();
     const token = regState.sessionToken;
@@ -64,21 +77,15 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
       setEmail(correo);
     }
 
-    if (token && !isVerified && !hasRequestedRef.current) {
+    if (token && !useEmailVerificationStore.getState().isVerified && !hasRequestedRef.current) {
       hasRequestedRef.current = true;
-      resendCode();
+      void resendCode().then((ok) => {
+        if (ok) resetOtpTimer(useEmailVerificationStore.getState().expiresInSeconds);
+      });
     }
-  }, [initialEmail, setEmail, setSessionToken, isVerified, resendCode]);
+  }, [initialEmail, setEmail, setSessionToken, resendCode, resetOtpTimer]);
 
-  // Temporizador principal de 5 minutos (300 segundos) para la expiración del código (CA-02.1, CA-02.4)
-  const { formattedTime, reset: resetOtpTimer } = useCountdown({
-    initialSeconds: 300,
-    autoStart: true,
-    onExpire: () => {
-      setIsExpired(true);
-    },
-  });
-
+  const isUpdate = variant === 'update';
   const isCodeComplete = otpDigits.every((d) => d.trim() !== '');
   const filledCount = otpDigits.filter((d) => d.trim() !== '').length;
   const nextDigit = Math.min(filledCount + 1, 6);
@@ -95,7 +102,7 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
   const handleResend = async () => {
     const ok = await resendCode();
     if (ok) {
-      resetOtpTimer(300);
+      resetOtpTimer(useEmailVerificationStore.getState().expiresInSeconds);
     }
   };
 
@@ -120,10 +127,12 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           </span>
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-md bg-burning-flame px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-abyssal-blue">
-              <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />
-              Token institucional
+              {isUpdate ? <Mail className="h-3.5 w-3.5" aria-hidden="true" /> : <KeyRound className="h-3.5 w-3.5" aria-hidden="true" />}
+              {isUpdate ? 'Actualización de correo electrónico' : 'Token institucional'}
             </span>
-            <p className="mt-1 text-xs text-abyssal-blue/70">Protocolo de validación segura</p>
+            <p className="mt-1 text-xs text-abyssal-blue/70">
+              {isUpdate ? 'Protocolo de validación segura v2.4' : 'Protocolo de validación segura'}
+            </p>
           </div>
         </div>
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-oatmeal text-abyssal-blue/70">
@@ -132,13 +141,36 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
       </div>
 
       <h1 className="mt-6 text-2xl sm:text-3xl font-bold tracking-tight">
-        Verifica tu correo electrónico
+        {isUpdate ? 'Verifica tu nuevo correo electrónico' : 'Verifica tu correo electrónico'}
       </h1>
       <p className="mt-2 text-sm text-abyssal-blue/75">
-        Hemos enviado un código de seguridad de 6 dígitos a{' '}
-        <strong className="font-mono font-bold text-abyssal-blue">{maskedEmail}</strong>{' '}
-        para validar tu registro oficial en el padrón universitario.
+        {isUpdate ? (
+          <>
+            Modificaste tu dirección de contacto. Necesitamos verificar el nuevo correo{' '}
+            <strong className="font-mono font-bold text-abyssal-blue">{maskedEmail}</strong> antes de formalizar la
+            entrega de tu solicitud.
+          </>
+        ) : (
+          <>
+            Hemos enviado un código de seguridad de 6 dígitos a{' '}
+            <strong className="font-mono font-bold text-abyssal-blue">{maskedEmail}</strong> para validar tu registro
+            oficial en el padrón universitario.
+          </>
+        )}
       </p>
+
+      {isUpdate && (
+        <div className="mt-4 flex items-start gap-3 rounded-xl border border-oatmeal bg-palladian/60 p-4">
+          <ShieldCheck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+          <div>
+            <p className="text-sm font-semibold text-abyssal-blue">Tus datos previos permanecen intactos</p>
+            <p className="mt-1 text-xs leading-relaxed text-abyssal-blue/75">
+              Todos tus otros datos biográficos, el historial de trámites y el archivo PDF adjunto se conservarán
+              automáticamente para la revisión final.
+            </p>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-6">
         {/* Entrada OTP de 6 casillas */}
@@ -173,7 +205,11 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         {isVerified && (
           <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800 font-medium">
             <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span>¡Correo verificado exitosamente! Ya puedes continuar con la carga de respaldo.</span>
+            <span>
+              {isUpdate
+                ? '¡Correo verificado! Vuelve al resumen para entregar tu solicitud.'
+                : '¡Correo verificado exitosamente! Ya puedes continuar con la carga de respaldo.'}
+            </span>
           </div>
         )}
 
@@ -206,15 +242,15 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           <Button
             type="submit"
             disabled={!isCodeComplete || isSubmitting || isExpired || maxAttemptsReached || isVerified}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-burning-flame px-4 py-3.5 text-sm font-bold text-abyssal-blue shadow-sm transition hover:brightness-95 disabled:opacity-60"
+            className="bg-burning-flame text-abyssal-blue hover:bg-burning-flame/90 hover:text-abyssal-blue disabled:hover:bg-burning-flame focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-abyssal-blue focus-visible:ring-offset-2 inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3.5 text-sm font-bold shadow-sm transition disabled:opacity-60"
           >
             {isSubmitting ? (
               'Validando código...'
             ) : isVerified ? (
-              'Correo Verificado'
+              'Correo verificado'
             ) : (
               <>
-                Verificar correo
+                {isUpdate ? 'Verificar nuevo correo' : 'Verificar correo'}
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </>
             )}
@@ -228,7 +264,20 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
           />
         </div>
 
-        {onEditData && (
+        {isUpdate && onBackToReview && (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={onBackToReview}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-truffle-trouble hover:underline"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Volver al resumen de revisión</span>
+            </button>
+          </div>
+        )}
+
+        {!isUpdate && onEditData && (
           <div className="text-center">
             <button
               type="button"
@@ -244,7 +293,9 @@ export const VerifyEmailForm: React.FC<VerifyEmailFormProps> = ({
         {/* Pie de seguridad */}
         <p className="flex items-center justify-center gap-2 border-t border-oatmeal/60 pt-4 text-center text-[11px] text-abyssal-blue/60">
           <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
-          Protegido por el Sistema Institucional UMSSPIRA.
+          {isUpdate
+            ? 'Protegido por el Sistema Institucional UMSSPIRA bajo el Protocolo Criptográfico de Certificación Universitaria.'
+            : 'Protegido por el Sistema Institucional UMSSPIRA.'}
         </p>
       </form>
     </div>

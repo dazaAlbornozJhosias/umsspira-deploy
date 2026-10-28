@@ -1,0 +1,58 @@
+meta {
+  name: HU-07 - Reintentar entrega identica
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/submit
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "sessionToken": "{{sessionToken}}",
+    "fechaTitulacion": "2025-05-01",
+    "fechaIngreso": "2020-02-01",
+    "deseaMentor": false,
+    "tipoDocumento": "{{documentType}}",
+    "rutaStorage": "{{documentId}}",
+    "sizeBytes": {{documentSizeBytes}}
+  }
+}
+
+tests {
+  const body = res.getBody();
+  const data = body?.data;
+  const originalId = bru.getVar("hu7OriginalApplicationId");
+
+  test("HU-07: reintento exitoso", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("HU-07: conserva estado pendiente", function () {
+    expect(data?.estado).to.equal("PENDING");
+  });
+
+  test("HU-07: devuelve el mismo identificador", function () {
+    expect(originalId).to.be.a("string");
+    expect(originalId).to.not.be.empty;
+    expect(data?.idSolicitud).to.equal(originalId);
+  });
+}
+
+docs {
+  Comprueba que repetir una entrega identica no genere
+  otra solicitud.
+
+  Debe ejecutarse despues del archivo 007 utilizando
+  el mismo borrador y los mismos datos.
+
+  El identificador devuelto debe coincidir con
+  hu7OriginalApplicationId.
+}

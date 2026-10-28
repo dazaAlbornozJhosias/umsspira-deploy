@@ -9,11 +9,18 @@ import type {
 } from '@umsspira/shared-types';
 
 import EventForm from '@/shared/components/event-form';
-import { EventAdminTabs } from '@/shared/components/events-ui';
+import {
+  EventAdminTabs,
+  EventSuccessDialog,
+} from '@/shared/components/events-ui';
 import {
   getAdminDraft,
+  removeEventCover,
+  uploadEventCover,
+  publishDraftEvent,
   updateDraftEvent,
 } from '@/shared/services/events-service';
+import { useAuthenticatedUserId } from '@/modules/auth/frontend/components/authenticated-user-context';
 
 interface EventDraftEditorProps {
   eventId: string;
@@ -22,8 +29,10 @@ interface EventDraftEditorProps {
 
 export function EventDraftEditor({
   eventId,
-  userId,
+  userId: providedUserId,
 }: EventDraftEditorProps) {
+  const authenticatedUserId = useAuthenticatedUserId();
+  const userId = providedUserId ?? authenticatedUserId;
   const router = useRouter();
   const [draft, setDraft] = useState<EventItem | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(userId));
@@ -35,6 +44,7 @@ export function EventDraftEditor({
   );
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [validationCount, setValidationCount] = useState(0);
+  const [publishedEventId, setPublishedEventId] = useState<string | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -74,7 +84,7 @@ export function EventDraftEditor({
 
   const handleSubmit = async (
     event: CreateEventDto,
-    _image: File | null,
+    image: File | null,
   ) => {
     if (!userId) {
       setErrorMessage(
@@ -96,15 +106,28 @@ export function EventDraftEditor({
     setErrorMessage(null);
     setSuccessMessage(null);
 
+    let uploadedImageUrl: string | undefined;
+    let imagePersisted = false;
     try {
+      if (image) uploadedImageUrl = await uploadEventCover(image);
       const updatedDraft = await updateDraftEvent(
         eventId,
-        changes,
+        { ...changes, ...(uploadedImageUrl ? { imageUrl: uploadedImageUrl } : {}) },
         userId,
       );
       setDraft(updatedDraft);
-      setSuccessMessage('Cambios del borrador guardados correctamente.');
+      imagePersisted = true;
+
+      if (event.status === 'PUBLICADO') {
+        const publishedEvent = await publishDraftEvent(eventId, userId);
+        setPublishedEventId(publishedEvent.id);
+      } else {
+        setSuccessMessage('Cambios del borrador guardados correctamente.');
+      }
     } catch (error) {
+      if (uploadedImageUrl && !imagePersisted) {
+        await removeEventCover(uploadedImageUrl).catch(() => undefined);
+      }
       setErrorMessage(getRequestErrorMessage(error));
     } finally {
       setIsSubmitting(false);
@@ -132,13 +155,19 @@ export function EventDraftEditor({
         <div className="event-create-layout">
           <EventForm
             initialEvent={draft}
-            allowPublication={false}
             onSubmit={handleSubmit}
-            onCancel={() => router.push('/events/drafts')}
+            onCancel={() => router.push('/events')}
             onValidationChange={setValidationCount}
             isSubmitting={isSubmitting}
           />
         </div>
+      ) : null}
+
+      {publishedEventId ? (
+        <EventSuccessDialog
+          eventId={publishedEventId}
+          onBack={() => router.push('/events')}
+        />
       ) : null}
     </main>
   );

@@ -1,0 +1,21 @@
+meta {
+  name: Leer documento
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/applications/{{applicationId}}/document/content
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Devuelve los bytes del documento privado. Puedes visualizar o guardar la respuesta desde Bruno.
+
+  Permiso: solicitudes:read.
+}

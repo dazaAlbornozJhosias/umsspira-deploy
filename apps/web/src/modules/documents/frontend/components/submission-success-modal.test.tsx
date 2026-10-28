@@ -30,21 +30,21 @@ describe('SubmissionSuccessModal', () => {
     expect(screen.getByText('Pendiente')).toBeInTheDocument();
   });
 
-  it('muestra el texto informativo completo con el código de seguimiento oficial', () => {
+  it('muestra el texto informativo completo del expediente', () => {
     render(<SubmissionSuccessModal {...props} />);
 
     expect(
       screen.getByText(
-        'Su expediente ha sido ingresado al sistema institucional de validación académica bajo el código de seguimiento oficial.',
+        'Su expediente ha sido ingresado al sistema institucional de validación académica.',
       ),
     ).toBeInTheDocument();
   });
 
-  it('muestra N/A como código de trámite mientras no exista', () => {
+  it('no expone el código interno TIT ni la etiqueta N/A en la confirmación pública (CA-07.6)', () => {
     render(<SubmissionSuccessModal {...props} />);
 
-    expect(screen.getByText('Código de trámite')).toBeInTheDocument();
-    expect(screen.getByText('N/A')).toBeInTheDocument();
+    expect(screen.queryByText('Código de trámite')).not.toBeInTheDocument();
+    expect(screen.queryByText('N/A')).not.toBeInTheDocument();
   });
 
   it('muestra un único título de confirmación y el resumen en una sola tarjeta', () => {

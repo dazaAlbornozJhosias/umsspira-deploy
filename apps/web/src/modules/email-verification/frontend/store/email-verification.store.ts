@@ -30,6 +30,7 @@ export interface EmailVerificationState {
   isExpired: boolean;
   maxAttemptsReached: boolean;
   cooldownSeconds: number;
+  expiresInSeconds: number;
 
   setEmail: (email: string) => void;
   setSessionToken: (token: string | null) => void;
@@ -57,18 +58,21 @@ export const useEmailVerificationStore = create<EmailVerificationState>((set, ge
   isExpired: false,
   maxAttemptsReached: false,
   cooldownSeconds: 0,
+  expiresInSeconds: 600,
 
-  setEmail: (email: string) =>
-    set({
-      email,
-      maskedEmail: maskEmail(email),
-      error: null,
-      isVerified: false,
-      isExpired: false,
-      maxAttemptsReached: false,
-    }),
+  setEmail: (email: string) => {
+    const normalized = email.trim().toLowerCase();
+    if (get().email === normalized) return;
+    set({ email: normalized, maskedEmail: maskEmail(normalized), otpDigits: ['', '', '', '', '', ''],
+      error: null, isVerified: false, isExpired: false, maxAttemptsReached: false, attempts: 0, cooldownSeconds: 0 });
+  },
 
-  setSessionToken: (sessionToken: string | null) => set({ sessionToken }),
+  setSessionToken: (sessionToken: string | null) => {
+    if (get().sessionToken !== sessionToken) {
+      get().reset();
+      set({ sessionToken });
+    }
+  },
 
   setOtpDigit: (index: number, digit: string) => {
     const { otpDigits } = get();
@@ -137,7 +141,9 @@ export const useEmailVerificationStore = create<EmailVerificationState>((set, ge
 
     set({ isSubmitting: false });
 
+    if (get().email !== email || get().sessionToken !== sessionToken) return false;
     if (response.success) {
+      useRegistrationStore.getState().setVerifiedEmail(email);
       set({
         isVerified: true,
         error: null,
@@ -195,8 +201,10 @@ export const useEmailVerificationStore = create<EmailVerificationState>((set, ge
 
     set({ isResending: false });
 
+    if (get().email !== email || get().sessionToken !== sessionToken) return false;
     if (response.success) {
       set({
+        expiresInSeconds: response.expiresInSeconds ?? 600,
         otpDigits: ['', '', '', '', '', ''],
         attempts: 0,
         isExpired: false,

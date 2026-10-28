@@ -1,0 +1,27 @@
+meta {
+  name: Iniciar sesión
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "admin@umss.edu.bo",
+    "password": "admin1234",
+    "remember": false
+  }
+}
+
+docs {
+  Completa email y password en Auth/folder.bru. Copia manualmente data.accessToken a accessToken. Para sesión persistida, copia umsspira_refresh y umsspira_csrf desde las cookies de la respuesta a refreshToken y csrfToken.
+}

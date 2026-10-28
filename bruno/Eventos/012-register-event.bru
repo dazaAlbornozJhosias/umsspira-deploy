@@ -1,0 +1,21 @@
+meta {
+  name: Inscribirse a evento
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/api/v1/events/{{eventId}}/registrations
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Confirma la inscripción del Titulado autenticado en un evento PUBLICADO y vigente con cupo.
+
+  Requiere una cuenta con rol titulado. No envíes userId ni body: la propiedad se deriva de la sesión.
+}

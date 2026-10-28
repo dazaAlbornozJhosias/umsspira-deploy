@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { HomeIcon, ArrowRightIcon, CompassIcon, UserRoundCogIcon } from 'lucide-react';
 import { ExploreCard } from '@/features/mentorship/components/explore-card';
+import { ActiveMentorRequestsLink } from '@/features/mentorship/components/active-mentor-requests-link';
 
 export default function MentoriasPage() {
   return (
@@ -50,6 +51,7 @@ export default function MentoriasPage() {
               Configurar mi perfil de mentor
               <ArrowRightIcon className="icon" aria-hidden="true" />
             </Link>
+            <ActiveMentorRequestsLink />
             <p aria-hidden="true" className="mentor-card-notice" />
           </div>
         </article>

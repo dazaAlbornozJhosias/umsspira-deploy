@@ -1,0 +1,55 @@
+meta {
+  name: Extraer keywords - 200 Sin keywords mapeadas
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "text": "Vendedor en tienda de barrio. Atención al cliente y caja registradora."
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Respuesta envuelta en data", function() {
+    expect(res.body).to.have.property("data").that.is.an("object");
+  });
+
+  test("data.keywords es lista vacia cuando no hay coincidencias", function() {
+    expect(res.body.data.keywords).to.be.an("array").that.is.empty;
+  });
+
+  test("data.unmapped tiene los terminos no mapeados", function() {
+    expect(res.body.data).to.have.property("unmapped").that.is.an("array");
+  });
+
+  test("Tiempo de respuesta menor a 1 000 ms", function() {
+    expect(res.responseTime).to.be.below(1000);
+  });
+}
+
+docs {
+  HU-5 · T1.7 — Texto sin palabras que coincidan con el diccionario.
+  data.keywords debe ser [] y data.unmapped puede tener candidatos.
+
+  CA-HU5-09: diccionario disponible pero sin coincidencias -> 200 con data.keywords vacia.
+  CA-HU5-07: los no mapeados pasan el filtro (sin stopwords, >= 3 chars, no numericos).
+}

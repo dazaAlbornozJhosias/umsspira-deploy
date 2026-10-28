@@ -1,0 +1,21 @@
+meta {
+  name: Listar sesiones propias
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/auth/sessions
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Copia manualmente el UUID de una sesión a sessionId para revocarla.
+
+  Permiso: auth:sessions:self.
+}

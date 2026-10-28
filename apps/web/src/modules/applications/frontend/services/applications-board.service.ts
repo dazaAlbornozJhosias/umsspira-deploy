@@ -1,10 +1,9 @@
-import { authStore } from '@/modules/auth/frontend/store/auth.store';
-import { getSessionToken } from '@/modules/auth/frontend/services/session';
+import { authenticatedFetch, SessionError } from '@/shared/services/auth-session';
+import { readApiError } from '@/shared/services/api-contract';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
-const APPLICATIONS_URL = `${API_BASE_URL}/api/applications`;
+const APPLICATIONS_URL = '/api/v1/applications';
 
-export type BoardStatus = 'PENDING' | 'OBSERVED' | 'APPROVED' | 'REJECTED';
+export type BoardStatus = 'PENDIENTE' | 'OBSERVADA' | 'APROBADA' | 'RECHAZADA';
 
 export interface BoardItem {
   id: string;
@@ -52,12 +51,6 @@ export type BoardResult<T> =
 
 type ApiErrorBody = { message?: string | string[]; error?: string };
 
-function authHeaders(): Record<string, string> {
-  // Al recargar, el estado en memoria se vacía pero la cookie sigue vigente.
-  const token = authStore.getState().accessToken ?? getSessionToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 async function readJson<T>(response: Response): Promise<T | null> {
   try {
     return (await response.json()) as T;
@@ -67,16 +60,17 @@ async function readJson<T>(response: Response): Promise<T | null> {
 }
 
 function toMessage(body: ApiErrorBody | null, fallback: string): string {
-  const raw = body?.message ?? body?.error;
-  if (Array.isArray(raw)) return raw[0] ?? fallback;
-  return raw ?? fallback;
+  return readApiError(body, fallback).message;
 }
 
 async function boardFetch<T>(url: string): Promise<BoardResult<T>> {
   let response: Response;
   try {
-    response = await fetch(url, { headers: authHeaders() });
-  } catch {
+    response = await authenticatedFetch(url);
+  } catch (error) {
+    if (error instanceof SessionError) {
+      return { ok: false, status: error.status, needsLogin: error.status === 401, message: error.message };
+    }
     return { ok: false, status: 0, needsLogin: false, message: 'No se pudo conectar con el servidor. Intenta nuevamente.' };
   }
   const body = await readJson<{ data?: T } & ApiErrorBody>(response);
@@ -108,6 +102,6 @@ export function fetchApplicationDetail(id: string): Promise<BoardResult<BoardDet
 }
 
 // Acceso temporal al adjunto (URL firmada de 5 minutos, CA-04.3).
-export function fetchDocumentUrl(id: string): Promise<BoardResult<{ url: string; expiresIn: number }>> {
+export function fetchDocumentUrl(id: string): Promise<BoardResult<{ url: string; expiresIn?: number; requiresAuthentication?: boolean }>> {
   return boardFetch(`${APPLICATIONS_URL}/${encodeURIComponent(id)}/document`);
 }

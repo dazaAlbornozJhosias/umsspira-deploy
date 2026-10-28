@@ -1,16 +1,24 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+import { authenticatedFetch, clearAccessToken, getAccessToken, SessionError } from './auth-session';
+import { apiUrl, readApiError } from './api-contract';
 
 interface ApiClientOptions
   extends Omit<RequestInit, 'body'> {
   body?: unknown;
+  authenticated?: boolean;
+}
+
+export class ApiClientError extends Error {
+  constructor(message: string, public readonly status: number, public readonly code?: string) {
+    super(message);
+    this.name = 'ApiClientError';
+  }
 }
 
 async function apiRequest<TResponse>(
   path: string,
   options: ApiClientOptions = {},
 ): Promise<TResponse> {
-  const { body, headers: providedHeaders, ...requestOptions } =
+  const { body, headers: providedHeaders, authenticated = false, ...requestOptions } =
     options;
   const headers = new Headers(providedHeaders);
 
@@ -18,7 +26,7 @@ async function apiRequest<TResponse>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await (authenticated ? authenticatedFetch : fetch)(apiUrl(path), {
     ...requestOptions,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -37,10 +45,13 @@ async function apiRequest<TResponse>(
 
   if (!response.ok) {
     const message = getErrorMessage(responseData);
+    const errorCode = readApiError(responseData, '').code;
 
-    throw new Error(
+    throw new ApiClientError(
       message ??
         `La solicitud falló con el estado ${response.status}.`,
+      response.status,
+      errorCode,
     );
   }
 
@@ -48,6 +59,9 @@ async function apiRequest<TResponse>(
 }
 
 function getErrorMessage(responseData: unknown): string | null {
+  if (responseData && typeof responseData === 'object' && 'error' in responseData) {
+    return readApiError(responseData, 'No se pudo procesar la solicitud').message;
+  }
   if (
     typeof responseData !== 'object' ||
     responseData === null ||
@@ -76,7 +90,7 @@ export class ApiException extends Error {
 }
 
 async function request<TResponse>(path: string, init?: RequestInit): Promise<TResponse> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(apiUrl(path), {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });
@@ -98,7 +112,6 @@ export const apiClient = Object.assign(apiRequest, {
     }),
 });
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 export const TOKEN_KEY = 'token';
 
 /** Deploy de demo: no exige sesion. Se fija al compilar (NEXT_PUBLIC_*). */
@@ -112,19 +125,11 @@ export class ApiError extends Error {
 }
 
 export function getToken(): string | null {
-  try {
-    return typeof window === 'undefined' ? null : localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
+  return getAccessToken();
 }
 
 export function clearToken(): void {
-  try {
-    localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    /* sin acceso a storage */
-  }
+  clearAccessToken();
 }
 
 /** true si hay token y no expiro (solo UX; la seguridad real la aplica la API con 401). */
@@ -141,7 +146,8 @@ export function hasValidSession(): boolean {
 
 /** Convierte el cuerpo de error de Nest (string | string[]) en un texto legible. */
 function errorMessage(body: unknown, fallback: string): string {
-  const msg = (body as { message?: string | string[] } | null)?.message;
+  const payload = body as { message?: string | string[]; error?: { message?: string } } | null;
+  const msg = payload?.error?.message ?? payload?.message;
   return Array.isArray(msg) ? msg.join(', ') : msg || fallback;
 }
 
@@ -151,7 +157,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const token = stored && (!DEMO_MODE || hasValidSession()) ? stored : null;
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await authenticatedFetch(apiUrl(path), {
       ...init,
       headers: {
         'Content-Type': 'application/json',
@@ -159,7 +165,8 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
         ...init.headers,
       },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof SessionError) throw new ApiError(error.status, error.message);
     throw new ApiError(0, 'No fue posible conectar con el servidor');
   }
   const body = await res.json().catch(() => null);
@@ -167,5 +174,5 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     if (res.status === 401) throw new ApiError(401, 'Tu sesion expiro. Inicia sesion nuevamente');
     throw new ApiError(res.status, errorMessage(body, 'Error inesperado'));
   }
-  return body as T;
+  return body?.data as T;
 }

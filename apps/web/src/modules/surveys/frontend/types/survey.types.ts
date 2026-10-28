@@ -1,0 +1,1 @@
+export type WorkCondition = 'works' | 'not-works';

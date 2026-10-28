@@ -115,3 +115,53 @@ describe("decideAccess", () => {
     });
   });
 });
+
+describe("HU-004/T4.1: control de acceso a reportes (Admin) y encuestas (Titulado)", () => {
+  it.each(["/reports", "/reports/detalle", "/surveys", "/surveys/formulario"])(
+    "envía a login a un visitante de %s", (path) => {
+      expect(decideAccess(path, undefined, undefined)).toEqual({
+        allowed: false, redirectTo: LOGIN_PATH,
+      });
+    },
+  );
+
+  it.each(["/reports", "/reports/detalle"])(
+    "permite al administrador acceder a %s", (path) => {
+      expect(decideAccess(path, "token", "administrador")).toEqual({ allowed: true });
+    },
+  );
+
+  it.each([
+    ["titulado", PORTAL_HOME],
+    ["empresa", COMPANY_HOME],
+  ])("impide el acceso a /reports para %s", (role, redirectTo) => {
+    expect(decideAccess("/reports", "token", role)).toEqual({
+      allowed: false, redirectTo,
+    });
+    expect(decideAccess("/reports/detalle", "token", role)).toEqual({
+      allowed: false, redirectTo,
+    });
+  });
+
+  it.each(["/surveys", "/surveys/formulario", "/surveys/respuestas/1"])(
+    "permite a titulado entrar en %s", (path) => {
+      expect(decideAccess(path, "token", "titulado")).toEqual({ allowed: true });
+    },
+  );
+
+  it.each([
+    ["administrador", ADMIN_HOME],
+    ["empresa", COMPANY_HOME],
+  ])("impide a %s entrar en /surveys y sus subrutas", (role, redirectTo) => {
+    for (const path of ["/surveys", "/surveys/formulario"]) {
+      expect(decideAccess(path, "token", role)).toEqual({
+        allowed: false, redirectTo,
+      });
+    }
+  });
+
+  it("no restringe falsos prefijos de las rutas protegidas", () => {
+    expect(decideAccess("/reports-extra", "token", "titulado")).toEqual({ allowed: true });
+    expect(decideAccess("/surveys-extra", "token", "administrador")).toEqual({ allowed: true });
+  });
+});

@@ -1,0 +1,67 @@
+meta {
+  name: Extraer keywords - 200 OK con keywords reconocidas
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "text": "Desarrollador Backend con Node.js y TypeScript. Experiencia en API REST, PostgreSQL y Docker. Certificacion AWS Certified Solutions Architect - Associate de Amazon Web Services."
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Respuesta envuelta en data", function() {
+    expect(res.body).to.have.property("data").that.is.an("object");
+  });
+
+  test("Esquema: data tiene keywords y unmapped", function() {
+    expect(res.body.data).to.have.property("keywords").that.is.an("array");
+    expect(res.body.data).to.have.property("unmapped").that.is.an("array");
+  });
+
+  test("keywords no esta vacia con texto relevante", function() {
+    expect(res.body.data.keywords).to.not.be.empty;
+  });
+
+  test("Cada keyword tiene term (string) y count (number)", function() {
+    res.body.data.keywords.forEach(function(k) {
+      expect(k).to.have.property("term").that.is.a("string");
+      expect(k).to.have.property("count").that.is.a("number");
+    });
+  });
+
+  test("Tiempo de respuesta menor a 1 000 ms", function() {
+    expect(res.responseTime).to.be.below(1000);
+  });
+}
+
+docs {
+  HU-5 · T1.7 — Extrae keywords del texto del perfil.
+  Requiere JWT con permiso nlp:extract.
+
+  Respuesta exitosa envuelta en { data: { keywords, unmapped } }.
+  Los errores usan { error: { code, message } }.
+
+  CA-HU5-01: texto con keywords mapeadas -> HTTP 200 con data.keywords no vacias.
+  CA-HU5-06: cada keyword tiene term (string) y count (number) — sin tope aplicado aqui.
+  CA-HU5-17: tiempo de respuesta < 1 000 ms.
+}

@@ -1,0 +1,31 @@
+meta {
+  name: Cambiar disponibilidad
+  type: http
+  seq: 15
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/mentorship/availability
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "availabilityStatus": "DISPONIBLE"
+  }
+}
+
+docs {
+  Requiere participación activa. Cambia el valor de este archivo a DISPONIBLE, EN_PAUSA o NO_DISPONIBLE según corresponda.
+
+  Permiso: mentores:self:write.
+}

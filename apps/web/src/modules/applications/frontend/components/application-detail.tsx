@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
 export type ApplicationStatus =
-  | "PENDING"
-  | "APPROVED"
-  | "OBSERVED"
-  | "REJECTED";
+  | "PENDIENTE"
+  | "APROBADA"
+  | "OBSERVADA"
+  | "RECHAZADA";
 
 export type ChecklistItem = { label: string; checked: boolean };
 
@@ -26,6 +26,7 @@ export type Application = {
   procedureMode: string;
   documentName: string;
   documentUrl: string;
+  documentFormat?: string;
   checklist: ChecklistItem[];
 };
 
@@ -33,7 +34,7 @@ export type Application = {
 export const MOCK_APPLICATION: Application = {
   id: "app-001",
   code: "REG-2024-8841B",
-  status: "PENDING",
+  status: "PENDIENTE",
   firstName: "Juan Carlos",
   lastName: "Pérez Mamani",
   ci: "6842109 CB",
@@ -65,10 +66,15 @@ export const MOCK_APPLICATION: Application = {
   ],
 };
 
-export const STATUS_LABEL: Record<ApplicationStatus, string> = {
+
+export const STATUS_LABEL: Record<string, string> = {
+  PENDIENTE: "Pendiente de validación",
   PENDING: "Pendiente de validación",
+  APROBADA: "Aprobado",
   APPROVED: "Aprobado",
+  OBSERVADA: "Observado",
   OBSERVED: "Observado",
+  RECHAZADA: "Rechazado",
   REJECTED: "Rechazado",
 };
 
@@ -94,7 +100,7 @@ function Field({
       <dt className="text-[11px] font-medium uppercase leading-4 tracking-wide text-[#2C3B4D]">
         {label}
       </dt>
-      <dd className="mt-1 text-[14px] font-semibold leading-5 text-[#1B2632]">
+      <dd className="mt-1 min-w-0 break-words text-[14px] font-semibold leading-5 text-[#1B2632]">
         {children}
       </dd>
     </div>
@@ -123,7 +129,7 @@ export function ApplicationDetail({ application }: Props) {
           </p>
         </div>
 
-        <dl className="grid grid-cols-2 gap-4">
+        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Nombres">{application.firstName}</Field>
           <Field label="Apellidos">{application.lastName}</Field>
           <Field label="Cédula de identidad">
@@ -141,7 +147,7 @@ export function ApplicationDetail({ application }: Props) {
           </Field>
           <Field label="Teléfono / Móvil">{application.phone}</Field>
           <Field label="Código SIS">{application.sisCode}</Field>
-          <Field label="Carrera / Programa académico" className="col-span-2">
+          <Field label="Carrera / Programa académico" className="sm:col-span-2">
             {application.career}
           </Field>
           <Field label="Año de conclusión / egreso">
@@ -160,7 +166,7 @@ export function ApplicationDetail({ application }: Props) {
               </span>
             </span>
           </Field>
-          <Field label="Tipo de trámite requerido" className="col-span-2">
+          <Field label="Tipo de trámite requerido" className="sm:col-span-2">
             <span className="flex items-center justify-between gap-2">
               {application.procedureType}
               <span className="shrink-0 rounded bg-[#FFB162] px-2 py-0.5 text-[11px] font-bold text-[#1B2632]">
@@ -221,20 +227,30 @@ export function ApplicationDetail({ application }: Props) {
           </p>
         </div>
 
-        <div className="flex min-h-[260px] flex-1 items-center justify-center rounded-lg border border-[#2C3B4D] bg-[#2C3B4D]/40 p-4 text-center text-[13px] leading-5 text-[#C9C1B1]">
-          Vista previa del documento
-          <br />
-          (fase 2: URL firmada de 5 minutos)
+        <div className="flex min-h-[260px] flex-1 items-center justify-center overflow-hidden rounded-lg bg-white text-center text-sm text-[#1B2632]">
+          {!application.documentUrl ? (
+            <p role="alert" className="p-6">No se pudo obtener el documento. Cierra y vuelve a abrir el expediente para reintentar.</p>
+          ) : /^(image\/(png|jpeg)|png|jpe?g)$/i.test(application.documentFormat ?? '') || /\.(png|jpe?g)$/i.test(application.documentName) ? (
+            // eslint-disable-next-line @next/next/no-img-element -- URL temporal del documento privado del expediente.
+            <img src={application.documentUrl} alt={`Documento adjunto: ${application.documentName}`}
+              className="max-h-[600px] w-full object-contain" />
+          ) : (
+            <object data={application.documentUrl} type="application/pdf"
+              aria-label={`Documento adjunto: ${application.documentName}`}
+              className="h-[600px] w-full">
+              <p className="p-6">Tu navegador no pudo mostrar el PDF aquí. Puedes abrirlo con el botón inferior.</p>
+            </object>
+          )}
         </div>
 
-        <a
+        {application.documentUrl && <a
           href={application.documentUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-[#FFB162] px-6 text-[14px] font-bold text-[#1B2632]"
         >
           Abrir documento en otra pestaña
-        </a>
+        </a>}
       </section>
     </div>
   );

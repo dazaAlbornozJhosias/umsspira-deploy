@@ -9,30 +9,45 @@ import {
   EventManagementContent,
   EventSuccessDialog,
 } from '@/shared/components/events-ui';
-import { createEvent } from '@/shared/services/events-service';
+import { createEvent, removeEventCover, uploadEventCover } from '@/shared/services/events-service';
+import { useAuthenticatedUserId } from '@/modules/auth/frontend/components/authenticated-user-context';
 
 export default function CreateEventPage() {
+  const userId = useAuthenticatedUserId();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [validationCount, setValidationCount] = useState(0);
-  const [published, setPublished] = useState(false);
+  const [publishedEventId, setPublishedEventId] = useState<string | null>(null);
 
   const handleValidationChange = useCallback((count: number) => {
     setValidationCount(count);
   }, []);
 
-  const handleSubmit = async (event: CreateEventDto, _image: File | null) => {
+  const handleSubmit = async (event: CreateEventDto, image: File | null) => {
     setIsSubmitting(true);
     setErrorMessage(null);
     setDraftSaved(false);
 
     try {
-      await createEvent(event);
+      if (!userId) {
+        throw new Error(
+          'No se pudo identificar la sesión. Vuelve a iniciar sesión.',
+        );
+      }
+
+      const imageUrl = image ? await uploadEventCover(image) : undefined;
+      let savedEvent;
+      try {
+        savedEvent = await createEvent({ ...event, imageUrl }, userId);
+      } catch (error) {
+        if (imageUrl) await removeEventCover(imageUrl).catch(() => undefined);
+        throw error;
+      }
 
       if (event.status === EVENT_STATUS.PUBLICADO) {
-        setPublished(true);
+        setPublishedEventId(savedEvent.id);
       } else {
         setDraftSaved(true);
       }
@@ -47,11 +62,14 @@ export default function CreateEventPage() {
     }
   };
 
-  if (published) {
+  if (publishedEventId) {
     return (
       <>
         <EventManagementContent compact />
-        <EventSuccessDialog onBack={() => router.push('/events')} />
+        <EventSuccessDialog
+          eventId={publishedEventId}
+          onBack={() => router.push('/events')}
+        />
       </>
     );
   }
@@ -62,7 +80,7 @@ export default function CreateEventPage() {
         <h1>Crear evento</h1>
         <p>
           {validationCount > 0
-            ? 'Corrige los campos marcados antes de publicar.'
+            ? 'Corrige los campos marcados para continuar.'
             : 'Completa la información del evento universitario.'}
         </p>
       </header>

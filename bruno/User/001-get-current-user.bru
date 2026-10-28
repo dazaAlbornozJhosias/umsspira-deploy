@@ -1,0 +1,21 @@
+meta {
+  name: Consultar mi usuario
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/user/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Consulta el usuario actual, sus permisos y sus scopes. companyId y careerId se toman de esos scopes cuando correspondan.
+
+  Permiso: user:self:read.
+}

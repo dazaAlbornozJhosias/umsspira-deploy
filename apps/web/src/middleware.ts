@@ -1,62 +1,72 @@
-import { NextResponse, type NextRequest } from "next/server";
-import {
-  decideAccess,
-  LOGIN_PATH,
-  TOKEN_COOKIE,
-} from "./modules/auth/frontend/services/route-access";
+import { NextResponse, type NextRequest } from 'next/server';
+import { decideAccess, LOGIN_PATH } from './modules/auth/frontend/services/route-access';
 
-const VALID_ROLES = new Set(["administrador", "empresa", "titulado"]);
+const VALID_ROLES = new Set(['administrador', 'empresa', 'titulado']);
+const API_URL = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
-// Las pantallas privadas nunca deben guardarse en la caché del navegador (CA-05.1 y CA-05.6)
-const NO_STORE = "no-store, no-cache, must-revalidate, max-age=0";
 
-// Variable exclusiva del servidor cuando exista; la pública conserva compatibilidad.
-const API_URL =
-  process.env.API_INTERNAL_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:3000";
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get(TOKEN_COOKIE)?.value;
-  const pathname = request.nextUrl.pathname;
-  const redirect = (path: string) =>
-    NextResponse.redirect(new URL(path, request.url));
+  // HU-10: el enlace de corrección se valida con el token, no con la sesión
+  if (request.nextUrl.pathname.startsWith('/applications/correct/')) {
+    return NextResponse.next();
+  }
 
-  if (!token || !API_URL) return redirect(LOGIN_PATH);
-
+  const path = request.nextUrl.pathname;
+  const isReport = path === '/reports' || path.startsWith('/reports/');
+  // Sprint 2 T4.1: las encuestas son privadas para el rol titulado.
+  const isSurvey = path === '/surveys' || path.startsWith('/surveys/');
+  const refresh = request.cookies.get('umsspira_refresh')?.value;
+  const redirect = (destination: string) => NextResponse.redirect(new URL(destination, request.url));
+  // HU-004: conservar el motivo para explicar al visitante por qué fue redirigido.
+  const loginDestination = isReport ? '/login?reportes=requiere-sesion' : LOGIN_PATH;
+  if (!refresh) return redirect(loginDestination);
   try {
-    const response = await fetch(`${API_URL.replace(/\/$/, "")}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-      signal: AbortSignal.timeout(5000),
+    // Consultar la sesión sin rotarla permite navegaciones paralelas.
+    const response = await fetch(`${API_URL.replace(/\/$/, '')}/api/v1/auth/session`, {
+      headers: { Cookie: `umsspira_refresh=${encodeURIComponent(refresh)}` },
+      cache: 'no-store', signal: AbortSignal.timeout(5000),
     });
-
-    if (!response.ok) return redirect(LOGIN_PATH);
-    const body: unknown = await response.json();
-    const payload = body as { data?: { role?: unknown } } | null;
-    const role = payload?.data?.role;
-    if (typeof role !== "string" || !VALID_ROLES.has(role)) {
-      return redirect(LOGIN_PATH);
+    if (response.status === 401 || response.status === 403) {
+      // La sesión ya no es válida: eliminar cookies de autenticación, no solo redirigir.
+      const expired = redirect(loginDestination);
+      for (const name of ['umsspira_token', 'umsspira_refresh', 'umsspira_csrf', 'umsspira_role']) {
+        expired.cookies.delete(name);
+      }
+      expired.headers.set('Cache-Control', 'no-store');
+      return expired;
     }
-
-    // Solo el rol verificado por el backend participa en la autorización.
-    const decision = decideAccess(pathname, token, role);
-    const res = decision.allowed ? NextResponse.next() : redirect(decision.redirectTo);
-    res.headers.set("Cache-Control", NO_STORE);
-    return res;
+    if (!response.ok) throw new Error('Servicio no disponible');
+    const body = await response.json() as { data?: { role?: unknown } };
+    const role = body.data?.role;
+    if (typeof role !== 'string' || !VALID_ROLES.has(role)) return redirect(loginDestination);
+    const decision = decideAccess(path, 'sesion-verificada', role);
+    const forbiddenDestination = isReport && !decision.allowed && role === 'titulado'
+      ? '/portal?acceso=reportes-no-autorizado'
+      : null;
+    const result = decision.allowed
+      ? NextResponse.next()
+      : redirect(forbiddenDestination ?? decision.redirectTo);
+    result.headers.set('Cache-Control', 'no-store');
+    return result;
   } catch {
-    // API caída o respuesta inválida: nunca se concede acceso por defecto.
-    return redirect(LOGIN_PATH);
+    if (isReport) {
+      // No continuar hacia una vista privada si el estado de sesión es desconocido.
+      // Reescribir a una pantalla estática que conserva el layout, sin reportes.
+      const unavailable = NextResponse.rewrite(
+        new URL('/reportes-no-disponibles', request.url),
+        { status: 503 },
+      );
+      unavailable.headers.set('Cache-Control', 'no-store');
+      return unavailable;
+    }
+    return new NextResponse('No se pudo verificar la sesión. Inténtalo nuevamente.', {
+      status: 503, headers: { 'Cache-Control': 'no-store' },
+    });
   }
 }
 
-export const config = {
-  matcher: [
-    "/applications/:path*",
-    "/me/:path*",
-    "/empresa/postulantes",
-    "/empresa/postulantes/:path*",
-    "/postulantes",
-    "/postulantes/:path*",
-  ],
-};
+export const config = { matcher: [
+  '/applications/:path*', '/reports/:path*', '/surveys/:path*', '/me/:path*',
+  '/empresa/postulantes', '/empresa/postulantes/:path*', '/postulantes', '/postulantes/:path*',
+] };

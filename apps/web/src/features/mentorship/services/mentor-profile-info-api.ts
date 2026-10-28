@@ -1,6 +1,7 @@
 import { getAccessToken, clearAccessToken } from '@/shared/services/auth-session';
+import { authenticatedFetch, ensureAccessToken } from '@/shared/services/auth-session';
+import { readApiError } from '@/shared/services/api-contract';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
 export interface MentorProfileInformationData {
   descripcion: string | null;
@@ -32,12 +33,12 @@ export class MentorProfileInfoError extends Error {
 }
 
 async function request(path: string, options: RequestInit = {}): Promise<unknown> {
-  const token = getAccessToken();
+  const token = getAccessToken() ?? await ensureAccessToken();
   if (!token) {
     throw new MentorProfileInfoError('Inicia sesión para gestionar la información de tu perfil de mentor.', 401);
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await authenticatedFetch(path, {
     ...options,
     credentials: 'omit',
     cache: 'no-store',
@@ -58,8 +59,8 @@ async function request(path: string, options: RequestInit = {}): Promise<unknown
       const body = await response.text();
       if (body) {
         const parsed = JSON.parse(body);
-        if (parsed && typeof parsed === 'object' && 'message' in parsed) {
-          const message = parsed.message;
+        if (parsed && typeof parsed === 'object' && ('message' in parsed || 'error' in parsed)) {
+          const message = readApiError(parsed, '').message;
           serverMessage = Array.isArray(message)
             ? message.filter((item): item is string => typeof item === 'string').join('. ')
             : typeof message === 'string' ? message : '';
@@ -82,12 +83,12 @@ async function request(path: string, options: RequestInit = {}): Promise<unknown
     );
   }
 
-  return response.json();
+  return (await response.json()).data;
 }
 
 /** GET /mentorship/my-profile/information */
 export async function getMentorProfileInformation(): Promise<MentorProfileInformationState> {
-  const data = await request('/mentorship/my-profile/information', { method: 'GET' });
+  const data = await request('/api/v1/mentorship/my-profile/information', { method: 'GET' });
   return data as MentorProfileInformationState;
 }
 
@@ -95,7 +96,7 @@ export async function getMentorProfileInformation(): Promise<MentorProfileInform
 export async function updateMentorProfileInformation(
   payload: UpdateMentorProfilePayload,
 ): Promise<MentorProfileInformationState> {
-  const data = await request('/mentorship/my-profile/information', {
+  const data = await request('/api/v1/mentorship/my-profile/information', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -105,6 +106,6 @@ export async function updateMentorProfileInformation(
 
 /** DELETE /mentorship/my-profile/information */
 export async function deleteMentorProfileInformation(): Promise<MentorProfileInformationState> {
-  const data = await request('/mentorship/my-profile/information', { method: 'DELETE' });
+  const data = await request('/api/v1/mentorship/my-profile/information', { method: 'DELETE' });
   return data as MentorProfileInformationState;
 }

@@ -10,7 +10,7 @@ function titlesOf(sections: TimelineSection[], title: string) {
 describe('sortSectionsByRecency', () => {
   const sorted = sortSectionsByRecency(profileTimeline);
 
-  it('ordena la educación del año más reciente al más antiguo', () => {
+  it('ordena la formación académica del año más reciente al más antiguo', () => {
     expect(titlesOf(sorted, 'FORMACIÓN ACADÉMICA')).toEqual([
       'Universidad Católica Boliviana',
       'Universidad Mayor de San Simón',
@@ -49,6 +49,19 @@ describe('sortSectionsByRecency', () => {
       'Enero',
       'Sin fecha',
     ]);
+  });
+
+  it('usa el año de la certificación aunque la entidad tenga números', () => {
+    const sections: TimelineSection[] = [
+      {
+        title: 'CERTIFICACIONES',
+        items: [
+          { title: 'Auditor ISO', subtitle: 'ISO 9001 · 2019', year: '2019' },
+          { title: 'Scrum', subtitle: 'Scrum.org · 2021', year: '2021' },
+        ],
+      },
+    ];
+    expect(titlesOf(sortSectionsByRecency(sections), 'CERTIFICACIONES')).toEqual(['Scrum', 'Auditor ISO']);
   });
 
   it('no modifica los datos originales', () => {

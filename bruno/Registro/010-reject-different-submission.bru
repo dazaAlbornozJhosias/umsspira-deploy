@@ -1,0 +1,61 @@
+meta {
+  name: HU-07 - Rechazar entrega modificada
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/submit
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "sessionToken": "{{sessionToken}}",
+    "fechaTitulacion": "2025-05-01",
+    "fechaIngreso": "2020-02-01",
+    "deseaMentor": true,
+    "tipoDocumento": "{{documentType}}",
+    "rutaStorage": "{{documentId}}",
+    "sizeBytes": {{documentSizeBytes}}
+  }
+}
+
+tests {
+  const body = res.getBody();
+
+  test("HU-07: rechaza una entrega modificada", function () {
+    expect(res.getStatus()).to.equal(409);
+  });
+
+  test("HU-07: devuelve codigo de conflicto", function () {
+    expect(body?.error?.code).to.equal(
+      "SUBMISSION_ALREADY_COMPLETED"
+    );
+  });
+
+  test("HU-07: no devuelve una nueva solicitud", function () {
+    expect(body?.data?.idSolicitud).to.be.undefined;
+  });
+}
+
+docs {
+  Prueba negativa de idempotencia de HU-07.
+
+  Requisitos:
+  - Ejecutar primero 007-submit-registration.
+  - Usar el mismo sessionToken y documento.
+  - La entrega original debe tener deseaMentor = false.
+
+  Esta peticion intenta cambiar deseaMentor a true.
+
+  Resultado esperado:
+  - HTTP 409 Conflict.
+  - Codigo SUBMISSION_ALREADY_COMPLETED.
+  - No crea un expediente nuevo.
+}

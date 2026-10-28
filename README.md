@@ -1,13 +1,14 @@
-# Proyecto Fexco (nombre provisional — ajustar)
+# UMSSPIRA
 
-Monorepo con **pnpm workspaces**: API en NestJS, frontend en Next.js, tipos compartidos y base de datos en Supabase.
+Proyecto completo de UMSSPIRA: frontend en Next.js, backend en NestJS y PostgreSQL alojado en Supabase. Se trabaja desde la raíz del monorepo con **pnpm workspaces**; `pnpm run dev` inicia frontend y backend juntos.
 
 ## Stack
 
-- **apps/api** — NestJS (REST), Redis, Supabase como cliente de base de datos
+- **apps/api** — NestJS (REST), arquitectura hexagonal, Prisma y PostgreSQL. Redis es opcional para limitar solicitudes.
 - **apps/web** — Next.js 14 (App Router), Tailwind CSS
 - **packages/shared-types** — Tipos TypeScript compartidos entre `api` y `web`
-- **supabase/** — Migraciones SQL y seed de la base de datos
+- **apps/api/prisma/** — Schema de Prisma y migraciones de PostgreSQL
+- **apps/api/scripts/seed/** — Catálogos y datos de demostración por épica
 - Gestor de paquetes: **pnpm** (workspace único, `pnpm-workspace.yaml`)
 - Husky + lint-staged + commitlint (Conventional Commits) para hooks de git
 
@@ -15,10 +16,10 @@ Monorepo con **pnpm workspaces**: API en NestJS, frontend en Next.js, tipos comp
 
 ## Requisitos previos
 
-- Node.js > 20
+- Node.js 22.12 o superior
 - pnpm (`corepack enable` o `npm i -g pnpm`)
-- Docker (para `docker-compose.yml` — Redis / Supabase local si aplica)
- - git
+- Docker Desktop para los servicios auxiliares de desarrollo
+- Git
 
 ## Instalación
 
@@ -30,51 +31,72 @@ pnpm install
 
 Esto instala las dependencias de **todos** los workspaces (`apps/api`, `apps/web`, `packages/shared-types`) de una sola vez.
 
-## Variables de entorno
+## Configuración inicial
 
-El servicio de base de datos usa un archivo `.env` en la raíz del repositorio:
+Copiar `apps/api/.env.example` como `apps/api/.env` y completar `DATABASE_URL`, `DIRECT_URL` y `AUTH_JWT_SECRET`. Cada equipo utiliza las conexiones de su propia base. Supabase solo aloja PostgreSQL; no se necesitan claves de Supabase Auth ni `service_role`.
 
-Si crean uno pasan la informacion al grupo 
-para evitar problemas de seguridad.
+Para el frontend, copiar `apps/web/.env.example` como `apps/web/.env.local`. En desarrollo local, conservar `NEXT_PUBLIC_API_URL=http://localhost:3000`. Next.js escucha en el puerto `3001` y su proxy envía las peticiones al backend del puerto `3000`.
 
-Por ahora solo hay uno que es de la contrasenia
-de la base de datos, se les pasara por el grupo 
-de whatsapp.
-
-## Levantar servicios locales (Docker)
+Abrir Docker Desktop y levantar el correo de prueba antes de iniciar la aplicación:
 
 ```bash
-docker compose up -d
+docker compose up -d --wait
 ```
 
-Levanta y crea la base de datos, con esto ya tienen corriendo la base de datos de manera local. 
+Preparar la base siguiendo [estos pasos](apps/api/docs/pasos-crear-bd.txt). Desde la raíz, con el entorno configurado:
 
-Para poder ejecutar y configurar la base de datos de manera local se puede utilizar dos extensiones o el 
-el cliente de postgresql
-
-* Database client o SQLtools: ambas te permiten 
-hacer cambios en la bd en vscode
-* DBeaver: cliente oficial te da una interfaz grafica para los cambios
-
-(Recomendacion) si te equivocaste en tus cambios y no sabes como regresar solo apaga el docker compose con el comando
-
-
-```
-docker compose down -v  # WARNING: permanently deletes db_data and all local data; use `docker compose down` to preserve it
-```
-
-De esta manera puedes volver a crear la bd con el comando inicial de Docker y te dara una bd nueva.
-
-Se recomienda apagar el docker una vez que termines tu trabajo 
-
-## Ejecutar el proyecto
-
-**Todo el monorepo en paralelo:**
 ```bash
-pnpm dev
+pnpm --filter api db:deploy
+pnpm --filter api prisma:generate
+pnpm --filter api db:seed:demo
 ```
 
-**Por separado**, en dos terminales:
+El seed de demostración exige `APP_ENV=epic`, `dev` o `test`. Para cargar solo catálogos y permisos, usar `pnpm --filter api db:seed`. Las credenciales reales permanecen en archivos de entorno ignorados por Git.
+
+La instalación y preparación de la base son pasos iniciales. No se repiten las migraciones ni el seed cada vez que se inicia el proyecto; se aplican cuando hay cambios que el equipo necesita incorporar.
+
+## Levantar todo el proyecto
+
+Desde la raíz, con Docker Desktop abierto:
+
+```bash
+docker compose up -d --wait
+pnpm run dev
+```
+
+Docker inicia Mailpit y `--wait` espera a que esté disponible. `pnpm run dev` mantiene frontend y backend corriendo en la misma terminal. PostgreSQL local y Redis son opcionales y se activan con los perfiles explicados abajo.
+
+- Aplicación web: http://localhost:3001
+- Estado del backend y conexión a la base: http://localhost:3000/health
+- Bandeja de correos de prueba: http://localhost:8025
+
+Para detener la aplicación, usar `Ctrl+C`. Después, `docker compose --profile "*" down` detiene los servicios auxiliares, incluidos los perfiles opcionales, y conserva los volúmenes de datos y correos.
+
+### Qué aporta Docker
+
+| Servicio | Uso | Cómo levantarlo |
+| --- | --- | --- |
+| `mailpit` | Correos de registro, verificación y activación guardados en el volumen `mailpit_data`, sin enviarlos a Internet | `docker compose up -d --wait` |
+| `redis` | Contadores temporales de límites de solicitudes | `docker compose --profile redis up -d --wait` |
+| `db` | PostgreSQL local con datos persistidos en el volumen `db_data` | `docker compose --profile local-db up -d --wait` |
+
+Con PostgreSQL alojado y el limitador en memoria, la aplicación puede arrancar sin Docker. Mailpit sigue siendo necesario para recibir correos locales con la configuración predeterminada. Levantar Redis o PostgreSQL en Docker no cambia las conexiones de la API: las decide su `.env`. Para usar Redis, agregar `AUTH_RATE_LIMIT_STORE=redis` y `REDIS_URL=redis://localhost:6379` en `apps/api/.env` y reiniciar la aplicación.
+
+Los tres servicios tienen comprobaciones de salud, puertos accesibles solo desde esta PC y límites para sus archivos de logs. `docker compose --profile "*" ps` muestra su estado. Mailpit conserva hasta 1000 mensajes; Redis pierde sus contadores al reiniciarse.
+
+Para levantar los tres servicios:
+
+```bash
+docker compose --profile local-db --profile redis up -d --wait
+```
+
+Para cambiar los puertos o la contraseña local, copiar el `.env.example` de la raíz como `.env`. Es opcional: Compose ya tiene valores locales predeterminados. Ese archivo configura Docker; no reemplaza los entornos de las aplicaciones.
+
+Para conectar la API al PostgreSQL local, configurar `DATABASE_URL` y `DIRECT_URL` en `apps/api/.env` con `postgresql://postgres:umsspira_local@localhost:5432/postgres`, ajustando contraseña y puerto si se cambiaron, y aplicar las migraciones con Prisma. Docker crea la base vacía; Prisma crea las tablas. Se conserva la versión PostgreSQL 15 y el volumen `db_data` existentes. Un volumen previo mantiene sus credenciales y datos; no se transforma automáticamente desde el esquema antiguo.
+
+### Ejecutar una sola aplicación
+
+Para trabajar por separado, usar el comando correspondiente en su propia terminal:
 
 ```bash
 # Backend (NestJS) — apps/api
@@ -84,10 +106,6 @@ pnpm --filter api dev
 pnpm --filter web dev
 ```
 
-- API por defecto en `http://localhost:3000` (revisar `apps/api/src/main.ts`)
-- Web por defecto en `http://localhost:3001`
-
-
 ## Despliegue
 
 La infraestructura vive repartida así:
@@ -96,13 +114,13 @@ La infraestructura vive repartida así:
 | --- | --- | --- |
 | API (NestJS) | **Render** | `render.yaml` en la raíz del repo (versionado) |
 | Web (Next.js) | **Vercel** | Se configura en el panel; no lleva archivo |
-| Base de datos | **Supabase** (São Paulo) | `supabase/migrations/` + `supabase db push` |
+| Base de datos | PostgreSQL alojado en **Supabase** | `apps/api/prisma/migrations/` + `pnpm --filter api db:deploy` |
 
 ### API en Render
 
-`render.yaml` ya describe el servicio (`umsspira-api`): región `virginia`, plan `free`, rama `dev`, build `pnpm install && pnpm --filter api build` y health check en `/mentorship/status`. Validar cambios con `render blueprints validate render.yaml`.
+`render.yaml` describe el servicio `umsspira-api`: raíz del monorepo, rama `dev`, compilación exclusiva del backend y health check en `/health`.
 
-Al crear el Blueprint, Render **pide en el dashboard** los valores de `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `WEB_ORIGIN` (están con `sync: false` para no commitear secretos). Se rellenan con los mismos valores de `apps/api/.env`.
+Configurar `DATABASE_URL`, `DIRECT_URL`, `AUTH_JWT_SECRET` y `CORS_ORIGINS`. Para enviar correos reales también se necesitan `SMTP_URL` y `MAIL_FROM`. Dejar `PORT` a cargo de Render.
 
 > **Plan gratuito:** el servicio se duerme tras ~15 min sin tráfico y el primer request tarda ~50 s. Si eso molesta en las demostraciones, subir de plan.
 
@@ -114,9 +132,11 @@ Al importar el repo hay que indicar **Root Directory = `apps/web`** y definir `N
 
 | Plataforma | Variable | Valor |
 | --- | --- | --- |
-| Render | `SUPABASE_URL` | `https://<project-ref>.supabase.co` |
-| Render | `SUPABASE_SERVICE_ROLE_KEY` | JWT `service_role` (la `sb_secret_…` **no** sirve para la API REST) |
-| Render | `WEB_ORIGIN` | URL de Vercel. Varios orígenes separados por coma |
+| Render | `DATABASE_URL` | Conexión PostgreSQL de la API |
+| Render | `DIRECT_URL` | Conexión PostgreSQL de migraciones y seeds |
+| Render | `AUTH_JWT_SECRET` | Clave propia de firma de tokens |
+| Render | `CORS_ORIGINS` | Origen de Vercel. Varios orígenes separados por coma |
+| Vercel | `API_INTERNAL_URL` | URL raíz del backend para el proxy de Next.js |
 | Vercel | `NEXT_PUBLIC_API_URL` | URL pública del API en Render |
 
 ### Antes de mergear una épica
@@ -126,9 +146,7 @@ Al importar el repo hay que indicar **Root Directory = `apps/web`** y definir `N
 
 ## Colección de API (Postman)
 
-Importar en Postman:
-- `collection/companies.postman_collection.json`
-- Environment: `collection/environments/local.postman_environment.json`
+Importar `postman/UMSSPIRA.json`. También está disponible la colección `bruno/`, con instrucciones en [su README](bruno/README.md).
 
 ## Tests (web)
 
@@ -146,12 +164,12 @@ pnpm --filter web test
 
 | Tarea / feature | Carpeta |
 |---|---|
-| Lógica de **empresas** (companies) | `modules/companies/companies.module.ts` (+ agregar `companies.controller.ts`, `companies.service.ts`) |
-| Lógica de **ofertas de trabajo** (job postings) | `modules/job-postings/job-postings.module.ts` (+ controller/service) |
-| Conexión a Supabase | `shared/lib/supabase.ts` |
-| Conexión a Redis (cache, colas, sesiones) | `shared/lib/redis.ts` |
+| Lógica de **empresas** (companies) | `modules/companies/` |
+| Lógica de **ofertas de trabajo** (job postings) | `modules/job-postings/` |
+| Conexión a PostgreSQL mediante Prisma | `shared/infrastructure/database/` |
+| Conexión opcional a Redis para límites de solicitudes | `shared/infrastructure/redis/` |
 | Bootstrap / configuración global de Nest | `main.ts`, `app.module.ts` |
-| Nuevo módulo (ej. usuarios, auth) | Crear carpeta hermana en `modules/<nombre>/` siguiendo el mismo patrón (`*.module.ts`, `*.controller.ts`, `*.service.ts`) |
+| Nuevo módulo | `modules/<nombre>/`, siguiendo [las fronteras y convenciones](apps/api/src/modules/README.md) de dominio, aplicación, infraestructura y HTTP |
 
 > `dist/` es la salida compilada — **nunca se edita a mano**.
 
@@ -187,12 +205,12 @@ Se importan en ambas apps como `@umsspira/shared-types`.
 
 | Tarea | Archivo |
 |---|---|
-| Nuevos endpoints a probar manualmente | Agregar request a `collection/companies.postman_collection.json` (o crear colección nueva por módulo) |
+| Nuevos endpoints a probar manualmente | Agregar una petición por endpoint en `bruno/`, dentro del módulo correspondiente |
 | Tests de componentes/páginas web | Junto al archivo o en `__tests__/`, config en `jest.config.js` / `jest.setup.js` |
 
 ---
 
-Los tests para el backend seran con postman y los test del frontend estan configurados con jest, tomenlo en cuenta para su implementacion
+Las pruebas automatizadas se ejecutan con `pnpm --filter api test` y `pnpm --filter web test`. Postman y Bruno permiten explorar los endpoints manualmente.
 
 ## Convenciones de commits
 

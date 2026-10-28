@@ -1,0 +1,21 @@
+meta {
+  name: Quitar interés
+  type: http
+  seq: 13
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/mentorship/interests/{{mentorInterestId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Quita un interés del mentor propio; no recibe el UUID del área raíz.
+
+  Permiso: mentores:self:write.
+}

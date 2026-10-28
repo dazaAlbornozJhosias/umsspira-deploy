@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 type SeccionAcordeonProps = {
@@ -7,14 +7,33 @@ type SeccionAcordeonProps = {
   titulo: string;
   descripcion: string;
   cantidad: number;
+  // Estado a mostrar en lugar del número de registros (la descripción no se cuenta por registros)
+  textoCompleto?: string;
+  // Llega abierta y a la vista desde un acceso directo del indicador de completitud (T6.6)
+  abiertaInicial?: boolean;
   // Errores sin corregir en el formulario de la sección (HU-02, AC 6)
   errores?: number;
   children?: React.ReactNode;
 };
 
 // Cabecera de sección según la v3 del Figma: número o check, título en mayúsculas y estado
-export function SeccionAcordeon({ numero, titulo, descripcion, cantidad, errores = 0, children }: SeccionAcordeonProps) {
-  const [abierta, setAbierta] = useState(false);
+export function SeccionAcordeon({
+  numero,
+  titulo,
+  descripcion,
+  cantidad,
+  textoCompleto,
+  abiertaInicial = false,
+  errores = 0,
+  children,
+}: SeccionAcordeonProps) {
+  const [abierta, setAbierta] = useState(abiertaInicial);
+  const seccionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    // jsdom no implementa scrollIntoView, por eso la llamada es opcional
+    if (abiertaInicial) seccionRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  }, [abiertaInicial]);
   const completa = cantidad > 0;
 
   let indicador = (
@@ -38,6 +57,7 @@ export function SeccionAcordeon({ numero, titulo, descripcion, cantidad, errores
 
   return (
     <section
+      ref={seccionRef}
       className={`rounded-2xl border bg-white transition-colors ${
         abierta ? 'border-truffle-trouble' : 'border-abyssal-blue/10'
       }`}
@@ -56,7 +76,9 @@ export function SeccionAcordeon({ numero, titulo, descripcion, cantidad, errores
               {abierta ? titulo : `${numero}. ${titulo}`}
             </span>
             <span className={`text-[13px] ${completa ? 'font-medium text-[#0F5132]' : 'text-blue-fantastic/60'}`}>
-              {completa ? `(Completado · ${cantidad} ${cantidad === 1 ? 'registro' : 'registros'})` : '(Sin iniciar)'}
+              {completa
+                ? (textoCompleto ?? `(Completado · ${cantidad} ${cantidad === 1 ? 'registro' : 'registros'})`)
+                : '(Sin iniciar)'}
             </span>
             {errores > 0 && (
               <span className="rounded-full bg-truffle-trouble px-2 py-0.5 text-[11px] font-bold text-white">

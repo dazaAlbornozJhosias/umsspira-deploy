@@ -71,7 +71,7 @@ export function RejectDialog({
     if (causeInvalid || noteInvalid || confirmInvalid) return;
 
     const ok = await submitReview({
-      decision: "REJECTED",
+      decision: "RECHAZADA",
       category: cause,
       note: note.trim(),
     });

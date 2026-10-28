@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { authStore } from "@/modules/auth/frontend/store/auth.store";
-import { getSessionToken } from "@/modules/auth/frontend/services/session";
+import { authenticatedFetch, SessionError } from "@/shared/services/auth-session";
+import { readApiError } from "@/shared/services/api-contract";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+const API_BASE_URL = "/api/v1";
 
-export type ReviewDecision = "APPROVED" | "OBSERVED" | "REJECTED";
+export type ReviewDecision = "APROBADA" | "OBSERVADA" | "RECHAZADA";
 
 export type ReviewPayload = {
   decision: ReviewDecision;
-  category?: string; // obligatoria si OBSERVED o REJECTED (causal)
-  note?: string; // mínimo 10 caracteres si OBSERVED o REJECTED
+  category?: string; // obligatoria si OBSERVADA o RECHAZADA (causal)
+  note?: string; // mínimo 10 caracteres si OBSERVADA o RECHAZADA
   notifyDean?: boolean; // checkbox del diseño de Observar
 };
 
@@ -49,14 +49,12 @@ export function useReview({ applicationId, onSuccess }: Options) {
     setError(null);
 
     try {
-      const token = authStore.getState().accessToken ?? getSessionToken();
-      const response = await fetch(
-        `${API_BASE_URL}/api/applications/${encodeURIComponent(applicationId)}/review`,
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/applications/${encodeURIComponent(applicationId)}/review`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify(payload),
         },
@@ -67,15 +65,14 @@ export function useReview({ applicationId, onSuccess }: Options) {
       }
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        const message = body?.message ?? body?.error;
-        setError(Array.isArray(message) ? message[0] : (message ?? "No se pudo registrar el dictamen. Intenta de nuevo."));
+        setError(readApiError(body, "No se pudo registrar el dictamen. Intenta de nuevo.").message);
         return false;
       }
 
       onSuccess?.();
       return true;
-    } catch {
-      setError("No se pudo registrar el dictamen. Intenta de nuevo.");
+    } catch (error) {
+      setError(error instanceof SessionError ? error.message : "No se pudo registrar el dictamen. Intenta de nuevo.");
       return false;
     } finally {
       setIsLoading(false);

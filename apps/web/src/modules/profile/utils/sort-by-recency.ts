@@ -26,8 +26,8 @@ function toMonths(text: string): number | null {
 
 /** Clave de orden [fin, inicio]: en rangos "Ene 2021 – Jun 2023" manda la fecha de fin. */
 function recencyKey(item: TimelineItem): [number, number] {
-  // Las certificaciones traen el año en el subtítulo: "Amazon Web Services · 2022"
-  const parts = (item.date ?? item.subtitle).split(/\s[–-]\s/);
+  // Las certificaciones traen su año aparte; sin él se lee del subtítulo: "Amazon Web Services · 2022"
+  const parts = (item.date ?? item.year ?? item.subtitle).split(/\s[–-]\s/);
   const start = toMonths(parts[0]) ?? Number.NEGATIVE_INFINITY;
   const end = toMonths(parts[parts.length - 1]) ?? start;
   return [end, start];

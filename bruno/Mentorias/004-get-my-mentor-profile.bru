@@ -1,0 +1,21 @@
+meta {
+  name: Consultar participación propia
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/mentorship/my-profile
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Consulta el perfil de mentor vinculado al titulado autenticado.
+
+  Permiso: mentores:self:write.
+}

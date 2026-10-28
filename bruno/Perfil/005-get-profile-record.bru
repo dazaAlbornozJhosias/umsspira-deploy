@@ -1,0 +1,21 @@
+meta {
+  name: Consultar registro del perfil
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/perfil/{{profileSection}}/{{profileRecordId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  profileSection admite formacion-academica, experiencia-laboral o certificaciones. Completa profileRecordId con el registro correspondiente.
+
+  Permiso: perfil:self:read.
+}

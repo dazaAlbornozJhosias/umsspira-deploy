@@ -1,48 +1,42 @@
-import './load-env';
+import 'reflect-metadata';
+import { INestApplicationContext, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, type ArgumentMetadata } from '@nestjs/common';
+import { IoAdapter } from '@nestjs/platform-socket.io';
+import type { ServerOptions } from 'socket.io';
 import { AppModule } from './app.module';
-import { AppExceptionFilter } from './shared/filters/app-exception.filter';
-import { UpdateCompanyDto } from './modules/companies/dto/update-company.dto';
-import { CreateJobPostingDto } from './modules/job-postings/dto/create-job-posting.dto';
-import { CreateEventDto } from './modules/events/dto/create-event.dto';
-import { UpdateDraftEventDto } from './modules/events/dto/update-draft-event.dto';
+import type { Environment } from './config/environment';
+import { configureHttp } from './shared/http/configuration/configure-http';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+// Socket.IO usa los mismos orígenes permitidos que el resto de la API (CORS_ORIGINS).
+class CorsIoAdapter extends IoAdapter {
+  constructor(
+    app: INestApplicationContext,
+    private readonly origins: string[],
+  ) {
+    super(app);
+  }
 
-  // Uno o varios origenes separados por coma:
-  //   WEB_ORIGIN=https://app.vercel.app,https://preview.vercel.app
-  const origenesPermitidos = (process.env.CORS_ORIGINS || process.env.WEB_ORIGIN || 'http://localhost:3001')
-    .split(',')
-    .map((origen) => origen.trim())
-    .filter(Boolean);
-
-  app.enableCors({
-    origin: origenesPermitidos,
-    credentials: true,
-  });
-
-  const validationPipe = new ValidationPipe({ whitelist: true, transform: true });
-  const eventsValidationPipe = new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  });
-  // Conserva la validación estricta de eventos, empresas y vacantes.
-  app.useGlobalPipes({
-    transform(value: unknown, metadata: ArgumentMetadata) {
-      const pipe = metadata.metatype === CreateEventDto || metadata.metatype === UpdateDraftEventDto || metadata.metatype === UpdateCompanyDto || metadata.metatype === CreateJobPostingDto
-        ? eventsValidationPipe : validationPipe;
-      return pipe.transform(value, metadata);
-    },
-  });
-  app.useGlobalFilters(new AppExceptionFilter());
-
-  // Las plataformas de despliegue asignan el puerto con PORT: hay que respetarlo.
-  const puerto = Number(process.env.PORT ?? 3000);
-  await app.listen(puerto, '0.0.0.0');
-
-  console.log(`API ejecutándose en http://localhost:${puerto}`);
+  override createIOServer(port: number, options?: ServerOptions) {
+    return super.createIOServer(port, {
+      ...options,
+      cors: { origin: this.origins, credentials: true },
+    });
+  }
 }
-bootstrap();
+
+async function bootstrap(): Promise<void> {
+  const app = await NestFactory.create(AppModule);
+  configureHttp(app);
+  const config = app.get(ConfigService<Environment, true>);
+  app.useWebSocketAdapter(new CorsIoAdapter(app, config.get('CORS_ORIGINS', { infer: true })));
+  app.enableShutdownHooks();
+  const port = config.get('PORT', { infer: true });
+  await app.listen(port, '0.0.0.0');
+  Logger.log(`API ejecutándose en el puerto ${port}`, 'Arranque');
+}
+
+void bootstrap().catch(() => {
+  Logger.error('No se pudo iniciar la API. Revisa la configuración del entorno.', 'Arranque');
+  process.exitCode = 1;
+});

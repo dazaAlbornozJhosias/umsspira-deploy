@@ -1,6 +1,6 @@
 ﻿import Link from 'next/link';
 import type { Requirements } from '@umsspira/shared-types';
-import { ArrowLeftIcon, AwardIcon, CirclePauseIcon } from 'lucide-react';
+import { ArrowLeftIcon, ArrowRightIcon, AwardIcon, CirclePauseIcon, InboxIcon } from 'lucide-react';
 import { ApprovedChip } from './approved-chip';
 import { StatusBadge } from './status-badge';
 import { MentorConfiguration } from './mentor-configuration';
@@ -13,6 +13,9 @@ export function ActivePanel({ requirements, onDeactivate }: { requirements: Requ
         <span aria-hidden="true" className="active-panel-hero-icon"><AwardIcon /></span>
         <h2 id="active-title" className="mentor-card-title active-panel-title">Tu participación como mentor está activa</h2>
         <p className="mentor-card-description active-panel-intro">Tu participación está habilitada. Ya puedes elegir tus áreas técnicas; pronto estarán disponibles más opciones de configuración.</p>
+        <Link href="/mentorship/requests/received" className="mentor-button mentor-button-secondary active-panel-requests-link">
+          <InboxIcon aria-hidden="true" /> Ver solicitudes recibidas <ArrowRightIcon aria-hidden="true" />
+        </Link>
       </div>
       <MentorConfiguration />
     </div>

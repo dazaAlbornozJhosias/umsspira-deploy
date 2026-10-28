@@ -38,6 +38,7 @@ function certificationItem(record: CertificationRecord): TimelineItem {
   if (record.backupFile) status = record.backupVerified ? 'verified' : 'pending';
 
   return {
+    id: record.id,
     title: record.name,
     subtitle: `${record.issuer} · ${record.issueYear}`,
     detail: `Grado: ${record.degree}`,

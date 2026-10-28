@@ -1,0 +1,21 @@
+meta {
+  name: Consultar referencia del documento
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/applications/{{applicationId}}/document
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Devuelve la ruta autenticada del documento. Para abrir sus bytes utiliza Leer documento.
+
+  Permiso: solicitudes:read.
+}

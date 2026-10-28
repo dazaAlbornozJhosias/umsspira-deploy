@@ -1,0 +1,48 @@
+meta {
+  name: HU-11 - Bloquear con seis rechazos
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/sessions
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombres": "{{hu11Nombres}}",
+    "apellidos": "{{hu11Apellidos}}",
+    "ci": "{{hu11Ci}}",
+    "complementoCi": "{{hu11ComplementoCi}}",
+    "expedidoEn": "{{hu11ExpedidoEn}}",
+    "correo": "{{hu11Correo}}",
+    "telefono": "{{hu11Telefono}}",
+    "carreraId": "{{hu11CarreraId}}",
+    "anioEgreso": {{hu11AnioEgreso}},
+    "codigoSis": "{{hu11CodigoSis}}"
+  }
+}
+
+tests {
+  const body = res.getBody();
+
+  test("HU-11: bloquea con seis rechazos", function () {
+    expect(res.getStatus()).to.equal(409);
+  });
+
+  test("HU-11: mantiene bloqueo por limite", function () {
+    expect(body?.error?.code).to.equal(
+      "REJECTION_LIMIT_REACHED"
+    );
+  });
+
+  test("HU-11: no genera borrador", function () {
+    expect(body?.data?.sessionToken).to.be.undefined;
+  });
+}

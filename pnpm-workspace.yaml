@@ -1,7 +1,11 @@
 packages:
   - 'apps/*'
+  - '!apps/api-antigua'
   - 'packages/*'
 allowBuilds:
+  argon2: true
+  '@prisma/engines': true
+  prisma: true
   '@nestjs/core': false
   '@parcel/watcher': true
   canvas: true

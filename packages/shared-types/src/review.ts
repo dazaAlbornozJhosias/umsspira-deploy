@@ -1,15 +1,15 @@
-export type ReviewDecision = 'APPROVED' | 'OBSERVED' | 'REJECTED';
+export type ReviewDecision = 'APROBADA' | 'OBSERVADA' | 'RECHAZADA';
 
 export type ApplicationStatus =
-  | 'PENDING'
-  | 'APPROVED'
-  | 'OBSERVED'
-  | 'REJECTED';
+  | 'PENDIENTE'
+  | 'APROBADA'
+  | 'OBSERVADA'
+  | 'RECHAZADA';
 
 export type CreateReviewRequest = {
   decision: ReviewDecision;
-  category?: string; // obligatoria si OBSERVED o REJECTED
-  note?: string; // de 10 a 500 caracteres si OBSERVED o REJECTED
+  category?: string; // obligatoria si OBSERVADA o RECHAZADA
+  note?: string; // de 10 a 500 caracteres si OBSERVADA o RECHAZADA
   notifyDean?: boolean;
 };
 

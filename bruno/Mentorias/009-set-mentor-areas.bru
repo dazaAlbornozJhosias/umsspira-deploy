@@ -1,0 +1,33 @@
+meta {
+  name: Seleccionar áreas de especialidad
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/mentorship/my-profile/areas
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "areaIds": [
+      "{{mentorAreaId}}"
+    ]
+  }
+}
+
+docs {
+  Requiere participación activa. Reemplaza la selección por entre una y cinco áreas raíz activas. Puedes agregar otros UUID al arreglo de este archivo.
+
+  Permiso: mentores:self:write.
+}

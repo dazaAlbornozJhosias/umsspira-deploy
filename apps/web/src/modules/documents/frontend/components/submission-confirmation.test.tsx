@@ -34,15 +34,9 @@ describe('SubmissionConfirmation', () => {
     expect(screen.getByText('Fecha no disponible')).toBeTruthy();
   });
 
-  it('muestra N/A como código de trámite mientras no exista', () => {
+  it('no expone el código interno TIT ni la etiqueta N/A (CA-07.6)', () => {
     render(<SubmissionConfirmation {...props} />);
-    expect(screen.getByText('Código de trámite')).toBeTruthy();
-    expect(screen.getByText('N/A')).toBeTruthy();
-  });
-
-  it('muestra el código de trámite cuando se recibe', () => {
-    render(<SubmissionConfirmation {...props} trackingCode="ABCDEF12" />);
-    expect(screen.getByText('ABCDEF12')).toBeTruthy();
+    expect(screen.queryByText('Código de trámite')).toBeNull();
     expect(screen.queryByText('N/A')).toBeNull();
   });
 
@@ -76,7 +70,6 @@ describe('SubmissionConfirmation', () => {
     );
     const labels = Array.from(container.querySelectorAll('dt')).map((term) => term.textContent);
     expect(labels).toEqual([
-      'Código de trámite',
       'Postulante',
       'C.I.',
       'Correo',

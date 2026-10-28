@@ -4,6 +4,7 @@ import {
   getFileNameFromDisposition,
   ReportGenerationException,
 } from '../services/graduates-report-service';
+import { setAccessToken, clearAccessToken } from '@/shared/services/auth-session';
 
 interface MockOptions {
   body?: unknown;
@@ -30,10 +31,11 @@ describe('graduates-report-service', () => {
 
   beforeEach(() => {
     fetchMock.mockReset();
+    setAccessToken('admin-token');
     global.fetch = fetchMock as unknown as typeof fetch;
   });
 
-  afterEach(() => jest.useRealTimers());
+  afterEach(() => { jest.useRealTimers(); clearAccessToken(); });
 
   it('pide el PDF del estado y devuelve el archivo con su nombre', async () => {
     fetchMock.mockResolvedValue(
@@ -42,7 +44,7 @@ describe('graduates-report-service', () => {
 
     const result = await fetchGraduatesReportPdf('verified');
 
-    expect(fetchMock.mock.calls[0][0]).toBe('http://localhost:3000/graduates-report/pdf?status=verified');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/reports/graduates/pdf?status=APROBADA');
     expect(result.fileName).toBe('reporte-titulados-verificados-20261001.pdf');
     expect(result.file).toBeInstanceOf(Blob);
   });
@@ -53,7 +55,7 @@ describe('graduates-report-service', () => {
     await fetchGraduatesReportPdf('observed', 'c2a5d8b3-4e6f-4a7b-9c8d-1e2f3a4b5c6d');
 
     expect(fetchMock.mock.calls[0][0]).toBe(
-      'http://localhost:3000/graduates-report/pdf?status=observed&careerId=c2a5d8b3-4e6f-4a7b-9c8d-1e2f3a4b5c6d',
+      '/api/v1/reports/graduates/pdf?status=OBSERVADA&careerId=c2a5d8b3-4e6f-4a7b-9c8d-1e2f3a4b5c6d',
     );
   });
 
@@ -63,12 +65,12 @@ describe('graduates-report-service', () => {
 
     await fetchGraduatesReportPdf('verified', undefined, controller.signal);
 
-    expect(fetchMock.mock.calls[0][1]).toEqual({ signal: controller.signal });
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ signal: controller.signal, headers: { Authorization: 'Bearer admin-token' } });
   });
 
   it('con 404 lanza EmptyReportException con el mensaje de la API', async () => {
     fetchMock.mockResolvedValue(
-      mockResponse(404, { body: { message: 'No hay titulados observados para exportar' } }),
+      mockResponse(404, { body: { error: { code: 'REPORT_EMPTY', message: 'No hay titulados observados para exportar' } } }),
     );
 
     const request = fetchGraduatesReportPdf('observed');

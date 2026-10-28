@@ -14,10 +14,10 @@ export const EMPTY_FILTERS: BoardFilters = { search: '', career: '', status: '' 
 
 const STATUS_OPTIONS: { value: '' | BoardStatus; label: string }[] = [
   { value: '', label: 'Todos los estados' },
-  { value: 'PENDING', label: 'Pendiente de validación' },
-  { value: 'OBSERVED', label: 'Observado' },
-  { value: 'APPROVED', label: 'Aprobado' },
-  { value: 'REJECTED', label: 'Rechazado' },
+  { value: 'PENDIENTE', label: 'Pendiente de validación' },
+  { value: 'OBSERVADA', label: 'Observado' },
+  { value: 'APROBADA', label: 'Aprobado' },
+  { value: 'RECHAZADA', label: 'Rechazado' },
 ];
 
 export interface RequestsFiltersProps {

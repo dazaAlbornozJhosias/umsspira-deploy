@@ -46,4 +46,22 @@ describe('VerifyEmailForm Component', () => {
 
     expect(onEditDataMock).toHaveBeenCalledTimes(1);
   });
+
+  it('muestra la variante de actualización de correo y regresa al resumen (CA-07.4)', () => {
+    const onBackToReview = jest.fn();
+    render(
+      <VerifyEmailForm
+        variant="update"
+        initialEmail="nuevo.correo@umss.edu"
+        onBackToReview={onBackToReview}
+      />,
+    );
+
+    expect(screen.getByText('Verifica tu nuevo correo electrónico')).toBeInTheDocument();
+    expect(screen.getByText('Tus datos previos permanecen intactos')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /corregir mis datos/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /volver al resumen de revisión/i }));
+    expect(onBackToReview).toHaveBeenCalledTimes(1);
+  });
 });

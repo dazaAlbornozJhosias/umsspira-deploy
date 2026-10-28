@@ -1,0 +1,21 @@
+meta {
+  name: Reenviar activación
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/applications/{{applicationId}}/activation
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Reenvía el código de una solicitud aprobada cuya cuenta todavía no se activó. Copia el nuevo código del correo a activationCode.
+
+  Permiso: solicitudes:review.
+}

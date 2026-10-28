@@ -1,5 +1,8 @@
 node_modules/
 apps/api/.local/
+apps/api/dist/
+apps/api-antigua/.local/
+apps/api/src/generated/
 dist/
 .next/
 .next-dev/
@@ -14,6 +17,15 @@ AGENTS.md
 .tmp-chrome-*/
 .vercel
 .env*
+!.env.example
+!apps/api/.env.example
+!apps/api-antigua/.env.example
+!apps/api-antigua/.env.localstack.example
 .context/
 .vscode/
-supabase/.temp/
+
+apps/api/.agents/
+apps/api/.claude/
+apps/api/.windsurf/
+apps/api/skills-lock.json
+holaaa

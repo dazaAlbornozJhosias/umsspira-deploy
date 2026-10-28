@@ -1,0 +1,35 @@
+meta {
+  name: Guardar información profesional
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/mentorship/my-profile/information
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "descripcion": "Mentoría en desarrollo profesional",
+    "experiencia": "Experiencia en desarrollo de aplicaciones y equipos de software.",
+    "informacion_relevante": "Disponibilidad para compartir experiencias profesionales.",
+    "foto_perfil": null,
+    "anios_exp": 3
+  }
+}
+
+docs {
+  Guarda información propia. foto_perfil admite una URL HTTP/HTTPS o null. experiencia es obligatoria.
+
+  Permiso: mentores:self:write.
+}

@@ -2,7 +2,8 @@ import Link from 'next/link';
 
 import { AFFINITY_ROUTE } from '@/modules/profile/data/affinity-route';
 
-// Tarjeta del resumen del perfil con el acceso a la afinidad profesional (Épica 3)
+// Tarjeta "Mi afinidad" del resumen del perfil (HU-07): solo un enlace a la pantalla de la Épica 3,
+// sin radar, porcentajes ni llamadas a GET /api/v1/radar
 export default function AffinityLinkCard() {
   return (
     <section
@@ -10,7 +11,7 @@ export default function AffinityLinkCard() {
       className="flex w-full flex-col gap-4 rounded-2xl border border-abyssal-blue/10 bg-white p-6"
     >
       <h2 id="affinity-card-title" className="text-xl font-bold text-blue-fantastic">
-        Afinidad profesional
+        Mi afinidad
       </h2>
       <p className="text-[13px] leading-[1.5] text-blue-fantastic/70">
         Descubre qué tan bien encaja tu perfil con las oportunidades laborales de la Red.

@@ -1,0 +1,21 @@
+meta {
+  name: Revocar una sesión
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/auth/sessions/{{sessionId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Completa sessionId con el UUID de una sesión propia.
+
+  Permiso: auth:sessions:self.
+}

@@ -1,0 +1,77 @@
+meta {
+  name: Enviar solicitud documental
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/submit
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "sessionToken": "{{sessionToken}}",
+    "fechaTitulacion": "2025-05-01",
+    "fechaIngreso": "2020-02-01",
+    "deseaMentor": false,
+    "tipoDocumento": "{{documentType}}",
+    "rutaStorage": "{{documentId}}",
+    "sizeBytes": {{documentSizeBytes}}
+  }
+}
+
+script:pre-request {
+  bru.deleteVar("hu7OriginalApplicationId");
+}
+
+
+tests {
+  const body = res.getBody();
+  const data = body?.data;
+
+  test("HU-07: entrega exitosa", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("HU-07: devuelve identificador de solicitud", function () {
+    expect(data?.idSolicitud).to.be.a("string");
+    expect(data?.idSolicitud).to.not.be.empty;
+  });
+
+  test("HU-07: registra solicitud pendiente", function () {
+    expect(data?.estado).to.equal("PENDING");
+  });
+
+  test("HU-07: devuelve confirmacion", function () {
+    expect(data?.mensaje).to.equal(
+      "Solicitud registrada correctamente"
+    );
+  });
+
+  if (
+    res.getStatus() === 201 &&
+    typeof data?.idSolicitud === "string" &&
+    data.estado === "PENDING"
+  ) {
+    bru.setVar("hu7OriginalApplicationId", data.idSolicitud);
+  }
+}
+
+docs {
+  Primera entrega definitiva de HU-07.
+
+  Requisitos:
+  - Borrador vigente.
+  - Correo verificado mediante OTP.
+  - Documento previamente cargado.
+
+  Al ejecutarse correctamente, guarda el identificador en
+  hu7OriginalApplicationId para las pruebas posteriores.
+}
+

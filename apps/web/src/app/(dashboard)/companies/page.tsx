@@ -1,5 +1,5 @@
 'use client';
-
+import { ConnectedNavbar } from '@/shared/components/navbar/index';
 import { useCallback, useEffect, useState } from 'react';
 import type {
   Company,

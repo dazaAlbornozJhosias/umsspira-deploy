@@ -1,0 +1,25 @@
+meta {
+  name: Cargar respaldo de certificación
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/perfil/certificaciones/{{certificationId}}/respaldo
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:multipart-form {
+  archivo: @file({{certificationFilePath}})
+}
+
+docs {
+  Completa certificationId y certificationFilePath. Adjunta un JPG de hasta 5 MiB; sustituye el respaldo anterior de esa certificación.
+
+  Permiso: perfil:self:write.
+}

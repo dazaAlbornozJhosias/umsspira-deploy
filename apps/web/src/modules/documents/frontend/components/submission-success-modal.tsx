@@ -30,7 +30,7 @@ export interface SubmissionSuccessModalProps {
 /**
  * Modal de confirmación tras registrar la solicitud (CA-03.2).
  * Muestra el encabezado y el botón de salida, y delega el resumen de datos en SubmissionConfirmation.
- * El código de trámite aún no existe (siguiente sprint): el resumen muestra N/A.
+ * El código interno TIT no se expone en la vista pública (CA-07.6).
  */
 export function SubmissionSuccessModal({
   submission,
@@ -79,8 +79,7 @@ export function SubmissionSuccessModal({
             ¡Solicitud enviada con éxito!
           </h2>
           <p className="mt-1 text-xs text-abyssal-blue/70">
-            Su expediente ha sido ingresado al sistema institucional de validación académica bajo el código de
-            seguimiento oficial.
+            Su expediente ha sido ingresado al sistema institucional de validación académica.
           </p>
         </div>
 
@@ -100,7 +99,7 @@ export function SubmissionSuccessModal({
         <Button
           type="button"
           onClick={onGoHome}
-          className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 bg-burning-flame text-base font-bold text-abyssal-blue hover:bg-burning-flame/90"
+          className="bg-burning-flame text-abyssal-blue hover:bg-burning-flame/90 hover:text-abyssal-blue disabled:hover:bg-burning-flame focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-abyssal-blue focus-visible:ring-offset-2 mt-3 inline-flex h-11 w-full items-center justify-center gap-2 text-base font-bold"
         >
           Ir al inicio
           <Home aria-hidden="true" className="h-4 w-4" />

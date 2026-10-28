@@ -1,0 +1,29 @@
+meta {
+  name: Listar solicitudes para reportes
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/reports/graduates?page=1&limit=10
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  limit: 10
+  ~careerId: {{careerId}}
+  ~status: {{reportStatus}}
+  ~search:
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Listado paginado. Habilita los filtros opcionales que necesites; reportStatus admite PENDIENTE, APROBADA, OBSERVADA o RECHAZADA.
+
+  Permiso: reportes:read.
+}

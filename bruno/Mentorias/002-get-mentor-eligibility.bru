@@ -1,0 +1,21 @@
+meta {
+  name: Consultar elegibilidad
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/mentorship/eligibility
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Usa el accessToken del titulado que desea participar como mentor.
+
+  Permiso: mentores:self:write.
+}

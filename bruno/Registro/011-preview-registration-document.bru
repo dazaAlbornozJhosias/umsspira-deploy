@@ -1,0 +1,17 @@
+meta {
+  name: Recuperar documento del borrador
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/v1/registrations/sessions/{{sessionToken}}/document
+  body: none
+  auth: none
+}
+
+docs {
+  Requiere el token secreto de un borrador vigente con archivo cargado.
+  Devuelve PDF/PNG/JPG con Cache-Control no-store; no es una URL pública permanente.
+  Permite revisar el archivo mientras se verifica un correo nuevo. Tras entregar o vencer el borrador devuelve 410.
+}

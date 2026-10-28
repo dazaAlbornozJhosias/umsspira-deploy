@@ -1,0 +1,34 @@
+meta {
+  name: Agregar experiencia laboral
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/perfil/experiencia-laboral
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "empresa": "Empresa de ejemplo",
+    "cargo": "Desarrollador de software",
+    "fechaInicio": "2024-02-01",
+    "fechaFin": null
+  }
+}
+
+docs {
+  Copia el UUID creado a profileRecordId y usa profileSection=experiencia-laboral. fechaFin=null indica experiencia vigente.
+
+  Permiso: perfil:self:write.
+}

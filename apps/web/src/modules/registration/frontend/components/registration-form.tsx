@@ -217,10 +217,10 @@ export function RegistrationForm() {
           <Button type="button" variant="secondary" onClick={() => router.push('/login')}>
             Cancelar
           </Button>
-          <Button 
+          <Button
             type="submit" 
             disabled={isSubmitting}
-            className="rounded-lg bg-burning-flame px-4 py-3.5 text-sm font-bold text-abyssal-blue shadow-sm transition hover:brightness-95 disabled:opacity-60"
+            className="bg-burning-flame text-abyssal-blue hover:bg-burning-flame/90 hover:text-abyssal-blue disabled:hover:bg-burning-flame focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-abyssal-blue focus-visible:ring-offset-2 rounded-lg px-4 py-3.5 text-sm font-bold shadow-sm transition disabled:opacity-60"
           >
             {isSubmitting ? 'Verificando...' : 'Continuar'}
           </Button>

@@ -1,0 +1,48 @@
+meta {
+  name: HU-11 - Bloquear solicitud pendiente duplicada
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/sessions
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombres": "{{hu11PendingNombres}}",
+    "apellidos": "{{hu11PendingApellidos}}",
+    "ci": "{{hu11PendingCi}}",
+    "complementoCi": "{{hu11PendingComplemento}}",
+    "expedidoEn": "{{hu11PendingExpedidoEn}}",
+    "correo": "{{hu11PendingEmail}}",
+    "telefono": "{{hu11PendingTelefono}}",
+    "carreraId": "{{hu11CarreraId}}",
+    "anioEgreso": {{hu11AnioEgreso}},
+    "codigoSis": "{{hu11PendingSis}}"
+  }
+}
+
+tests {
+  const body = res.getBody();
+
+  test("HU-11: bloquea solicitud pendiente duplicada", function () {
+    expect(res.getStatus()).to.equal(409);
+  });
+
+  test("HU-11: devuelve REGISTRATION_EXISTS", function () {
+    expect(body?.error?.code).to.equal(
+      "REGISTRATION_EXISTS"
+    );
+  });
+
+  test("HU-11: no genera nuevo borrador", function () {
+    expect(body?.data?.sessionToken).to.be.undefined;
+  });
+}

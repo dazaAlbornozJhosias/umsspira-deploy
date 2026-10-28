@@ -3,14 +3,12 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { authStore, useAuthStore } from '@/modules/auth/frontend/store';
-import { clearSession, getSessionToken } from '@/modules/auth/frontend/services/session';
-import { clearAccessToken, getAccessToken } from '@/shared/services/auth-session';
-import { clearToken, getToken } from '@/shared/services/api-client';
+import { clearSession } from '@/modules/auth/frontend/services/session';
+import { authenticatedFetch, revokeCurrentSession, SessionError } from '@/shared/services/auth-session';
 import { Navbar } from './navbar';
 import { NAVBAR_ROLE_LABEL } from './navigation';
 import type { NavbarRole, NavbarSession } from './types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 const roles: NavbarRole[] = ['titulado', 'empresa', 'administrador'];
 
 function sessionFromUser(value: unknown): NavbarSession | null {
@@ -34,26 +32,42 @@ export function ConnectedNavbar() {
   const router = useRouter();
   const auth = useAuthStore();
   const [session, setSession] = useState<NavbarSession | null>(null);
+  const [logoutError, setLogoutError] = useState(false);
 
   useEffect(() => {
     let request: AbortController | undefined;
     let disposed = false;
+    const invalidateSession = () => {
+      // HU-004 CA-05: un rechazo 401 no debe dejar el estado React autenticado.
+      clearSession();
+      authStore.reset();
+      setSession(DEMO_SESSION);
+      // El portal institucional público puede mostrarse sin sesión;
+      // reportería, en cambio, requiere volver a /login.
+      if (pathname === '/reports' || pathname?.startsWith('/reports/')) {
+        router.replace('/login');
+        router.refresh();
+      }
+    };
     const synchronize = async () => {
       request?.abort();
       const controller = new AbortController();
       request = controller;
-      const token = getSessionToken() ?? getAccessToken() ?? getToken();
-      if (!token) { setSession(DEMO_SESSION); return; }
       try {
-        const response = await fetch(`${API_URL}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await authenticatedFetch('/api/v1/auth/me', {
           signal: controller.signal,
           cache: 'no-store',
         });
         const body: { data?: unknown } = response.ok ? await response.json() : {};
-        if (!disposed && !controller.signal.aborted) setSession((response.ok ? sessionFromUser(body.data) : null) ?? DEMO_SESSION);
-      } catch {
-        if (!disposed && !controller.signal.aborted) setSession(DEMO_SESSION);
+        if (!disposed && !controller.signal.aborted) {
+          if (response.status === 401) invalidateSession();
+          else setSession((response.ok ? sessionFromUser(body.data) : null) ?? DEMO_SESSION);
+        }
+      } catch (error) {
+        if (!disposed && !controller.signal.aborted) {
+          if (error instanceof SessionError && error.status === 401) invalidateSession();
+          else setSession(DEMO_SESSION);
+        }
       }
     };
     void synchronize();
@@ -65,17 +79,20 @@ export function ConnectedNavbar() {
       window.removeEventListener('focus', synchronize);
       window.removeEventListener('storage', synchronize);
     };
-  }, [pathname, auth.accessToken]);
+  }, [pathname, auth.accessToken, router]);
 
-  const logout = () => {
-    clearSession();
-    clearAccessToken();
-    clearToken();
-    authStore.reset();
-    setSession(null);
-    router.push('/login');
-    router.refresh();
+  const logout = async () => {
+    setLogoutError(false);
+    try {
+      await revokeCurrentSession();
+      clearSession();
+      authStore.reset();
+      setSession(null);
+      // HU-004: el administrador regresa a la bienvenida institucional.
+      router.push(session?.role === 'administrador' ? '/' : '/login');
+      router.refresh();
+    } catch { setLogoutError(true); }
   };
 
-  return <Navbar session={session} onLogout={logout} />;
+  return <><Navbar session={session} onLogout={logout} />{logoutError && <p role="alert">No se pudo cerrar la sesión. Inténtalo nuevamente.</p>}</>;
 }

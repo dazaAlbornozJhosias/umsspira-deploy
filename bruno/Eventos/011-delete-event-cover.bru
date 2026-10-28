@@ -1,0 +1,21 @@
+meta {
+  name: Eliminar portada sin vincular
+  type: http
+  seq: 11
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/events/covers/{{eventCoverId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Elimina una carga propia que todavía no se utiliza en un evento. Responde 204 sin cuerpo.
+
+  Permiso: eventos:manage.
+}

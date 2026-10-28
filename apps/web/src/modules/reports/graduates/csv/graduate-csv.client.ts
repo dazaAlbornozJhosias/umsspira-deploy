@@ -1,3 +1,7 @@
+import { authenticatedFetch } from '@/shared/services/auth-session';
+import { readApiError } from '@/shared/services/api-contract';
+import { fetchCareers } from '@/modules/registration/frontend/services/registration.service';
+
 export type GraduateCsvStatus = 'TODOS' | 'VERIFICADO' | 'OBSERVADO';
 
 export interface GraduateCsvFilters {
@@ -48,10 +52,11 @@ function getFilename(
 
 async function getErrorMessage(response: Response): Promise<string> {
   try {
-    const payload = (await response.json()) as { message?: unknown };
+    const payload = await response.json();
+    const message = readApiError(payload, '').message;
 
-    if (typeof payload.message === 'string' && payload.message.trim() !== '') {
-      return payload.message;
+    if (message.trim() !== '') {
+      return message;
     }
   } catch {
     // La API puede responder sin cuerpo JSON ante ciertos errores de red/proxy.
@@ -112,16 +117,20 @@ async function readResponseBlob(
 
 export async function requestGraduateCsv(
   filters: GraduateCsvFilters = {},
-  apiBaseUrl: string = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000',
+  apiBaseUrl: string = '',
   onProgress?: GraduateCsvProgressHandler,
 ): Promise<GraduateCsvDownload> {
   const params = new URLSearchParams();
   const status = filters.status ?? 'TODOS';
 
-  params.set('status', status);
+  if (status !== 'TODOS') params.set('status', status === 'VERIFICADO' ? 'APROBADA' : 'OBSERVADA');
 
   if (filters.career?.trim()) {
-    params.set('career', filters.career.trim());
+    const selected = filters.career.trim();
+    const careers = await fetchCareers();
+    const career = careers.find((item) => item.id === selected || item.nombre === selected);
+    if (!career) throw new Error('No se encontró la carrera seleccionada');
+    params.set('careerId', career.id);
   }
 
   if (filters.search?.trim()) {
@@ -130,12 +139,12 @@ export async function requestGraduateCsv(
 
   const query = params.toString();
   const baseUrl = apiBaseUrl.replace(/\/$/, '');
-  const url = `${baseUrl}/graduates-report/csv?${query}`;
+  const url = `${baseUrl}/api/v1/reports/graduates/csv?${query}`;
 
   let response: Response;
 
   try {
-    response = await fetch(url, { method: 'GET' });
+    response = await authenticatedFetch(url, { method: 'GET' });
   } catch {
     throw new Error(GRADUATE_CSV_ERROR_MESSAGE);
   }

@@ -1,6 +1,7 @@
-'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+'use client';
+ 
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Briefcase, Check, Eye, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -9,32 +10,55 @@ import { SeccionAcordeon } from './seccion-acordeon';
 import { FormularioExperiencia, type Experiencia } from './experiencia-laboral';
 import { FormacionAcademicaForm, type FormacionAcademica } from './formacion-academica';
 import { FormularioCertificaciones, type Certificacion } from './certificaciones';
-import { crearExperiencia, crearFormacion } from '@/modules/profile/services/perfil-api';
+import { FormularioDescripcion } from './descripcion-profesional';
+import {
+  crearCertificacion,
+  crearExperiencia,
+  crearFormacion,
+  guardarDescripcion,
+  subirRespaldo,
+} from '@/modules/profile/services/perfil-api';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import { urlDeArchivo } from '@/modules/profile/utils/backup-url';
+import {
+  profileCompleteness,
+  type CompletenessSectionId,
+} from '@/modules/profile/utils/profile-completeness';
 import type {
   CertificationRecord,
   EducationRecord,
   ExperienceRecord,
 } from '@/modules/profile/types/profile-record';
-
-// returnTo: ruta interna desde la que se llegó (por ejemplo /afinidad); al terminar se vuelve ahí (E2.3)
-export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
+ 
+// returnTo: ruta interna desde la que se llegó (por ejemplo /afinidad); al terminar se vuelve ahí (E2.3).
+// seccionInicial: sección que se abre al llegar desde el indicador de completitud (T6.6)
+export function AcordeonPerfil({
+  returnTo,
+  seccionInicial,
+}: {
+  returnTo?: string;
+  seccionInicial?: CompletenessSectionId;
+}) {
   // Los registros vienen del estado compartido del perfil, así lo agregado aquí aparece en el resumen
-  const { records, addEducation, addExperience, addCertification } = useProfileStore();
+  const { records, description, addEducation, addExperience, addCertification, setDescription } =
+    useProfileStore();
   const router = useRouter();
   const [avisoBorrador, setAvisoBorrador] = useState(false);
   // Errores sin corregir por sección, para el contador del encabezado (HU-02, AC 6)
   const [erroresFormacion, setErroresFormacion] = useState(0);
   const [erroresExperiencia, setErroresExperiencia] = useState(0);
   const [erroresCertificaciones, setErroresCertificaciones] = useState(0);
-
+  // Avance (0 a 100) de la subida del respaldo mientras se guarda una certificación
+  const [progresoSubida, setProgresoSubida] = useState<number>();
+  // Certificación ya creada cuyo respaldo no se pudo subir: al reintentar se sube solo la foto, sin duplicar (T8.6)
+  const pendienteRef = useRef<{ clave: string; creada: CertificationRecord } | null>(null);
+ 
   useEffect(() => {
     if (!avisoBorrador) return;
     const temporizador = setTimeout(() => setAvisoBorrador(false), 3000);
     return () => clearTimeout(temporizador);
   }, [avisoBorrador]);
-
+ 
   const formaciones = useMemo<FormacionAcademica[]>(
     () =>
       (records.education as EducationRecord[]).map((registro) => ({
@@ -45,7 +69,7 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
       })),
     [records.education],
   );
-
+ 
   const experiencias = useMemo<Experiencia[]>(
     () =>
       (records.experience as ExperienceRecord[]).map((registro) => ({
@@ -56,7 +80,7 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
       })),
     [records.experience],
   );
-
+ 
   const certificaciones = useMemo<Certificacion[]>(
     () =>
       (records.certification as CertificationRecord[]).map((registro) => ({
@@ -68,10 +92,11 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
       })),
     [records.certification],
   );
-
-  const cantidades = [formaciones.length, experiencias.length, certificaciones.length];
-  const completas = cantidades.filter((cantidad) => cantidad > 0).length;
-
+ 
+  // Mismo cálculo que el indicador del resumen: las 3 secciones de registros y la descripción
+  const secciones = profileCompleteness(records, description).sections;
+  const completas = secciones.filter((seccion) => seccion.complete).length;
+ 
   return (
     <div className="flex flex-col gap-6">
       {/* Cabecera con progreso (v3: "Completar Perfil Profesional") */}
@@ -80,7 +105,7 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
           <h1 className="text-2xl font-bold text-blue-fantastic md:text-[28px]">Completar Perfil Profesional</h1>
           <div className="flex flex-wrap items-center gap-4">
             <span className="text-sm font-semibold text-truffle-trouble">
-              {completas} de 3 secciones completas
+              {completas} de {secciones.length} secciones completas
             </span>
             {returnTo && (
               <Link
@@ -100,9 +125,9 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
             </Link>
           </div>
         </div>
-        <BarraProgreso completas={completas} total={3} />
+        <BarraProgreso completas={completas} total={secciones.length} />
       </header>
-
+ 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         {/* Tarjeta informativa (v3: "Tu Base de Datos Egresado") */}
         <aside className="flex flex-col gap-4 rounded-2xl border border-abyssal-blue/10 bg-white p-6 lg:w-[300px] lg:shrink-0">
@@ -123,11 +148,12 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
             </p>
           </div>
         </aside>
-
+ 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-
+ 
       <SeccionAcordeon
         numero={1}
+        abiertaInicial={seccionInicial === 'formacion-academica'}
         titulo="Formación académica"
         descripcion="Tu formación académica principal"
         cantidad={formaciones.length}
@@ -150,6 +176,7 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
       </SeccionAcordeon>
       <SeccionAcordeon
         numero={2}
+        abiertaInicial={seccionInicial === 'experiencia-laboral'}
         titulo="Experiencia laboral"
         descripcion="Tu experiencia profesional más relevante"
         cantidad={experiencias.length}
@@ -166,6 +193,7 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
       </SeccionAcordeon>
       <SeccionAcordeon
         numero={3}
+        abiertaInicial={seccionInicial === 'certificaciones'}
         titulo="Certificaciones"
         descripcion="Credenciales que respaldan tu perfil"
         cantidad={certificaciones.length}
@@ -174,18 +202,55 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
         <FormularioCertificaciones
           certificaciones={certificaciones}
           onErroresChange={setErroresCertificaciones}
-          onAgregar={(certificacion) =>
+          returnTo={returnTo}
+          progreso={progresoSubida}
+          onAgregar={async (certificacion) => {
+            setProgresoSubida(undefined);
+            const clave = JSON.stringify([
+              certificacion.nombre,
+              certificacion.entidadEmisora,
+              certificacion.anioEmision,
+              certificacion.grado,
+            ]);
+            // 1) se crea la certificación (o se reutiliza la que ya quedó creada) y 2) con su id se sube la foto
+            let creada = pendienteRef.current?.clave === clave ? pendienteRef.current.creada : null;
+            if (!creada) {
+              creada = await crearCertificacion(certificacion);
+              pendienteRef.current = { clave, creada };
+            }
+            if (certificacion.respaldo) {
+              await subirRespaldo(creada.id, certificacion.respaldo, setProgresoSubida);
+            }
+            pendienteRef.current = null;
+            // Solo se agrega al estado lo que la API guardó, con su id real
             addCertification({
-              name: certificacion.nombre,
-              issuer: certificacion.entidadEmisora,
-              issueYear: certificacion.anioEmision,
-              degree: certificacion.grado,
+              id: creada.id,
+              name: creada.name,
+              issuer: creada.issuer,
+              issueYear: creada.issueYear,
+              degree: creada.degree,
               // Un respaldo recién subido queda en revisión hasta que la administración lo valide
               backupFile: certificacion.respaldo?.name,
               backupUrl: urlDeArchivo(certificacion.respaldo),
               backupVerified: false,
-            })
-          }
+            });
+          }}
+        />
+      </SeccionAcordeon>
+      <SeccionAcordeon
+        numero={4}
+        abiertaInicial={seccionInicial === 'descripcion-profesional'}
+        titulo="Descripción profesional"
+        descripcion="Un resumen de quién eres como profesional"
+        cantidad={description ? 1 : 0}
+        textoCompleto="(Completado)"
+      >
+        <FormularioDescripcion
+          descripcion={description}
+          onGuardar={async (descripcion) => {
+            // El resumen muestra lo que la API guardó; si falla, el estado no cambia
+            setDescription(await guardarDescripcion(descripcion));
+          }}
         />
       </SeccionAcordeon>
 
@@ -208,7 +273,7 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
           </div>
         </div>
       </div>
-
+ 
       {avisoBorrador && (
         <div
           role="status"
@@ -221,3 +286,4 @@ export function AcordeonPerfil({ returnTo }: { returnTo?: string }) {
     </div>
   );
 }
+ 

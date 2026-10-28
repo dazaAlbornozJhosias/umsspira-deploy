@@ -4,7 +4,7 @@ describe('submitRegistration', () => {
   const params = {
     sessionToken: '22222222-2222-4222-8222-222222222222',
     tipoDocumento: 'titulo_provision_nacional' as const,
-    rutaStorage: 'solicitudes/x/y.pdf',
+    rutaStorage: '33333333-3333-4333-8333-333333333333',
     sizeBytes: 2048,
     mimeType: 'application/pdf',
   };
@@ -20,7 +20,7 @@ describe('submitRegistration', () => {
     const result = await submitRegistration(params);
 
     expect(result).toEqual({ ok: true, submission });
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:3000/registrations/submit', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/v1/registrations/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: expect.any(String),

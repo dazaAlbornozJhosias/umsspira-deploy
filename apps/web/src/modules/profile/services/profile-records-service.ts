@@ -1,7 +1,13 @@
-import { CURRENT_GRADUATE_ID } from '@/modules/profile/data/profile-records-data';
-import type { DeleteRecordErrorCode, ProfileRecord } from '@/modules/profile/types/profile-record';
+import { PERFIL_URL } from '@/modules/profile/services/perfil-api';
+import type { DeleteRecordErrorCode, ProfileRecord, RecordSection } from '@/modules/profile/types/profile-record';
+import { ApiError, apiFetch } from '@/shared/services/api-client';
 
-const MOCK_DELAY_MS = 600;
+// Nombre de cada sección en las rutas del backend (PROFILE_SECTIONS del módulo profile de la API)
+const API_SECTIONS: Record<RecordSection, string> = {
+  education: 'formacion-academica',
+  experience: 'experiencia-laboral',
+  certification: 'certificaciones',
+};
 
 export class DeleteRecordException extends Error {
   constructor(public readonly code: DeleteRecordErrorCode) {
@@ -10,15 +16,15 @@ export class DeleteRecordException extends Error {
   }
 }
 
-// Mock del endpoint DELETE de registros del perfil (el backend se integra en la siguiente fase).
-// Reproduce las respuestas que la interfaz debe manejar: sin conexión y registro de otro egresado (403).
-export async function deleteProfileRecord(record: ProfileRecord): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS));
-
-  if (typeof navigator !== 'undefined' && !navigator.onLine) {
-    throw new DeleteRecordException('network');
-  }
-  if (record.ownerId !== CURRENT_GRADUATE_ID) {
-    throw new DeleteRecordException('forbidden');
+// DELETE /api/v1/perfil/:seccion/:id -> 204. La eliminación es física (se borra de la base).
+// 403 = el registro es de otro egresado; cualquier otro fallo se muestra como error de conexión
+// y la lista no cambia.
+export async function deleteProfileRecord(section: RecordSection, record: ProfileRecord): Promise<void> {
+  try {
+    await apiFetch<void>(`${PERFIL_URL}/${API_SECTIONS[section]}/${record.id}`, { method: 'DELETE' });
+  } catch (error) {
+    // 404 = ya no existe en la base: el resultado es el mismo que haberlo eliminado
+    if (error instanceof ApiError && error.status === 404) return;
+    throw new DeleteRecordException(error instanceof ApiError && error.status === 403 ? 'forbidden' : 'network');
   }
 }

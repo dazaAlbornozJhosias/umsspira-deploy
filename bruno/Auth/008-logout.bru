@@ -1,0 +1,19 @@
+meta {
+  name: Cerrar sesión actual
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/logout
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Invalida la sesión del accessToken actual. Responde 204 sin cuerpo.
+}

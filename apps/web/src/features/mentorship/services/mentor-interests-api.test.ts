@@ -36,14 +36,14 @@ afterEach(clearAccessToken);
 afterAll(() => { global.fetch = originalFetch; });
 
 function response(body: unknown, status = 200) {
-  return { ok: status < 400, status, json: async () => body };
+  return { ok: status < 400, status, json: async () => status < 400 ? { data: body } : { error: body } };
 }
 
 it('mapea el catálogo y la selección real y envía el Bearer token', async () => {
   const state = await getMentorInterests();
   expect(state.catalog[0]).toEqual({ id: area.id, name: 'Backend', description: '', topics: [{ id: 'rest', name: 'REST' }, { id: 'node', name: 'Node.js' }] });
   expect(state.configuration).toEqual({ areaIds: [area.id], topicIds: ['rest'] });
-  expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/interests/mine'), expect.objectContaining({ cache: 'no-store', credentials: 'omit', headers: { Accept: 'application/json', Authorization: 'Bearer access-token' } }));
+  expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/interests/mine'), expect.objectContaining({ cache: 'no-store', credentials: 'omit', headers: { accept: 'application/json', Authorization: 'Bearer access-token' } }));
 });
 
 it('no hace solicitudes sin sesión y limpia el token si recibe 401', async () => {

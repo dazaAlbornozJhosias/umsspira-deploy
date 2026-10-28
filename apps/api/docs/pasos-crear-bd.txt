@@ -1,0 +1,35 @@
+1. Crear un proyecto Supabase vacío para el equipo. Habrá una base compartida para dev, pero cada equipo debe tener su propia copia para desarrollar.
+
+2. Copiar apps/api/.env.example como apps/api/.env y completar:
+   - DATABASE_URL: conexión del pooler de transacciones de Supabase, puerto 6543.
+   - DIRECT_URL: conexión del pooler de sesiones, puerto 5432, usada para migraciones y seeds.
+   - Reemplazar [YOUR-PASSWORD] en ambas conexiones por la contraseña de esa base.
+   - Dejar NODE_ENV=development y APP_ENV=epic. APP_ENV indica qué base usamos; no es el nombre de la rama de Git.
+
+3. Generar la clave de autenticación y pegar el resultado en AUTH_JWT_SECRET:
+
+   node -e "console.log(require('node:crypto').randomBytes(48).toString('hex'))"
+
+   El backend la usa para firmar y verificar los tokens del login. Generarla una sola vez para este entorno y conservarla entre reinicios. No es una credencial de Supabase.
+
+4. Desde la raíz del repositorio, instalar dependencias, crear las tablas y cargar los datos de ejemplo:
+
+   pnpm install
+   pnpm --filter api db:deploy
+   pnpm --filter api prisma:generate
+   pnpm --filter api db:seed:demo
+
+5. Iniciar el backend:
+
+   pnpm --filter api dev
+
+6. Abrir http://localhost:3000/health. Debe responder con servidor y base de datos en estado ok.
+
+DATOS DE LOS EQUIPOS
+
+- Cada equipo añade sus datos en apps/api/scripts/seed/epic-N.ts, según su épica. Hay un archivo para cada una, del 1 al 9.
+- Las cuentas de prueba están en demo-accounts.ts; las carreras y la creación de cuentas, en base.ts, dentro de esa misma carpeta.
+- Usar UUID fijos y reutilizar los existentes para las relaciones. Hay un ejemplo en apps/api/scripts/seed/README.md.
+- Un solo comando carga la base compartida y todas las épicas: pnpm --filter api db:seed:demo.
+- Repetirlo agrega datos faltantes; no borra ni actualiza registros existentes. Si una carga falla, corregir el problema y volver a ejecutarlo.
+- Para la base compartida de dev usar APP_ENV=dev. Para la base del sistema simulado real usar APP_ENV=production y no ejecutar la seed de demostración.

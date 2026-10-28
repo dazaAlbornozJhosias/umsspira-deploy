@@ -1,6 +1,7 @@
 import { getAccessToken, clearAccessToken } from '@/shared/services/auth-session';
+import { authenticatedFetch, ensureAccessToken } from '@/shared/services/auth-session';
+import { readApiError } from '@/shared/services/api-contract';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
 export interface MentorArea {
   id: string;
@@ -20,10 +21,10 @@ export class MentorAreasError extends Error {
 }
 
 async function request(path: string, options: RequestInit = {}): Promise<unknown> {
-  const token = getAccessToken();
+  const token = getAccessToken() ?? await ensureAccessToken();
   if (!token) throw new Error('Inicia sesión para configurar tus áreas técnicas.');
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await authenticatedFetch(path, {
     ...options,
     credentials: 'omit',
     cache: 'no-store',
@@ -42,8 +43,8 @@ async function request(path: string, options: RequestInit = {}): Promise<unknown
       if (body) {
         try {
           const parsed: unknown = JSON.parse(body);
-          if (parsed && typeof parsed === 'object' && 'message' in parsed) {
-            const message = parsed.message;
+          if (parsed && typeof parsed === 'object' && ('message' in parsed || 'error' in parsed)) {
+            const message = readApiError(parsed, '').message;
             serverMessage = Array.isArray(message)
               ? message.filter((item): item is string => typeof item === 'string').join(' ')
               : typeof message === 'string' ? message : '';
@@ -63,7 +64,7 @@ async function request(path: string, options: RequestInit = {}): Promise<unknown
       || `No se pudieron guardar las áreas (HTTP ${response.status})${serverMessage ? `: ${serverMessage}` : '.'}`, response.status,
     );
   }
-  return response.json();
+  return (await response.json()).data;
 }
 
 function parseAreasState(value: unknown): MentorAreasState {
@@ -108,11 +109,11 @@ function parseAreasState(value: unknown): MentorAreasState {
 }
 
 export async function getMentorAreas(signal?: AbortSignal): Promise<MentorAreasState> {
-  return parseAreasState(await request('/mentorship/my-profile/areas', { method: 'GET', signal }));
+  return parseAreasState(await request('/api/v1/mentorship/my-profile/areas', { method: 'GET', signal }));
 }
 
 export async function updateMentorAreas(areaIds: string[], signal?: AbortSignal): Promise<MentorAreasState> {
-  return parseAreasState(await request('/mentorship/my-profile/areas', {
+  return parseAreasState(await request('/api/v1/mentorship/my-profile/areas', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ areaIds: Array.from(new Set(areaIds)) }),

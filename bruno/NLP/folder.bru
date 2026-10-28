@@ -1,0 +1,18 @@
+meta {
+  name: NLP
+  seq: 12
+}
+
+docs {
+  Extracción de palabras clave del perfil. Usa el accessToken de un titulado o administrador.
+
+  Permiso: nlp:extract. La empresa recibe 403 y una petición sin token recibe 401.
+}
+
+vars:pre-request {
+  accessTokenSinPermiso:
+}
+
+vars:secret [
+  accessTokenSinPermiso
+]

@@ -1,0 +1,33 @@
+meta {
+  name: Cambiar participación
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/mentorship/my-profile/participation
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "esta_activo": true,
+    "experiencia": "Desarrollo de aplicaciones y trabajo en equipos de software.",
+    "anios_exp": 3
+  }
+}
+
+docs {
+  Activa la participación propia; false la desactiva. Copia el UUID del perfil a mentorId. Mentor y usuario tienen UUID distintos.
+
+  Permiso: mentores:self:write.
+}

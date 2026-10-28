@@ -1,0 +1,2 @@
+# Conservar los bytes originales de M1 para verificar su checksum registrado.
+apps/api/prisma/migrations/20261022000000_epic3_sprint2_m1_radar/migration.sql -text

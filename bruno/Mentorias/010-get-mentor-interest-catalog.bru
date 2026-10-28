@@ -1,0 +1,21 @@
+meta {
+  name: Consultar catálogo de intereses
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/v1/mentorship/interests/catalog
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Muestra intereses de las áreas seleccionadas. Copia un UUID de interés a mentorInterestId.
+
+  Permiso: mentores:self:write.
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Consultar encabezado de empresa
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/companies/{{companyId}}/header
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Usa el accessToken de una empresa. Copia companyId de data.scopes.companyIds en Me.
+
+  Permiso: empresas:self:read.
+}

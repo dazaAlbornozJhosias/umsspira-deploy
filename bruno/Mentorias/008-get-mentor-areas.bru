@@ -1,0 +1,21 @@
+meta {
+  name: Consultar áreas de especialidad
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/v1/mentorship/my-profile/areas
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Requiere participación activa. Copia un UUID del catálogo a mentorAreaId.
+
+  Permiso: mentores:self:write.
+}

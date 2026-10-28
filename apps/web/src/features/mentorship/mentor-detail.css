@@ -1,0 +1,583 @@
+/* ==========================================================================
+   HU-6.9: Consultar perfil detallado del mentor
+   Todas las clases tienen el prefijo mentor-detail- para garantizar modularidad.
+   ========================================================================== */
+
+/* 1. Layout general */
+.mentor-detail-shell {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.mentor-detail-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.mentor-detail-page-heading {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.mentor-detail-tabs .mentor-detail-tab-disabled {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .75rem 0;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-70);
+  opacity: .55;
+  cursor: not-allowed;
+  font-size: .875rem;
+}
+
+/* 2. Tarjeta de Cabecera (Header) */
+.mentor-detail-header-card {
+  background: white;
+  border: 1px solid var(--oatmeal);
+  border-radius: .75rem;
+  padding: 1.75rem;
+  box-shadow: 0 1px 3px rgb(32 37 43 / 6%);
+  margin-bottom: 1.5rem;
+}
+
+.mentor-detail-header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .mentor-detail-header-main {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+}
+
+.mentor-detail-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (min-width: 540px) {
+  .mentor-detail-header-info {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.mentor-detail-avatar {
+  width: 5rem;
+  height: 5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--ink);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgb(32 37 43 / 15%);
+}
+
+.mentor-detail-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mentor-detail-avatar-initials {
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  color: white;
+}
+
+.mentor-detail-identity {
+  min-width: 0;
+}
+
+.mentor-detail-name {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(1.5rem, 3vw, 1.875rem);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.mentor-detail-profession {
+  margin-top: .25rem;
+  font-size: .9375rem;
+  font-weight: 500;
+  color: var(--navy);
+}
+
+.mentor-detail-status-pill-wrap {
+  margin-top: .875rem;
+}
+
+/* Badges de disponibilidad */
+.mentor-detail-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .375rem;
+  padding: .25rem .75rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.mentor-detail-badge-dot {
+  width: .4375rem;
+  height: .4375rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mentor-detail-badge-available {
+  background: rgb(35 112 68 / 12%);
+  color: var(--success);
+}
+.mentor-detail-badge-available .mentor-detail-badge-dot {
+  background: var(--success);
+}
+
+.mentor-detail-badge-paused {
+  background: rgb(242 166 90 / 25%);
+  color: var(--truffle-dark);
+}
+.mentor-detail-badge-paused .mentor-detail-badge-dot {
+  background: var(--flame);
+}
+
+.mentor-detail-badge-unavailable {
+  background: rgb(32 37 43 / 10%);
+  color: var(--ink-70);
+}
+.mentor-detail-badge-unavailable .mentor-detail-badge-dot {
+  background: var(--ink-70);
+}
+
+.mentor-detail-header-action {
+  flex-shrink: 0;
+}
+
+.mentor-detail-request-btn {
+  white-space: nowrap;
+}
+
+.mentor-button-disabled:disabled {
+  background: rgb(217 210 197 / 60%);
+  color: var(--ink-70);
+  cursor: not-allowed;
+  border-color: transparent;
+}
+
+/* Aviso de mentor no disponible o en pausa */
+.mentor-detail-notice {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: .5rem;
+  background: var(--palladian);
+  border: 1px solid var(--oatmeal);
+  display: flex;
+  align-items: flex-start;
+  gap: .875rem;
+}
+
+.mentor-detail-notice-icon {
+  color: var(--navy);
+  flex-shrink: 0;
+  margin-top: .125rem;
+}
+
+.mentor-detail-notice-title {
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.mentor-detail-notice-text {
+  font-size: .8125rem;
+  color: var(--ink-75);
+  margin-top: .25rem;
+  line-height: 1.45;
+}
+
+/* 3. Grilla de dos columnas (Desktop / Tablet / Mobile) */
+.mentor-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .mentor-detail-layout {
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.1fr);
+  }
+}
+
+.mentor-detail-info-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Tarjetas individuales */
+.mentor-detail-card {
+  background: white;
+  border: 1px solid var(--oatmeal);
+  border-radius: .75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgb(32 37 43 / 4%);
+}
+
+.mentor-detail-card-title {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.mentor-detail-card-icon {
+  color: var(--navy);
+  flex-shrink: 0;
+}
+
+.mentor-detail-card-text {
+  margin-top: .875rem;
+  font-size: .9375rem;
+  line-height: 1.6;
+  color: var(--ink-75);
+  white-space: pre-line;
+  word-break: break-word;
+}
+
+.mentor-detail-empty-text {
+  color: var(--ink-70);
+  font-style: italic;
+}
+
+/* Pills de áreas técnicas e intereses */
+.mentor-detail-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  list-style: none;
+  padding: 0;
+  margin: .875rem 0 0;
+}
+
+.mentor-detail-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: .3125rem .75rem;
+  border-radius: 999px;
+  background: var(--palladian);
+  border: 1px solid var(--oatmeal);
+  font-size: .8125rem;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.mentor-detail-pill-subtle {
+  background: white;
+  border-color: var(--oatmeal);
+}
+
+.mentor-detail-interest-groups {
+  margin-top: .875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}
+
+.mentor-detail-interest-group-title {
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-70);
+  margin: 0;
+}
+
+/* 4. Columna de Disponibilidad */
+.mentor-detail-availability-card {
+  position: relative;
+}
+
+.mentor-detail-avail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  border-bottom: 1px solid var(--oatmeal-70);
+  padding-bottom: .875rem;
+  margin-bottom: 1rem;
+}
+
+.mentor-detail-avail-subheading {
+  margin-bottom: 1.125rem;
+}
+
+.mentor-detail-avail-title {
+  font-size: .9375rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.mentor-detail-avail-subtitle {
+  font-size: .8125rem;
+  color: var(--ink-70);
+  margin-top: .25rem;
+}
+
+.mentor-detail-slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: .875rem;
+}
+
+.mentor-detail-slot-day {
+  border-bottom: 1px dashed var(--oatmeal-70);
+  padding-bottom: .75rem;
+}
+
+.mentor-detail-slot-day:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.mentor-detail-slot-day-label {
+  font-size: .8125rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-transform: capitalize;
+  margin: 0;
+}
+
+.mentor-detail-slot-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .375rem;
+  list-style: none;
+  padding: 0;
+  margin: .375rem 0 0;
+}
+
+.mentor-detail-slot-chip {
+  background: var(--palladian);
+  border: 1px solid var(--oatmeal);
+  border-radius: .25rem;
+  padding: .2rem .5rem;
+  font-size: .75rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.mentor-detail-avail-footer {
+  margin-top: 1.25rem;
+  padding-top: .875rem;
+  border-top: 1px solid var(--oatmeal-70);
+  text-align: center;
+}
+
+.mentor-detail-avail-hint {
+  font-size: .75rem;
+  color: var(--ink-70);
+  margin: 0;
+}
+
+.mentor-detail-avail-blocked {
+  background: var(--palladian-50);
+  border: 1px solid var(--oatmeal);
+  border-radius: .5rem;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.mentor-detail-avail-blocked-message {
+  font-size: .875rem;
+  color: var(--ink-70);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* 5. Estados de Error y No Disponible (Mockup 5) */
+.mentor-detail-not-found-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 55vh;
+  padding: 2rem 1rem;
+}
+
+.mentor-detail-state-card {
+  background: white;
+  border: 1px solid var(--oatmeal);
+  border-radius: .75rem;
+  padding: 2.5rem 2rem;
+  max-width: 36rem;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 4px 16px rgb(32 37 43 / 6%);
+}
+
+.mentor-detail-state-icon-circle {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--palladian);
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+
+.mentor-detail-state-error-circle {
+  background: rgb(118 83 59 / 12%);
+  color: var(--truffle);
+}
+
+.mentor-detail-state-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.mentor-detail-state-title {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 .625rem;
+}
+
+.mentor-detail-state-description {
+  font-size: .9375rem;
+  color: var(--ink-75);
+  line-height: 1.6;
+  margin: 0 0 1.75rem;
+}
+
+.mentor-detail-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  justify-content: center;
+}
+
+/* 6. Skeletons de carga */
+@keyframes mentor-detail-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+.mentor-detail-skeleton {
+  animation: mentor-detail-pulse 1.6s ease-in-out infinite;
+}
+
+.mentor-detail-skeleton-avatar {
+  display: block;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  background: var(--oatmeal);
+  flex-shrink: 0;
+}
+
+.mentor-detail-skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: .625rem;
+  flex: 1;
+}
+
+.mentor-detail-skeleton-line {
+  display: block;
+  background: var(--oatmeal);
+  border-radius: .25rem;
+  height: .875rem;
+}
+
+.mentor-detail-skeleton-title {
+  width: 14rem;
+  height: 1.5rem;
+}
+
+.mentor-detail-skeleton-subtitle {
+  width: 10rem;
+}
+
+.mentor-detail-skeleton-desc {
+  width: 80%;
+}
+
+.mentor-detail-skeleton-badge {
+  width: 6rem;
+  height: 1.25rem;
+  border-radius: 999px;
+}
+
+.mentor-detail-skeleton-button {
+  display: block;
+  width: 9rem;
+  height: 2.5rem;
+  background: var(--oatmeal);
+  border-radius: .375rem;
+}
+
+.mentor-detail-skeleton-card-title {
+  width: 11rem;
+  height: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.mentor-detail-skeleton-text-block {
+  width: 100%;
+  height: 4rem;
+}
+
+.mentor-detail-skeleton-pills {
+  display: flex;
+  gap: .5rem;
+}
+
+.mentor-detail-skeleton-pills span {
+  display: block;
+  width: 5rem;
+  height: 1.5rem;
+  background: var(--oatmeal);
+  border-radius: 999px;
+}
+
+.mentor-detail-skeleton-slots {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  margin-top: 1rem;
+}
+
+.mentor-detail-skeleton-slots span {
+  display: block;
+  width: 100%;
+  height: 2rem;
+  background: var(--oatmeal);
+  border-radius: .25rem;
+}

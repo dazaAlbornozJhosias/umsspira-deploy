@@ -1,3 +1,5 @@
+import { readApiError } from '@/shared/services/api-contract';
+
 export interface VerifyOtpPayload {
   email: string;
   code: string;
@@ -29,8 +31,8 @@ export interface ResendOtpResponse {
 export class EmailVerificationService {
   private baseUrl: string;
 
-  constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000') {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl: string = '') {
+    this.baseUrl = baseUrl.replace(/\/+$/, '');
   }
 
   /**
@@ -38,21 +40,18 @@ export class EmailVerificationService {
    */
   async verifyOtp(payload: VerifyOtpPayload): Promise<VerifyOtpResponse> {
     try {
-      // Simulación controlada para tests unitarios o entornos sin token
       if (!payload.sessionToken) {
-        if (payload.code === '123456') {
-          return { success: true, message: 'Correo verificado correctamente' };
-        }
-        return { success: false, error: 'El código ingresado no es correcto. Intenta nuevamente' };
+        return { success: false, error: 'La sesión de registro venció. Inicia el registro nuevamente' };
       }
 
-      const response = await fetch(`${this.baseUrl}/api/email-verification/verify`, {
+      const response = await fetch(`${this.baseUrl}/api/v1/email-verification/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           registrationId: payload.sessionToken,
+          email: payload.email,
           code: payload.code,
         }),
       });
@@ -60,8 +59,9 @@ export class EmailVerificationService {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        const errorMsg = data?.message || data?.error;
-        if (response.status === 410 || data?.code === 'OTP_EXPIRED') {
+        const detail = readApiError(data, 'El código ingresado no es correcto. Intenta nuevamente');
+        const errorMsg = detail.message;
+        if (response.status === 410 || detail.code === 'CODE_EXPIRED') {
           return {
             success: false,
             isExpired: true,
@@ -69,7 +69,7 @@ export class EmailVerificationService {
           };
         }
 
-        if (response.status === 429 || data?.code === 'MAX_ATTEMPTS_EXCEEDED') {
+        if (response.status === 429 || detail.code === 'CODE_ATTEMPTS_EXCEEDED') {
           return {
             success: false,
             maxAttemptsExceeded: true,
@@ -102,26 +102,26 @@ export class EmailVerificationService {
     try {
       if (!payload.sessionToken) {
         return {
-          success: true,
-          message: 'Código reenviado con éxito',
-          cooldownSeconds: 30,
+          success: false,
+          error: 'La sesión de registro venció. Inicia el registro nuevamente',
         };
       }
 
-      const response = await fetch(`${this.baseUrl}/api/email-verification/resend`, {
+      const response = await fetch(`${this.baseUrl}/api/v1/email-verification/resend`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           registrationId: payload.sessionToken,
+          email: payload.email,
         }),
       });
 
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        const errorMsg = data?.message || data?.error;
+        const errorMsg = readApiError(data, 'No fue posible reenviar el código. Intenta de nuevo más tarde').message;
         return {
           success: false,
           error: errorMsg || 'No fue posible reenviar el código. Intenta de nuevo más tarde',

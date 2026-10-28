@@ -1,0 +1,21 @@
+meta {
+  name: Cargar documento de respaldo
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/documents
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  sessionToken: {{sessionToken}}
+  tipoDocumento: {{documentType}}
+  archivo: @file({{registrationFilePath}})
+}
+
+docs {
+  Borrador con correo verificado. registrationFilePath es la ruta local a un PDF, PNG o JPG de hasta 5 MiB. Copia data.path a documentId y data.sizeBytes a documentSizeBytes.
+}

@@ -1,0 +1,60 @@
+meta {
+  name: Extraer keywords - 200 Normalizacion mayusculas tildes (CA-HU5-02)
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "text": "Node.JS nodejs TypeScript TYPESCRIPT"
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Respuesta envuelta en data", function() {
+    expect(res.body).to.have.property("data").that.is.an("object");
+  });
+
+  test("node.js se reconoce como termino canonico (variantes normalizadas)", function() {
+    var keywords = res.body.data.keywords;
+    var nodejs = keywords.find(function(k) { return k.term === "node.js"; });
+    expect(nodejs, "Debe encontrar el termino canonico node.js").to.exist;
+    expect(nodejs.count).to.equal(2, "Node.JS y nodejs deben contar como 2 menciones");
+  });
+
+  test("typescript se reconoce como termino canonico", function() {
+    var keywords = res.body.data.keywords;
+    var ts = keywords.find(function(k) { return k.term === "typescript"; });
+    expect(ts, "Debe encontrar typescript").to.exist;
+    expect(ts.count).to.equal(2, "TypeScript y TYPESCRIPT deben contar como 2 menciones");
+  });
+}
+
+docs {
+  HU-5 · T1.7 — Normalizacion de mayusculas, minusculas y tildes.
+  "Node.JS" y "nodejs" deben resolverse a "node.js" con count 2.
+  "TypeScript" y "TYPESCRIPT" deben resolverse a "typescript" con count 2.
+
+  CA-HU5-02: variantes de mayusculas/minusculas/tildes -> termino canonico unificado.
+
+  Nota: ajusta los terminos canonicos esperados si el diccionario real usa nombres distintos.
+  Permiso: nlp:extract.
+}

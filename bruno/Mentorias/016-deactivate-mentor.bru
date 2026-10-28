@@ -1,0 +1,21 @@
+meta {
+  name: Desactivar mentor desde administración
+  type: http
+  seq: 16
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/mentorship/profiles/{{mentorId}}/deactivate
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Usa el token de un administrador de la carrera del mentor. mentorId es el UUID del mentor, no el del usuario.
+
+  Permiso: mentores:manage.
+}

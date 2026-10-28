@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+import { readApiError } from '@/shared/services/api-contract';
+
+const API_BASE_URL = '/api/v1';
 
 export type DocumentType = 'titulo_provision_nacional' | 'diploma_academico' | 'certificado_egreso';
 
@@ -37,7 +39,7 @@ export interface UploadDocumentParams {
   file: File;
 }
 
-// Envia el documento al backend, que lo valida y lo guarda en el bucket privado (CA-03.2 y CA-03.3).
+// La API valida el documento y devuelve su referencia privada.
 export async function uploadDocument({ sessionToken, tipoDocumento, file }: UploadDocumentParams): Promise<UploadDocumentResult> {
   const formData = new FormData();
   formData.append('sessionToken', sessionToken);
@@ -67,14 +69,13 @@ export async function uploadDocument({ sessionToken, tipoDocumento, file }: Uplo
     return { ok: true, document: body.data };
   }
 
-  const rawMessage = body?.message;
-  const message = Array.isArray(rawMessage) ? rawMessage[0] : rawMessage;
+  const detail = readApiError(body, 'No se pudo enviar el documento. Intenta nuevamente.');
   return {
     ok: false,
     status: response.status,
-    code: body?.code,
-    message: message ?? 'No se pudo enviar el documento. Intenta nuevamente.',
-    errors: Array.isArray(body?.errors) ? body.errors : [],
+    code: detail.code,
+    message: detail.message,
+    errors: detail.errors,
   };
 }
 
@@ -96,9 +97,7 @@ export interface SubmitRegistrationParams {
   mimeType: string;
 }
 
-// Registra la solicitud en la base de datos con fun_registrar_solicitud (CA-03.2).
-// Requiere que el documento ya este guardado en Storage y el correo verificado.
-// El formato real (mimeType) permite guardar la referencia al catalogo tipo_archivo.
+// Envía la referencia del documento ya cargado y de la sesión con correo verificado.
 export async function submitRegistration({
   sessionToken,
   tipoDocumento,
@@ -133,13 +132,12 @@ export async function submitRegistration({
     return { ok: true, submission: body.data };
   }
 
-  const rawMessage = body?.message;
-  const message = Array.isArray(rawMessage) ? rawMessage[0] : rawMessage;
+  const detail = readApiError(body, 'No se pudo registrar la solicitud. Intenta nuevamente.');
   return {
     ok: false,
     status: response.status,
-    code: body?.code,
-    message: message ?? 'No se pudo registrar la solicitud. Intenta nuevamente.',
-    errors: Array.isArray(body?.errors) ? body.errors : [],
+    code: detail.code,
+    message: detail.message,
+    errors: detail.errors,
   };
 }

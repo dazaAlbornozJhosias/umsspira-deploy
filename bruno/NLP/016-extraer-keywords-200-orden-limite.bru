@@ -1,0 +1,71 @@
+meta {
+  name: Extraer keywords - 200 Orden y limite unmapped (CA-HU5-08)
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "text": "alpha beta gamma alpha beta alpha delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega extra1 extra2 extra3 extra4 extra5 extra6 extra7 extra8 extra9 extra10 extra11 extra12 extra13 extra14 extra15 extra16 extra17 extra18 extra19 extra20 extra21 extra22 extra23 extra24 extra25 extra26 extra27 extra28 foo bar baz qux quux quuz corge grault garply waldo fred plugh xyzzy thud slug flux knob blip drip drum frog toad crow hawk dove rook wren lark swift finch"
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Respuesta envuelta en data", function() {
+    expect(res.body).to.have.property("data").that.is.an("object");
+  });
+
+  test("data.unmapped no supera los 50 terminos", function() {
+    expect(res.body.data.unmapped.length).to.be.at.most(50);
+  });
+
+  test("data.keywords esta ordenada de mayor a menor count", function() {
+    var keywords = res.body.data.keywords;
+    for (var i = 0; i < keywords.length - 1; i++) {
+      expect(keywords[i].count).to.be.at.least(keywords[i + 1].count,
+        "El termino " + keywords[i].term + " debe tener count >= que " + keywords[i + 1].term);
+    }
+  });
+
+  test("data.unmapped esta ordenada de mayor a menor count", function() {
+    var unmapped = res.body.data.unmapped;
+    for (var i = 0; i < unmapped.length - 1; i++) {
+      if (unmapped[i].count === unmapped[i + 1].count) {
+        expect(unmapped[i].term <= unmapped[i + 1].term).to.be.true;
+      } else {
+        expect(unmapped[i].count).to.be.at.least(unmapped[i + 1].count);
+      }
+    }
+  });
+}
+
+docs {
+  HU-5 · T1.7 — Verificacion del orden y del limite de 50 en unmapped.
+  Texto con palabras de distintas frecuencias y muchos tokens no mapeados.
+
+  CA-HU5-08: resultados ordenados de mayor a menor count; empate -> orden alfabetico.
+             data.unmapped limitado a 50 terminos maximos.
+
+  Nota: este texto usa palabras en ingles/griego que probablemente no esten en el
+        diccionario. Ajustar si el entorno tiene un diccionario ampliado.
+
+  Permiso: nlp:extract.
+}

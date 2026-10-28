@@ -1,0 +1,26 @@
+meta {
+  name: Verificar correo
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/email-verification/verify
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "registrationId": "{{sessionToken}}",
+    "code": "{{registrationCode}}"
+  }
+}
+
+docs {
+  Completa registrationCode con el código recibido por correo para este borrador.
+}

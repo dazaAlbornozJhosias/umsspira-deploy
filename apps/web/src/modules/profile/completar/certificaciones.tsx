@@ -1,12 +1,18 @@
+
 'use client';
-
+ 
 import { useEffect, useRef, useState } from 'react';
-import { Award, Camera, CloudUpload, Image as ImageIcon, Plus, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { Award, Camera, Check, CloudUpload, FileText, Plus, Trash2 } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
-import { validarRespaldo } from '@/modules/profile/validation/reglas-perfil';
-
-const GRADOS = ['Fundamentos', 'Asociado', 'Profesional', 'Especialista', 'Experto'];
-
+import {
+  type ErroresCertificacion,
+  validarCertificacion,
+  validarRespaldo,
+} from '@/modules/profile/validation/reglas-perfil';
+import { formatearTamanio } from '@/modules/profile/utils/format-file-size';
+import { ApiError } from '@/shared/services/api-client';
+ 
 export type Certificacion = {
   nombre: string;
   entidadEmisora: string;
@@ -14,36 +20,82 @@ export type Certificacion = {
   grado: string;
   respaldo: File | null;
 };
-
+ 
 type FormularioCertificacionesProps = {
   certificaciones: Certificacion[];
-  onAgregar: (certificacion: Certificacion) => void;
+  // Si la promesa falla con ApiError se muestra su mensaje y se conserva lo escrito
+  onAgregar: (certificacion: Certificacion) => void | Promise<void>;
+  // Avance (0 a 100) de la subida del respaldo mientras se guarda
+  progreso?: number;
+  // Ruta interna desde la que se llegó (por ejemplo /afinidad desde la Épica 3); al guardar se ofrece volver ahí (T8.5)
+  returnTo?: string;
   // Avisa cuántos errores hay a la vista, para el contador del encabezado de la sección (HU-02, AC 6)
   onErroresChange?: (errores: number) => void;
 };
-
+ 
 const VACIO: Certificacion = { nombre: '', entidadEmisora: '', anioEmision: '', grado: '', respaldo: null };
-
+ 
 const subtituloClase = 'text-xs font-bold uppercase tracking-wide text-[#2C3B4D]';
 const labelClase = 'block text-xs font-semibold text-[#2C3B4D]';
-// Campo obligatorio: asterisco igual al de Experiencia laboral (no forma parte del texto de la etiqueta)
-const labelObligatorioClase = `${labelClase} after:ml-1 after:text-[#A35139] after:content-['*']`;
+// Asterisco de obligatorio con CSS (::after): no cambia el texto de la etiqueta que leen los lectores de pantalla y los tests
+const labelObligatorioClase = `${labelClase} after:ml-0.5 after:text-truffle-trouble after:content-['*']`;
 const inputClase =
   'mt-1.5 h-11 w-full rounded-md border border-[#C9C1B1] bg-white px-3 text-sm text-[#2C3B4D] placeholder:text-[#2C3B4D]/40 focus:border-[#FFB162] focus:outline-none';
 const botonRespaldoClase =
   'inline-flex h-9 items-center gap-1.5 rounded-md border border-[#C9C1B1] bg-white px-3 text-xs font-semibold text-[#2C3B4D] hover:bg-[#FAF8F4]';
-
-export function FormularioCertificaciones({ certificaciones, onAgregar, onErroresChange }: FormularioCertificacionesProps) {
+ 
+export function FormularioCertificaciones({
+  certificaciones,
+  onAgregar,
+  progreso,
+  returnTo,
+  onErroresChange,
+}: FormularioCertificacionesProps) {
   const [datos, setDatos] = useState<Certificacion>(VACIO);
   const fotoRef = useRef<HTMLInputElement>(null);
   // Archivo rechazado (no es JPG o supera 5 MB): no se adjunta y se explica junto al campo
   const [errorRespaldo, setErrorRespaldo] = useState<string>();
-  useEffect(() => onErroresChange?.(errorRespaldo ? 1 : 0), [errorRespaldo, onErroresChange]);
+  // Errores por campo al intentar agregar (T8.3); con alguno no se envía nada a la API
+  const [errores, setErrores] = useState<ErroresCertificacion>({});
+  const [guardando, setGuardando] = useState(false);
+  // Mensaje del backend al guardar, tal como lo envía; se quita al cambiar cualquier campo
+  const [errorGuardar, setErrorGuardar] = useState<string>();
+  // Dirección local de la foto elegida para mostrar su miniatura
+  const [vistaPrevia, setVistaPrevia] = useState<string>();
+  // Aviso «Certificación guardada» tras guardar (T8.5); se quita al empezar a escribir otra
+  const [guardada, setGuardada] = useState(false);
 
-  function cambiar(campo: 'nombre' | 'entidadEmisora' | 'anioEmision' | 'grado', valor: string) {
-    setDatos({ ...datos, [campo]: valor });
+  const cantidadErrores = [errorRespaldo, errorGuardar].filter(Boolean).length;
+  useEffect(() => onErroresChange?.(cantidadErrores), [cantidadErrores, onErroresChange]);
+ 
+  // Se crea al elegir la foto y se libera al quitarla, cambiarla o salir (evita fugas de memoria)
+  useEffect(() => {
+    if (!datos.respaldo || typeof URL.createObjectURL !== 'function') {
+      setVistaPrevia(undefined);
+      return;
+    }
+    const url = URL.createObjectURL(datos.respaldo);
+    setVistaPrevia(url);
+    return () => URL.revokeObjectURL(url);
+  }, [datos.respaldo]);
+ 
+  function quitarRespaldo() {
+    setDatos({ ...datos, respaldo: null });
+    setErrorRespaldo(undefined);
   }
-
+ 
+  // Al corregir un campo se quita su mensaje
+  function limpiarError(campo: keyof ErroresCertificacion) {
+    if (errores[campo]) setErrores({ ...errores, [campo]: undefined });
+  }
+ 
+  function cambiar(campo: 'nombre' | 'entidadEmisora' | 'anioEmision', valor: string) {
+    setDatos({ ...datos, [campo]: valor });
+    limpiarError(campo);
+    setErrorGuardar(undefined);
+    setGuardada(false);
+  }
+ 
   function elegirRespaldo(evento: React.ChangeEvent<HTMLInputElement>) {
     const archivo = evento.target.files?.[0];
     evento.target.value = '';
@@ -51,20 +103,43 @@ export function FormularioCertificaciones({ certificaciones, onAgregar, onErrore
     // El atributo accept se puede saltar eligiendo "Todos los archivos"
     const error = validarRespaldo(archivo);
     setErrorRespaldo(error);
-    if (!error) setDatos({ ...datos, respaldo: archivo });
+    if (!error) {
+      setDatos({ ...datos, respaldo: archivo });
+      limpiarError('respaldo');
+    }
   }
-
+ 
+  async function guardar() {
+    if (guardando) return;
+    setErrorGuardar(undefined);
+    setGuardada(false);
+    setGuardando(true);
+    try {
+      await onAgregar({
+        ...datos,
+        nombre: datos.nombre.trim(),
+        entidadEmisora: datos.entidadEmisora.trim(),
+      });
+      setDatos(VACIO);
+      setErrorRespaldo(undefined);
+      setGuardada(true);
+    } catch (error) {
+      // Se conserva lo escrito y la foto elegida: «Reintentar» vuelve a enviar lo mismo (T8.6)
+      if (!(error instanceof ApiError)) throw error;
+      setErrorGuardar(`No se pudo guardar la certificación. ${error.message}`);
+    } finally {
+      setGuardando(false);
+    }
+  }
+ 
   function agregar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    onAgregar({
-      ...datos,
-      nombre: datos.nombre.trim(),
-      entidadEmisora: datos.entidadEmisora.trim(),
-    });
-    setDatos(VACIO);
-    setErrorRespaldo(undefined);
+    const encontrados = validarCertificacion(datos);
+    setErrores(encontrados);
+    if (Object.keys(encontrados).length > 0) return;
+    void guardar();
   }
-
+ 
   return (
     <div>
       {certificaciones.length > 0 && (
@@ -93,10 +168,10 @@ export function FormularioCertificaciones({ certificaciones, onAgregar, onErrore
           </ul>
         </div>
       )}
-
+ 
       <p className={subtituloClase}>Agregar nueva certificación</p>
-
-      <form onSubmit={agregar} className="mt-4 space-y-4">
+ 
+      <form onSubmit={agregar} noValidate className="mt-4 space-y-4">
         <div>
           <label htmlFor="nombreCertificacion" className={labelObligatorioClase}>Nombre de certificación</label>
           <input
@@ -106,10 +181,13 @@ export function FormularioCertificaciones({ certificaciones, onAgregar, onErrore
             placeholder="Ej. AWS Cloud Practitioner"
             value={datos.nombre}
             onChange={(e) => cambiar('nombre', e.target.value)}
-            className={inputClase}
+            aria-invalid={Boolean(errores.nombre)}
+            aria-describedby={errores.nombre ? 'error-nombre' : undefined}
+            className={claseCampo(inputClase, errores.nombre)}
           />
+          <MensajeError id="error-nombre" mensaje={errores.nombre} />
         </div>
-
+ 
         <div>
           <label htmlFor="entidadEmisora" className={labelObligatorioClase}>Entidad emisora</label>
           <input
@@ -119,64 +197,64 @@ export function FormularioCertificaciones({ certificaciones, onAgregar, onErrore
             placeholder="Ej. Amazon Web Services"
             value={datos.entidadEmisora}
             onChange={(e) => cambiar('entidadEmisora', e.target.value)}
-            className={inputClase}
+            aria-invalid={Boolean(errores.entidadEmisora)}
+            aria-describedby={errores.entidadEmisora ? 'error-entidadEmisora' : undefined}
+            className={claseCampo(inputClase, errores.entidadEmisora)}
           />
+          <MensajeError id="error-entidadEmisora" mensaje={errores.entidadEmisora} />
         </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label htmlFor="anioEmision" className={labelObligatorioClase}>Año</label>
-            <input
-              id="anioEmision"
-              type="text"
-              inputMode="numeric"
-              required
-              minLength={4}
-              maxLength={4}
-              pattern="\d{4}"
-              title="Ingresa un año de 4 dígitos"
-              placeholder="Ej. 2023"
-              value={datos.anioEmision}
-              onChange={(e) => cambiar('anioEmision', e.target.value.replace(/\D/g, ''))}
-              className={inputClase}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="gradoCertificacion" className={labelObligatorioClase}>Grado</label>
-            <select
-              id="gradoCertificacion"
-              required
-              value={datos.grado}
-              onChange={(e) => cambiar('grado', e.target.value)}
-              className={inputClase}
-            >
-              <option value="" disabled>Selecciona un grado</option>
-              {GRADOS.map((grado) => (
-                <option key={grado} value={grado}>{grado}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
+ 
         <div>
-          <span className={labelClase}>Respaldo de certificación</span>
+          <label htmlFor="anioEmision" className={labelObligatorioClase}>Año</label>
+          <input
+            id="anioEmision"
+            type="text"
+            inputMode="numeric"
+            required
+            minLength={4}
+            maxLength={4}
+            pattern="\d{4}"
+            title="Ingresa un año de 4 dígitos"
+            placeholder="Ej. 2023"
+            value={datos.anioEmision}
+            onChange={(e) => cambiar('anioEmision', e.target.value.replace(/\D/g, ''))}
+            aria-invalid={Boolean(errores.anioEmision)}
+            aria-describedby={errores.anioEmision ? 'error-anioEmision' : undefined}
+            className={claseCampo(inputClase, errores.anioEmision)}
+          />
+          <MensajeError id="error-anioEmision" mensaje={errores.anioEmision} />
+        </div>
+ 
+        <div>
+          <span className={labelObligatorioClase}>Respaldo de certificación</span>
           <div
             className={claseCampo(
               'mt-1.5 flex flex-col items-center gap-3 rounded-md border-2 border-dashed border-[#C9C1B1] bg-[#EEE9DF] px-4 py-6 text-center',
-              errorRespaldo,
+              errorRespaldo ?? errores.respaldo,
             )}
           >
             {datos.respaldo ? (
-              <div className="flex max-w-full flex-wrap items-center justify-center gap-2 text-sm font-medium text-[#2C3B4D]">
-                <ImageIcon className="h-4 w-4 shrink-0 text-[#A35139]" />
-                <span className="truncate">{datos.respaldo.name}</span>
+              <div className="flex w-full max-w-full items-center gap-3 text-left">
+                {vistaPrevia ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={vistaPrevia}
+                    alt="Vista previa del respaldo"
+                    className="h-16 w-16 shrink-0 rounded-md border border-[#C9C1B1] object-cover"
+                  />
+                ) : (
+                  <FileText className="h-8 w-8 shrink-0 text-[#A35139]" />
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-[#2C3B4D]">
+                    {datos.respaldo.name}
+                  </span>
+                  <span className="block text-xs text-[#2C3B4D]/70">
+                    {formatearTamanio(datos.respaldo.size)}
+                  </span>
+                </span>
                 {/* Quitar solo la imagen, sin descartar el resto del formulario */}
-                <button
-                  type="button"
-                  onClick={() => setDatos({ ...datos, respaldo: null })}
-                  className="inline-flex items-center gap-1 rounded-md border border-[#C9C1B1] bg-white px-2 py-1 text-xs font-semibold text-[#A35139] hover:bg-[#FFF3EC]"
-                >
+                <button type="button" onClick={quitarRespaldo} className={botonRespaldoClase}>
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   Quitar imagen
                 </button>
@@ -196,8 +274,8 @@ export function FormularioCertificaciones({ certificaciones, onAgregar, onErrore
             {/* Decisión del equipo: el backend y el almacenamiento solo aceptan JPG (BUG-HU2-007) */}
             <p className="text-xs text-[#2C3B4D]/70">Solo JPG, máximo 5 MB</p>
           </div>
-          <MensajeError id="error-respaldo" mensaje={errorRespaldo} />
-
+          <MensajeError id="error-respaldo" mensaje={errorRespaldo ?? errores.respaldo} />
+ 
           <input
             ref={fotoRef}
             type="file"
@@ -207,15 +285,55 @@ export function FormularioCertificaciones({ certificaciones, onAgregar, onErrore
             onChange={elegirRespaldo}
           />
         </div>
-
+ 
+        {guardando && (
+          <div
+            role="progressbar"
+            aria-label="Avance de la subida"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progreso ?? 0}
+            className="h-2 w-full overflow-hidden rounded-full bg-[#EEE9DF]"
+          >
+            <div className="h-full bg-[#A35139] transition-all" style={{ width: `${progreso ?? 0}%` }} />
+          </div>
+        )}
+        {guardada && (
+          <p role="status" className="flex items-center gap-1.5 text-sm font-semibold text-[#2C3B4D]">
+            <Check className="h-4 w-4 text-[#A35139]" aria-hidden="true" />
+            Certificación guardada
+          </p>
+        )}
+        {guardada && returnTo && (
+          <Link
+            href={returnTo}
+            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-burning-flame px-4 text-sm font-bold text-abyssal-blue transition hover:brightness-95 md:w-auto"
+          >
+            Ver mi afinidad →
+          </Link>
+        )}
+        <MensajeError id="error-certificacion-guardar" mensaje={errorGuardar} />
+        {errorGuardar && (
+          <button
+            type="button"
+            onClick={() => void guardar()}
+            disabled={guardando}
+            className="inline-flex h-9 items-center rounded-md border border-[#A35139] bg-white px-3 text-xs font-semibold text-[#A35139] hover:bg-[#FAF8F4] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Reintentar
+          </button>
+        )}
+ 
         <button
           type="submit"
-          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-[#2C3B4D] bg-white px-4 text-sm font-medium text-[#2C3B4D] hover:bg-[#EEE9DF] md:w-auto"
+          disabled={guardando}
+          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-[#2C3B4D] bg-white px-4 text-sm font-medium text-[#2C3B4D] hover:bg-[#EEE9DF] disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
         >
           <Plus className="h-4 w-4" />
-          Agregar certificación
+          {guardando ? `Guardando…${progreso !== undefined ? ` ${progreso} %` : ''}` : 'Agregar certificación'}
         </button>
       </form>
     </div>
   );
 }
+ 

@@ -1,3 +1,6 @@
+import EventsCatalogPage from '@/features/events/events-catalog-page';
+import '@/app/(dashboard)/events/events.css';
+
 export default function EventosPage() {
-  return <div className="p-6">Eventos (próximamente)</div>;
+  return <EventsCatalogPage detailBasePath="/portal/eventos" />;
 }

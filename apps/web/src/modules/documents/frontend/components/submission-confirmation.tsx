@@ -16,7 +16,6 @@ export interface SubmissionConfirmationProps {
   fullName: string;
   idNumber: string;
   email: string;
-  trackingCode?: string;
   fileName?: string;
   fileSizeLabel?: string;
   status?: string;
@@ -47,10 +46,12 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /**
- * Resumen de la solicitud enviada (CA-03.2). Sigue el orden del mockup:
- * código de trámite (N/A hasta el siguiente sprint), postulante, documento adjunto, fecha y hora, y estado del proceso;
- * los datos que pide el criterio (C.I., correo enmascarado y tipo de documento) van junto a su fila relacionada.
- * El título, el subtítulo y el botón de salida pertenecen al modal que lo contiene.
+ * Resumen de la solicitud enviada (CA-03.2 y CA-07.6). Sigue el orden del mockup:
+ * postulante, documento adjunto, fecha y hora, y estado del proceso; los datos que pide
+ * el criterio (C.I., correo enmascarado y tipo de documento) van junto a su fila relacionada.
+ * El codigo interno TIT vive solo en el backend y en la bandeja administrativa: no se muestra
+ * aqui ni se rellena con N/A.
+ * El titulo, el subtitulo y el boton de salida pertenecen al contenedor que lo muestra.
  */
 export function SubmissionConfirmation({
   submittedAt,
@@ -58,7 +59,6 @@ export function SubmissionConfirmation({
   fullName,
   idNumber,
   email,
-  trackingCode,
   fileName,
   fileSizeLabel,
   status,
@@ -67,11 +67,6 @@ export function SubmissionConfirmation({
   return (
     <section aria-label="Resumen de la solicitud">
       <dl className="divide-y divide-oatmeal/60 rounded-xl border border-oatmeal bg-white/60 px-4 py-1">
-        <Row label="Código de trámite">
-          <span className="rounded-md bg-burning-flame/30 px-2 py-0.5 font-mono font-bold tracking-wide">
-            {trackingCode ?? 'N/A'}
-          </span>
-        </Row>
         <Row label="Postulante">{fullName}</Row>
         <Row label="C.I.">{idNumber}</Row>
         <Row label="Correo">{maskEmail(email)}</Row>

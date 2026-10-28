@@ -1,9 +1,10 @@
 import { clearAccessToken, getAccessToken } from '@/shared/services/auth-session';
+import { authenticatedFetch, ensureAccessToken } from '@/shared/services/auth-session';
+import { readApiError } from '@/shared/services/api-contract';
 import { updateMentorAreas } from './mentor-areas-api';
 import { normalizeInterests, type InterestArea, type InterestConfiguration } from '../model/mentor-interests';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000').replace(/\/+$/, '');
-const BASE = '/mentorship/interests';
+const BASE = '/api/v1/mentorship/interests';
 
 export interface MentorInterestsState {
   catalog: InterestArea[];
@@ -15,9 +16,9 @@ export class MentorInterestsError extends Error {
 }
 
 async function request(path: string, options: RequestInit): Promise<unknown> {
-  const token = getAccessToken();
+  const token = getAccessToken() ?? await ensureAccessToken();
   if (!token) throw new MentorInterestsError('Inicia sesión para configurar tus intereses.', 401);
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await authenticatedFetch(path, {
     ...options,
     credentials: 'omit',
     cache: 'no-store',
@@ -28,7 +29,8 @@ async function request(path: string, options: RequestInit): Promise<unknown> {
     let message = '';
     try {
       const body = await response.json();
-      if (typeof body?.message === 'string') message = body.message;
+      if (body?.error) message = readApiError(body, '').message;
+      else if (typeof body?.message === 'string') message = body.message;
       else if (Array.isArray(body?.message)) message = body.message.filter((item: unknown) => typeof item === 'string').join(' ');
     } catch { /* La respuesta de error puede no ser JSON. */ }
     const messages: Record<number, string> = {
@@ -38,7 +40,7 @@ async function request(path: string, options: RequestInit): Promise<unknown> {
     };
     throw new MentorInterestsError(messages[response.status] || message || `No se pudieron procesar los intereses (HTTP ${response.status}).`, response.status);
   }
-  return response.json();
+  return (await response.json()).data;
 }
 
 interface ApiArea { id: string; nombre: string }

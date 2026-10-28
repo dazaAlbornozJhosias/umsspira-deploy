@@ -1,0 +1,66 @@
+meta {
+  name: Extraer keywords - 200 Simbolos tecnicos C++ C# Node.js (CA-HU5-03)
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "text": "Experiencia en C++ y C#. Desarrollo con Node.js en entornos CI/CD."
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Respuesta envuelta en data", function() {
+    expect(res.body).to.have.property("data").that.is.an("object");
+  });
+
+  test("c++ se conserva como termino (simbolo + final preservado)", function() {
+    var keywords = res.body.data.keywords;
+    var cpp = keywords.find(function(k) { return k.term === "c++"; });
+    expect(cpp, "Debe encontrar c++").to.exist;
+  });
+
+  test("c# se conserva como termino (simbolo # final preservado)", function() {
+    var keywords = res.body.data.keywords;
+    var csharp = keywords.find(function(k) { return k.term === "c#"; });
+    expect(csharp, "Debe encontrar c#").to.exist;
+  });
+
+  test("node.js se conserva (punto interno preservado)", function() {
+    var keywords = res.body.data.keywords;
+    var nodejs = keywords.find(function(k) { return k.term === "node.js"; });
+    expect(nodejs, "Debe encontrar node.js").to.exist;
+  });
+}
+
+docs {
+  HU-5 · T1.7 — Tratamiento de separadores, puntuacion y simbolos tecnicos.
+  C++ y C# conservan sus simbolos finales + y #.
+  Node.js conserva el punto interno.
+  CI/CD: la barra se convierte en espacio (ci cd), buscados como tokens separados.
+
+  CA-HU5-03: / y - se convierten en espacios; . y _ se quitan al inicio/final;
+             + y # finales se conservan; punto interno en node.js se conserva.
+
+  Nota: ajusta los terminos esperados si el diccionario no incluye c++ o c#.
+  Permiso: nlp:extract.
+}

@@ -1,0 +1,33 @@
+meta {
+  name: Agregar intereses
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/api/v1/mentorship/interests
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "ids": [
+      "{{mentorInterestId}}"
+    ]
+  }
+}
+
+docs {
+  Agrega intereses de las áreas ya seleccionadas. Puedes añadir varios UUID al mismo arreglo.
+
+  Permiso: mentores:self:write.
+}

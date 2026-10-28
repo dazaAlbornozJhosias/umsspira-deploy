@@ -29,7 +29,7 @@ describe("useAuth", () => {
     }) as jest.Mock;
   });
 
-  it("inicia sesión como administrador y redirige a /applications", async () => {
+  it("HU-004: inicia sesión como administrador y redirige a /reports", async () => {
     const { result } = renderHook(() => useAuth());
 
     await act(async () => {
@@ -39,7 +39,7 @@ describe("useAuth", () => {
     expect(result.current.status).toBe("authenticated");
     expect(result.current.role).toBe("administrador");
     expect(result.current.accessToken).toBeTruthy();
-    expect(mockPush).toHaveBeenCalledWith("/applications");
+    expect(mockPush).toHaveBeenCalledWith("/reports");
   });
 
   it("inicia sesión como titulado y redirige al portal", async () => {

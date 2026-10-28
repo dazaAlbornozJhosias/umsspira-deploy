@@ -1,0 +1,58 @@
+meta {
+  name: Extraer keywords - 200 No hay coincidencia entre segmentos (CA-HU5-11)
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "text": "gobierno de\nti"
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Respuesta envuelta en data", function() {
+    expect(res.body).to.have.property("data").that.is.an("object");
+  });
+
+  test("gobierno de ti NO se reconoce (los n-gramas no cruzan el salto de linea)", function() {
+    var keywords = res.body.data.keywords;
+    var gdt = keywords.find(function(k) { return k.term === "gobierno de ti"; });
+    expect(gdt, "gobierno de ti NO debe aparecer cuando esta separado por \\n").to.not.exist;
+  });
+
+  test("data.keywords puede estar vacia o sin terminos cruzados", function() {
+    expect(res.body.data.keywords).to.be.an("array");
+  });
+}
+
+docs {
+  HU-5 · T1.7 — Los n-gramas no cruzan el limite entre segmentos (salto de linea \n).
+  "gobierno de\nti" no debe reconocerse como "gobierno de ti".
+  Cada segmento se procesa de forma independiente.
+
+  CA-HU5-11: el campo text puede tener segmentos separados por \n; los n-gramas
+             no cruzan esos limites.
+
+  Contraste: el test 011 usa "Gobierno de TI" sin salto -> SI se reconoce.
+
+  Permiso: nlp:extract.
+}

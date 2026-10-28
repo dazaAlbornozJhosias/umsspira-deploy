@@ -32,21 +32,21 @@ const options: {
   icon: typeof CheckCircle2Icon;
 }[] = [
   {
-    status: 'AVAILABLE',
+    status: 'DISPONIBLE',
     title: 'Disponible',
     description: 'Tu perfil es visible en el directorio y los estudiantes pueden solicitar orientación.',
     visibility: 'Visible en el directorio',
     icon: CheckCircle2Icon,
   },
   {
-    status: 'PAUSED',
+    status: 'EN_PAUSA',
     title: 'Pausar disponibilidad',
     description: 'Suspende temporalmente el ingreso de nuevas solicitudes sin perder tu configuración.',
     visibility: 'Nuevas solicitudes pausadas',
     icon: CirclePauseIcon,
   },
   {
-    status: 'UNAVAILABLE',
+    status: 'NO_DISPONIBLE',
     title: 'No disponible',
     description: 'Indica que por ahora no deseas recibir mentorías y oculta temporalmente tu ficha del directorio.',
     visibility: 'Oculto del directorio',
@@ -55,15 +55,15 @@ const options: {
 ];
 
 const statusLabels: Record<MentorAvailabilityStatus, string> = {
-  AVAILABLE: 'Mentor disponible',
-  PAUSED: 'Mentor en pausa',
-  UNAVAILABLE: 'Mentor no disponible',
+  DISPONIBLE: 'Mentor disponible',
+  EN_PAUSA: 'Mentor en pausa',
+  NO_DISPONIBLE: 'Mentor no disponible',
 };
 
 const successMessages: Record<MentorAvailabilityStatus, string> = {
-  AVAILABLE: 'Disponibilidad activada correctamente',
-  PAUSED: 'Disponibilidad pausada correctamente',
-  UNAVAILABLE: 'Estado actualizado correctamente',
+  DISPONIBLE: 'Disponibilidad activada correctamente',
+  EN_PAUSA: 'Disponibilidad pausada correctamente',
+  NO_DISPONIBLE: 'Estado actualizado correctamente',
 };
 
 function wait(milliseconds: number) {
@@ -142,7 +142,7 @@ export function MentorAvailabilityPage() {
     setBanner('');
     setToast('');
     setSavedFeedback(false);
-    if (status === 'AVAILABLE') {
+    if (status === 'DISPONIBLE') {
       setSelectedStatus(status);
       return;
     }
@@ -164,7 +164,7 @@ export function MentorAvailabilityPage() {
       setSavedStatus(state.availabilityStatus);
       setSelectedStatus(state.availabilityStatus);
       setBanner(successMessages[state.availabilityStatus ?? selectedStatus]);
-      if (selectedStatus === 'UNAVAILABLE') setToast('Disponibilidad actualizada con éxito');
+      if (selectedStatus === 'NO_DISPONIBLE') setToast('Disponibilidad actualizada con éxito');
       setSavedFeedback(true);
       window.setTimeout(() => setSavedFeedback(false), 1800);
     } catch (reason) {
@@ -243,7 +243,7 @@ export function MentorAvailabilityPage() {
               </div>
               <h3>{title}</h3>
               <p>{description}</p>
-              <div className="mentor-availability-option-footer"><span>{status === 'AVAILABLE' ? 'Directorio público' : 'Nuevas solicitudes'}</span><strong>{visibility.replace(' en el directorio', '').replace(' del directorio', '')}</strong></div>
+              <div className="mentor-availability-option-footer"><span>{status === 'DISPONIBLE' ? 'Directorio público' : 'Nuevas solicitudes'}</span><strong>{visibility.replace(' en el directorio', '').replace(' del directorio', '')}</strong></div>
             </article>;
           })}
         </div>
@@ -297,14 +297,14 @@ export function MentorAvailabilityPage() {
     />
     <ConfirmModal
       open={confirmStatus !== null}
-      icon={confirmStatus === 'PAUSED' ? CirclePauseIcon : CircleSlash2Icon}
+      icon={confirmStatus === 'EN_PAUSA' ? CirclePauseIcon : CircleSlash2Icon}
       eyebrow="Confirmación de estado"
-      title={confirmStatus === 'PAUSED' ? '¿Deseas pausar tu disponibilidad temporalmente?' : '¿Deseas marcarte como no disponible?'}
-      description={confirmStatus === 'PAUSED'
+      title={confirmStatus === 'EN_PAUSA' ? '¿Deseas pausar tu disponibilidad temporalmente?' : '¿Deseas marcarte como no disponible?'}
+      description={confirmStatus === 'EN_PAUSA'
         ? 'Tu perfil dejará de recibir nuevas solicitudes mientras dure la pausa.'
         : 'Tu ficha dejará de aparecer en el directorio y no recibirás nuevas solicitudes hasta que cambies tu estado.'}
       cancelLabel="Cancelar y seguir editando"
-      confirmLabel={confirmStatus === 'PAUSED' ? 'Sí, pausar disponibilidad' : 'Sí, marcar como no disponible'}
+      confirmLabel={confirmStatus === 'EN_PAUSA' ? 'Sí, pausar disponibilidad' : 'Sí, marcar como no disponible'}
       onCancel={() => setConfirmStatus(null)}
       onConfirm={() => {
         if (confirmStatus) setSelectedStatus(confirmStatus);

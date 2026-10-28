@@ -1,17 +1,12 @@
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
+  { ignores: ['dist/**', 'src/generated/**', 'node_modules/**'] },
   ...tseslint.configs.recommended,
   {
     rules: {
+      curly: ['error', 'all'],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    },
-  },
-  {
-    files: ['src/shared/lib/supabase.spec.ts'],
-    rules: {
-      // El spec recarga el módulo después de jest.resetModules() para aislar los clientes.
-      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 );

@@ -1,0 +1,21 @@
+meta {
+  name: Consultar contacto de empresa
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/companies/{{companyId}}/contact
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Consulta datos de contacto de una empresa vinculada a la cuenta autenticada.
+
+  Permiso: empresas:self:read.
+}

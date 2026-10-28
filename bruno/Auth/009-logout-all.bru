@@ -1,0 +1,19 @@
+meta {
+  name: Cerrar todas las sesiones
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/logout-all
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Invalida todas las sesiones del usuario autenticado. Responde 204 sin cuerpo.
+}

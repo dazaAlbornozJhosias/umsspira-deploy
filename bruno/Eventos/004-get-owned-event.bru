@@ -1,0 +1,21 @@
+meta {
+  name: Consultar evento propio
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/events/owned/{{eventId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Consulta un evento del creador autenticado, en cualquier estado.
+
+  Permiso: eventos:manage.
+}

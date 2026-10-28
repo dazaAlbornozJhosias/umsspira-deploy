@@ -1,0 +1,35 @@
+meta {
+  name: Publicar vacante
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/job-postings
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "empresaId": "{{companyId}}",
+    "titulo": "Desarrollador de software",
+    "modalidad": "REMOTO",
+    "nivelExperiencia": "Junior",
+    "descripcionTecnica": "Desarrollo y mantenimiento de aplicaciones web utilizando TypeScript, PostgreSQL y prácticas de trabajo colaborativo."
+  }
+}
+
+docs {
+  Usa el token de la empresa y un companyId de sus scopes. modalidad admite PRESENCIAL, HIBRIDO o REMOTO; la descripción técnica requiere al menos 50 caracteres.
+
+  Permiso: vacantes:create.
+}

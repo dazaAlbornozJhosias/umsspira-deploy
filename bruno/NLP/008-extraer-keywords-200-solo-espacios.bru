@@ -1,0 +1,53 @@
+meta {
+  name: Extraer keywords - 200 Solo espacios (CA-HU5-10)
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "text": "     "
+  }
+}
+
+tests {
+  test("Status 200 con texto de solo espacios", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Respuesta envuelta en data", function() {
+    expect(res.body).to.have.property("data").that.is.an("object");
+  });
+
+  test("data.keywords es lista vacia", function() {
+    expect(res.body.data.keywords).to.be.an("array").that.is.empty;
+  });
+
+  test("data.unmapped es lista vacia", function() {
+    expect(res.body.data.unmapped).to.be.an("array").that.is.empty;
+  });
+}
+
+docs {
+  HU-5 · T1.7 — Texto compuesto unicamente por espacios ("     ").
+  Debe responder 200 OK con listas vacias, igual que texto vacio.
+
+  CA-HU5-10: texto vacio o solo espacios -> HTTP 200 con { data: { keywords: [], unmapped: [] } }.
+  Complementa el test 005 que prueba string vacio "".
+
+  Permiso: nlp:extract.
+}

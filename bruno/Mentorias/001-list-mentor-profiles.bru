@@ -1,0 +1,15 @@
+meta {
+  name: Consultar directorio de mentores
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/mentorship/profiles
+  body: none
+  auth: none
+}
+
+docs {
+  Directorio público de mentores activos visibles. Copia el UUID de un mentor a mentorId para la gestión administrativa.
+}

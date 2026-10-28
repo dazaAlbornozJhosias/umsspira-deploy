@@ -1,3 +1,0 @@
-[db.seed]
-enabled = false
-sql_paths = ["./seed.sql"]

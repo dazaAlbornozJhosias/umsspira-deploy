@@ -2,6 +2,7 @@ import type {
   Graduate,
   GraduateStatus,
 } from '../data/graduates.mock';
+import { authenticatedFetch } from '@/shared/services/auth-session';
 
 export interface DashboardIndicators {
   totalGraduates: number;
@@ -24,14 +25,15 @@ interface GraduateRecordResponse {
   anioEgreso: number;
   codSis: string;
   deseaMentor: boolean;
-  estado: GraduateStatus;
+  estado: 'PENDIENTE' | 'APROBADA' | 'OBSERVADA' | 'RECHAZADA';
   fechaCreacion: string;
+  fechaRevision: string | null;
   justificacion?: string;
 }
 
 interface GraduatesResponse {
-  data: GraduateRecordResponse[];
-  meta: {
+  data: {
+    items: GraduateRecordResponse[];
     total: number;
     page: number;
     limit: number;
@@ -39,24 +41,22 @@ interface GraduatesResponse {
   };
 }
 
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'
-).replace(/\/$/, '');
+const API_BASE_URL = '/api/v1';
 
 export async function getDashboardIndicators(): Promise<DashboardIndicators> {
-  const response = await fetch(
-    `${API_BASE_URL}/reports/dashboard/indicators`,
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/reports/metrics`,
   );
 
   if (!response.ok) {
     throw new Error('No se pudieron cargar los indicadores del dashboard');
   }
 
-  return response.json();
+  return (await response.json()).data;
 }
 
 export async function getGraduates(): Promise<Graduate[]> {
-  const response = await fetch(
+  const response = await authenticatedFetch(
     `${API_BASE_URL}/reports/graduates?page=1&limit=1000`,
   );
 
@@ -66,7 +66,15 @@ export async function getGraduates(): Promise<Graduate[]> {
 
   const payload = (await response.json()) as GraduatesResponse;
 
-  return payload.data.map((record) => ({
+  const records = [...payload.data.items];
+  for (let page = 2; page <= payload.data.totalPages; page++) {
+    const next = await authenticatedFetch(`${API_BASE_URL}/reports/graduates?page=${page}&limit=1000`);
+    if (!next.ok) throw new Error('No se pudo cargar el padrón de titulados');
+    const nextPage = await next.json() as GraduatesResponse;
+    records.push(...nextPage.data.items);
+  }
+
+  return records.filter((record) => record.estado === 'APROBADA' || record.estado === 'OBSERVADA').map((record) => ({
     id: record.id,
     registrationNumber: `#REG-${record.anioEgreso}-${record.id.slice(-4)}`,
     fullName: `${record.apellido}, ${record.nombre}`,
@@ -81,9 +89,9 @@ export async function getGraduates(): Promise<Graduate[]> {
       record.fechaIngreso,
       record.fechaTitulacion,
     ),
-    reviewDate: formatDate(record.fechaCreacion),
+    reviewDate: formatDate(record.fechaRevision ?? record.fechaCreacion),
     rejectionReason: record.justificacion ?? null,
-    status: record.estado,
+    status: (record.estado === 'APROBADA' ? 'VERIFICADO' : 'OBSERVADO') as GraduateStatus,
   }));
 }
 

@@ -1,0 +1,25 @@
+meta {
+  name: Solicitar código de correo
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/email-verification/resend
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "registrationId": "{{sessionToken}}"
+  }
+}
+
+docs {
+  El campo registrationId recibe el mismo sessionToken del borrador. Lee el correo y copia sus seis dígitos a registrationCode. En desarrollo, Mailpit está en http://localhost:8025.
+}

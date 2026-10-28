@@ -1,0 +1,26 @@
+meta {
+  name: 001 - Validar acceso con token valido
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/registrations/observed/access
+  body: none
+  auth: none
+}
+
+headers {
+  X-Correction-Token: {{validCorrectionToken}}
+}
+
+tests {
+  test("Acceso permitido con token valido", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().data.valid).to.be.true;
+  });
+}
+
+docs {
+  Valida que el token de correccion provisto en el header X-Correction-Token sea valido y corresponda a una solicitud en estado Observada. Devuelve { data: { valid: true } } sin exponer datos sensibles del expediente.
+}

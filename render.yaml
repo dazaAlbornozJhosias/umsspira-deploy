@@ -1,53 +1,56 @@
-# ============================================================
-# Infraestructura del API de UMSSPIRA en Render.
-#
-# Validar antes de commitear:
-#   render blueprints validate render.yaml
-#
-# Los SECRETOS no se escriben aqui: van con `sync: false`, que hace que Render
-# los pida en el dashboard la primera vez. Asi el repo queda commiteable.
-# ============================================================
+# Servicio independiente del backend.
+# sync: false solicita el valor en Render; las credenciales no se guardan aquí.
 
 services:
   - type: web
     name: umsspira-api
     runtime: node
 
-    # Render NO ofrece Sao Paulo (solo oregon, ohio, virginia, frankfurt,
-    # singapore). virginia es lo mas cercano a la BD (Supabase sa-east-1)
-    # y a Bolivia. OJO: la region no se puede cambiar despues de crear.
+    # Elegir al crear el servicio la región más cercana al PostgreSQL utilizado.
     region: virginia
 
-    # 0.1 CPU / 512 MB. Plan gratuito: se duerme tras ~15 min sin trafico y el
-    # primer request tarda ~50 s. Subir de plan si eso molesta a los QAs.
+    # El plan gratuito se duerme tras 15 minutos sin tráfico.
     plan: free
 
     # Rama de integracion: aqui se mergean todas las epicas.
     branch: dev
 
-    # Monorepo: los workspaces se instalan desde la raiz, porque apps/web
-    # consume packages/shared-types como TypeScript crudo.
+    # La raíz conserva pnpm-workspace.yaml y el lockfile; solo se compila la API.
     rootDir: .
 
-    buildCommand: pnpm install && pnpm --filter api build
+    buildCommand: pnpm install --frozen-lockfile --prod=false && pnpm --filter api build
     startCommand: pnpm --filter api start
 
     # Devuelve 200 cuando la API puede leer la BD. Render lo usa de health check.
-    healthCheckPath: /mentorship/status
+    healthCheckPath: /health
 
     envVars:
       - key: NODE_VERSION
-        value: 22
+        value: 22.22.1
+      - key: NODE_ENV
+        value: production
+      # Datos falsos de integración. Usar production para la base del sistema real.
+      - key: APP_ENV
+        value: dev
+      - key: AUTH_RATE_LIMIT_STORE
+        value: memory
 
       # --- Secretos: Render los pide en el dashboard ---
       # Ver apps/api/.env.example para el contenido.
-      - key: SUPABASE_URL
+      - key: DATABASE_URL
         sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
+      - key: DIRECT_URL
+        sync: false
+      - key: AUTH_JWT_SECRET
         sync: false
 
-      # URL publica del frontend en Vercel. Se aceptan varias separadas por
-      # coma (la API las usa como lista de origenes permitidos por CORS):
-      #   WEB_ORIGIN=https://umsspira.vercel.app,https://umsspira-git-dev.vercel.app
-      - key: WEB_ORIGIN
+      # Origen del frontend, sin /login. Para otros despliegues usar su propio origen.
+      - key: CORS_ORIGINS
+        value: https://umsspira-web.vercel.app
+
+      # Configurar con un proveedor real para registro, verificación y activación.
+      # En Free, los puertos SMTP 25/465/587 están bloqueados: consultar la guía.
+      - key: SMTP_URL
+        sync: false
+      - key: MAIL_FROM
         sync: false

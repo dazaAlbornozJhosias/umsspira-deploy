@@ -1,0 +1,21 @@
+meta {
+  name: Limpiar información profesional
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/mentorship/my-profile/information
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Limpia los campos descriptivos del mentor propio. Conserva participación, años, áreas y disponibilidad.
+
+  Permiso: mentores:self:write.
+}

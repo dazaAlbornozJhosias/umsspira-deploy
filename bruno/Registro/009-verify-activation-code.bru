@@ -1,0 +1,26 @@
+meta {
+  name: Validar código de activación (paso 1)
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/activate/verify
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "applicationId": "{{applicationId}}",
+    "code": "{{activationCode}}"
+  }
+}
+
+docs {
+  Paso 1 de la activación. Valida el código de 6 dígitos (24 horas, máximo 5 intentos fallidos) y devuelve activationToken, un pase de 10 minutos para el paso 2.
+}

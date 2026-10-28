@@ -1,0 +1,53 @@
+meta {
+  name: Extraer keywords - 400 Campos extra en el cuerpo (CA-HU5-19)
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/api/v1/nlp/extract
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "text": "Node.js",
+    "campoExtra": "valor no permitido"
+  }
+}
+
+tests {
+  test("Status 400 cuando el cuerpo tiene campos extra", function() {
+    expect(res.status).to.equal(400);
+  });
+
+  test("Respuesta usa formato de error { error: { code, message } }", function() {
+    expect(res.body).to.have.property("error").that.is.an("object");
+    expect(res.body.error).to.have.property("message");
+  });
+}
+
+docs {
+  HU-5 · T1.7 — Validacion del cuerpo: campos extra no permitidos.
+  El schema Zod es estricto (stripUnknown: false); campos adicionales -> 400.
+
+  CA-HU5-19: el endpoint acepta UNICAMENTE el campo text; campos extra -> 400.
+  CA-HU5-20: formato de error { error: { code, message } }.
+
+  Nota: si el schema usa strip() en lugar de strict() este test devolvera 200.
+        En ese caso, revisa la configuracion del schema Zod en el backend.
+
+  Ver test 013 para type incorrecto.
+  Ver test 014 para campo text ausente.
+
+  Permiso: nlp:extract.
+}

@@ -5,6 +5,11 @@ import type { TimelineItem } from '@/modules/profile/data/profile-data';
 
 import CertificationItem from './certification-item';
 
+jest.mock('@/modules/profile/services/perfil-api', () => ({
+  ...jest.requireActual('@/modules/profile/services/perfil-api'),
+  obtenerEnlaceRespaldo: jest.fn().mockResolvedValue({ url: '/api/v1/perfil/respaldos/cert-1/archivo', expiraEn: '' }),
+}));
+
 const withBackup: TimelineItem = {
   title: 'AWS Solutions Architect',
   subtitle: 'Amazon Web Services · 2022',
@@ -108,5 +113,29 @@ describe('CertificationItem', () => {
     fireEvent.keyDown(header, { key: 'Enter' });
     expect(header).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByText('Entidad emisora')).not.toBeInTheDocument();
+  });
+
+  it('«Ver respaldo» abre el visor con el nombre de la certificación', async () => {
+    render(<Harness item={{ ...withBackup, id: 'cert-1' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver respaldo' }));
+
+    expect(screen.getByRole('dialog', { name: 'AWS Solutions Architect' })).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: 'Respaldo de AWS Solutions Architect' })).toBeInTheDocument();
+  });
+
+  it('sin respaldo no ofrece «Ver respaldo» aunque el registro exista', () => {
+    render(<Harness item={{ ...withoutBackup, id: 'cert-3' }} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Google Cloud Engineer/ }));
+
+    expect(screen.queryByRole('button', { name: 'Ver respaldo' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('sin id del registro no ofrece «Ver respaldo»', () => {
+    render(<Harness item={withBackup} />);
+
+    expect(screen.queryByRole('button', { name: 'Ver respaldo' })).not.toBeInTheDocument();
   });
 });

@@ -1,0 +1,36 @@
+meta {
+  name: Actualizar borrador
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/events/drafts/{{eventId}}
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "title": "Encuentro de titulados",
+    "description": "Encuentro universitario de intercambio profesional.",
+    "startDate": "{{eventStartDate}}",
+    "endDate": "{{eventEndDate}}",
+    "maxCapacity": 100,
+    "location": "Auditorio UMSS"
+  }
+}
+
+docs {
+  Reemplaza los campos editables del borrador propio. Para adjuntar portada agrega imageUrl con la ruta devuelta al cargarla; null la desvincula y omitir el campo la conserva.
+
+  Permiso: eventos:manage.
+}

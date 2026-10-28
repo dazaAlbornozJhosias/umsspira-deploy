@@ -14,29 +14,29 @@ afterEach(() => clearAccessToken());
 afterAll(() => { global.fetch = originalFetch; });
 
 it('consulta el perfil con credenciales y sin caché', async () => {
-  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ eligible: true }) }).mockResolvedValueOnce({ ok: true, json: async () => ({ esta_activo: false }) });
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ data: ({ eligible: true }) }) }).mockResolvedValueOnce({ ok: true, json: async () => ({ data: ({ esta_activo: false }) }) });
   expect(await getMentorProfile()).toEqual(profile);
-  expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/mentorship/eligibility'), expect.objectContaining({ method: 'POST', credentials: 'omit', headers: { Accept: 'application/json', Authorization: 'Bearer test-access-token' } }));
-  expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/mentorship/my-profile'), expect.objectContaining({ method: 'GET', credentials: 'omit', cache: 'no-store', headers: { Accept: 'application/json', Authorization: 'Bearer test-access-token' } }));
+  expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/mentorship/eligibility'), expect.objectContaining({ method: 'GET', credentials: 'omit', headers: { accept: 'application/json', Authorization: 'Bearer test-access-token' } }));
+  expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/mentorship/my-profile'), expect.objectContaining({ method: 'GET', credentials: 'omit', cache: 'no-store', headers: { accept: 'application/json', Authorization: 'Bearer test-access-token' } }));
 });
 
 it('permite la primera activación cuando el usuario aún no tiene registro de mentor', async () => {
-  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ eligible: true }) })
-    .mockResolvedValueOnce({ ok: false, status: 404, json: async () => ({ message: 'El usuario no tiene perfil de mentor' }) });
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ data: ({ eligible: true }) }) })
+    .mockResolvedValueOnce({ ok: false, status: 404, json: async () => ({ error: { code: 'MENTOR_NOT_FOUND', message: 'El usuario no tiene perfil de mentor' } }) });
   expect(await getMentorProfile()).toEqual(profile);
 });
 
 it('usa la elegibilidad real y trata esta_activo null como inactivo', async () => {
-  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ eligible: false }) })
-    .mockResolvedValueOnce({ ok: true, json: async () => ({ esta_activo: null }) });
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ data: ({ eligible: false }) }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ data: ({ esta_activo: null }) }) });
   expect(await getMentorProfile()).toEqual({ isActive: false, requirements: { egresado: false } });
 });
 
 it('envía PATCH JSON y devuelve el estado confirmado', async () => {
   const active = { ...profile, isActive: true };
-  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ eligible: true }) }).mockResolvedValueOnce({ ok: true, json: async () => ({ esta_activo: true }) });
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ data: ({ eligible: true }) }) }).mockResolvedValueOnce({ ok: true, json: async () => ({ data: ({ esta_activo: true }) }) });
   expect(await updateMentorParticipation(true)).toEqual(active);
-  expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/mentorship/my-profile/participation'), expect.objectContaining({ method: 'PATCH', body: '{"esta_activo":true}', headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: 'Bearer test-access-token' } }));
+  expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/mentorship/my-profile/participation'), expect.objectContaining({ method: 'PATCH', body: '{"esta_activo":true}', headers: { accept: 'application/json', 'content-type': 'application/json', Authorization: 'Bearer test-access-token' } }));
 });
 
 it('no envía solicitudes protegidas sin token', async () => {
@@ -53,8 +53,8 @@ it('descarta el token rechazado con 401', async () => {
 
 it('usa el token actualizado en las solicitudes siguientes', async () => {
   setAccessToken('renewed-token');
-  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ eligible: true }) })
-    .mockResolvedValueOnce({ ok: true, json: async () => ({ esta_activo: false }) });
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ data: ({ eligible: true }) }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ data: ({ esta_activo: false }) }) });
   await getMentorProfile();
   expect(fetchMock).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
     headers: expect.objectContaining({ Authorization: 'Bearer renewed-token' }),
@@ -67,6 +67,6 @@ it.each([401, 403, 404, 500])('rechaza HTTP %s', async status => {
 });
 
 it.each([null, {}, { isActive: 'true', requirements: profile.requirements }, { isActive: false, requirements: { egresado: true } }])('rechaza respuestas incompletas: %j', async data => {
-  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ eligible: true }) }).mockResolvedValueOnce({ ok: true, json: async () => data });
+  fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ data: ({ eligible: true }) }) }).mockResolvedValueOnce({ ok: true, json: async () => ({ data: data }) });
   await expect(getMentorProfile()).rejects.toThrow('formato inválido');
 });

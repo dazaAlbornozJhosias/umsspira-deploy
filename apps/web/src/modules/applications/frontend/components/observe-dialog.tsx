@@ -69,7 +69,7 @@ export function ObserveDialog({
     if (categoryInvalid || noteInvalid) return;
 
     const ok = await submitReview({
-      decision: "OBSERVED",
+      decision: "OBSERVADA",
       category,
       note: note.trim(),
       notifyDean,

@@ -3,7 +3,7 @@ import { getMentorAvailability, updateMentorAvailability } from './mentor-availa
 
 const originalFetch = global.fetch;
 const fetchMock = jest.fn();
-const state = { availabilityStatus: 'AVAILABLE', fecha_actualizacion: '2026-10-07' };
+const state = { availabilityStatus: 'DISPONIBLE', fecha_actualizacion: '2026-10-07' };
 
 beforeEach(() => {
   fetchMock.mockReset();
@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 it('consulta la disponibilidad con el token de la sesión', async () => {
-  fetchMock.mockResolvedValue({ ok: true, json: async () => state });
+  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: state }) });
   expect(await getMentorAvailability()).toEqual(state);
   expect(fetchMock).toHaveBeenCalledWith(expect.stringMatching(/\/mentorship\/availability$/), expect.objectContaining({
     method: 'GET', credentials: 'omit',
@@ -26,19 +26,19 @@ it('consulta la disponibilidad con el token de la sesión', async () => {
 });
 
 it('envía el token y el estado seleccionado al guardar', async () => {
-  const paused = { ...state, availabilityStatus: 'PAUSED' };
-  fetchMock.mockResolvedValue({ ok: true, json: async () => paused });
-  expect(await updateMentorAvailability('PAUSED')).toEqual(paused);
+  const paused = { ...state, availabilityStatus: 'EN_PAUSA' };
+  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: paused }) });
+  expect(await updateMentorAvailability('EN_PAUSA')).toEqual(paused);
   expect(fetchMock).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
-    method: 'PATCH', body: JSON.stringify({ availabilityStatus: 'PAUSED' }),
-    headers: expect.objectContaining({ Authorization: 'Bearer mentor-token', 'Content-Type': 'application/json' }),
+    method: 'PATCH', body: JSON.stringify({ availabilityStatus: 'EN_PAUSA' }),
+    headers: expect.objectContaining({ Authorization: 'Bearer mentor-token', 'content-type': 'application/json' }),
   }));
 });
 
 it('sin sesión rechaza la consulta y el guardado antes de enviar peticiones', async () => {
   clearAccessToken();
   await expect(getMentorAvailability()).rejects.toMatchObject({ status: 401 });
-  await expect(updateMentorAvailability('AVAILABLE')).rejects.toMatchObject({ status: 401 });
+  await expect(updateMentorAvailability('DISPONIBLE')).rejects.toMatchObject({ status: 401 });
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
@@ -50,7 +50,7 @@ it('limpia la sesión rechazada por el backend con 401', async () => {
 
 it('conserva la sesión cuando el backend rechaza los permisos con 403', async () => {
   fetchMock.mockResolvedValue({ ok: false, status: 403 });
-  await expect(updateMentorAvailability('PAUSED')).rejects.toMatchObject({ status: 403 });
+  await expect(updateMentorAvailability('EN_PAUSA')).rejects.toMatchObject({ status: 403 });
   expect(getAccessToken()).toBe('mentor-token');
 });
 

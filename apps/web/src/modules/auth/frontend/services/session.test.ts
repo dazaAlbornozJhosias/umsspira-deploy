@@ -1,16 +1,17 @@
 /// <reference types="jest" />
 import { clearSession, getSessionToken, saveSession } from "./session";
 
-describe("sesión en cookies", () => {
+describe("sesión en memoria", () => {
   afterEach(() => {
     clearSession();
   });
 
-  it("guarda el token y el rol", () => {
+  it("expone el token sin crear cookies de identidad desde JavaScript", () => {
     saveSession("token-de-prueba", "administrador", false);
 
-    expect(document.cookie).toContain("umsspira_token=token-de-prueba");
-    expect(document.cookie).toContain("umsspira_role=administrador");
+    expect(getSessionToken()).toBe("token-de-prueba");
+    expect(document.cookie).not.toContain("umsspira_token");
+    expect(document.cookie).not.toContain("umsspira_role");
   });
 
   it("borra la sesión al cerrarla", () => {
@@ -25,13 +26,14 @@ describe("sesión en cookies", () => {
     expect(window.sessionStorage.getItem("umsspira.access-token")).toBeNull();
   });
 
-  it("replica el token en localStorage para la Epic 4", () => {
+  it("no persiste el access token en localStorage", () => {
     saveSession("token-de-prueba", "empresa", false);
 
-    expect(window.localStorage.getItem("token")).toBe("token-de-prueba");
+    expect(window.localStorage.getItem("token")).toBeNull();
+    expect(getSessionToken()).toBe("token-de-prueba");
   });
 
-  it("recupera el token de la cookie tras recargar la página", () => {
+  it("recupera el token de la sesión activa en memoria", () => {
     saveSession("token-de-prueba", "administrador", false);
 
     expect(getSessionToken()).toBe("token-de-prueba");

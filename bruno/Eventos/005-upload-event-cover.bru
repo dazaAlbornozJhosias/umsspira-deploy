@@ -1,0 +1,25 @@
+meta {
+  name: Cargar portada
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/events/covers
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:multipart-form {
+  file: @file({{eventCoverFilePath}})
+}
+
+docs {
+  Adjunta JPG, PNG o WebP de hasta 5 MiB. Copia data.id a eventCoverId. Puedes agregar imageUrl con la ruta devuelta al body de Crear evento o Actualizar borrador.
+
+  Permiso: eventos:manage.
+}

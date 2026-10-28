@@ -1,0 +1,27 @@
+meta {
+  name: Consultar vista previa del reporte
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/reports/graduates/report
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~careerId: {{careerId}}
+  ~status: {{reportStatus}}
+  ~search:
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Datos del reporte sin paginación, con los filtros seleccionados y las carreras autorizadas del administrador.
+
+  Permiso: reportes:read.
+}

@@ -1,0 +1,40 @@
+meta {
+  name: 008 - Actualizar datos del expediente observado
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/registrations/observed
+  body: json
+  auth: none
+}
+
+headers {
+  X-Correction-Token: {{validCorrectionToken}}
+}
+
+body:json {
+  {
+    "expectedVersion": 1,
+    "nombres": "Carlos Alberto",
+    "apellidos": "Montano Diaz",
+    "correo": "carlos.nuevo@example.com",
+    "telefono": "78888888",
+    "carreraId": "123e4567-e89b-12d3-a456-426614174000",
+    "anioEgreso": 2024,
+    "deseaMentor": true,
+    "fechaTitulacion": "2024-05-10",
+    "fechaIngreso": "2019-02-15"
+  }
+}
+
+tests {
+  test("Actualiza datos con version esperada", function() {
+    expect([200, 409]).to.include(res.getStatus());
+  });
+}
+
+docs {
+  Actualiza los campos editables del expediente observado, validando expectedVersion para control de concurrencia optimista y registrando el snapshot en el historial.
+}

@@ -1,7 +1,0 @@
-{{platformName}}
-
-{{greeting}}
-
-Lamentamos informarte que tu solicitud no fue aprobada. Este es el motivo:
-
-{{justification}}

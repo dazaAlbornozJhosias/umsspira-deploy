@@ -1,0 +1,27 @@
+meta {
+  name: Descargar reporte PDF
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/reports/graduates/pdf
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~careerId: {{careerId}}
+  ~status: {{reportStatus}}
+  ~search:
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Descarga PDF institucional de los registros filtrados. Guarda o visualiza la respuesta desde Bruno. Los filtros son iguales a los de CSV y vista previa.
+
+  Permiso: reportes:read.
+}

@@ -3,22 +3,34 @@
 import { authStore } from "../store";
 import { clearSession } from "../services";
 import { hardRedirect } from "../services/navigation";
+import { useState } from 'react';
+import { revokeCurrentSession } from '@/shared/services/auth-session';
 
 export function LogoutButton() {
-  function handleLogout() {
-    clearSession();
-    authStore.reset();
-    // Con "Atrás" ya no se puede volver a ver la pantalla privada (CA-05.6)
-    hardRedirect("/login");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function handleLogout() {
+    if (pending) return;
+    setPending(true);
+    setError(null);
+    try {
+      await revokeCurrentSession();
+      clearSession();
+      authStore.reset();
+      hardRedirect("/login");
+    } catch {
+      setError('No se pudo cerrar la sesión. Inténtalo nuevamente.');
+    } finally { setPending(false); }
   }
 
   return (
-    <button
+    <><button
       type="button"
       onClick={handleLogout}
+      disabled={pending}
       className="text-sm font-medium text-white/90 hover:text-white"
     >
       Cerrar sesión
-    </button>
+    </button>{error && <p role="alert">{error}</p>}</>
   );
 }

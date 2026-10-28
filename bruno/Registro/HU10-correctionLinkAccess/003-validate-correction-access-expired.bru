@@ -1,0 +1,26 @@
+meta {
+  name: 003 - Rechazar acceso con token vencido
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/registrations/observed/access
+  body: none
+  auth: none
+}
+
+headers {
+  X-Correction-Token: {{expiredCorrectionToken}}
+}
+
+tests {
+  test("Acceso denegado por expiracion con 404 generico", function() {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody().error.code).to.equal("TOKEN_NOT_FOUND");
+  });
+}
+
+docs {
+  Un token con fecha de expiracion superada devuelve la misma respuesta HTTP 404 generica que un token inexistente.
+}

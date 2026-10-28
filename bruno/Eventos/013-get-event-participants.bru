@@ -1,0 +1,21 @@
+meta {
+  name: Consultar participantes y ocupación
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/api/v1/events/owned/{{eventId}}/participants
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Devuelve la ocupación y los participantes de un evento propio del Administrador de Eventos.
+
+  Requiere permiso eventos:manage y que el evento pertenezca al usuario autenticado. Solo las inscripciones CONFIRMADA cuentan como cupos ocupados.
+}

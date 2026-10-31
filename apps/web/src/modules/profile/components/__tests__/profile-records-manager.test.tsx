@@ -69,7 +69,8 @@ describe('ProfileRecordsManager', () => {
   });
 
   it('muestra error de conexión con opción de reintentar sin borrar el registro', async () => {
-    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+    // Deploy personal: sin conexión se elimina en local; el fallo se prueba con un 500
+    responder(500, { error: { message: 'Error' } });
     render(<ProfileRecordsManager />);
     fireEvent.click(within(getDesktopRows()[0]).getByRole('button', { name: 'Eliminar registro' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
@@ -187,7 +188,8 @@ describe('ProfileRecordsManager', () => {
     });
 
     it('no muestra el aviso si la eliminación falla', async () => {
-      fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+      // Deploy personal: sin conexión se elimina en local; el fallo se prueba con un 500
+      responder(500, { error: { message: 'Error' } });
       render(<ProfileRecordsManager />);
       fireEvent.click(within(getDesktopRows()[0]).getByRole('button', { name: 'Eliminar registro' }));
       fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));

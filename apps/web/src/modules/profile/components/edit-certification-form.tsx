@@ -13,7 +13,12 @@ import {
 } from '@/modules/profile/components/edit-record-layout';
 import { urlDeArchivo } from '@/modules/profile/utils/backup-url';
 import { recordsHref } from '@/modules/profile/data/profile-records-data';
-import { actualizarCertificacion, obtenerCertificacion, subirRespaldo } from '@/modules/profile/services/perfil-api';
+import {
+  actualizarCertificacion,
+  esDemoSinBackend,
+  obtenerCertificacion,
+  subirRespaldo,
+} from '@/modules/profile/services/perfil-api';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { CertificationRecord } from '@/modules/profile/types/profile-record';
 import { MensajeError } from '@/modules/profile/validation/mensaje-error';
@@ -54,7 +59,7 @@ export function EditCertificationForm() {
       .catch((error: unknown) => {
         if (ignore) return;
         // Demo sin backend ni login: se edita la certificación guardada en el navegador
-        if (error instanceof ApiError && (error.status === 0 || error.status === 401)) {
+        if (esDemoSinBackend(error)) {
           const local = (recordsRef.current.certification as CertificationRecord[]).find((record) => record.id === id);
           setCertification(local ?? null);
           setStatus(local ? 'ready' : 'not-found');

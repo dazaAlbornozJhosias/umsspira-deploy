@@ -119,12 +119,17 @@ export function aCertificationRecord(certificacion: CertificacionApi): Certifica
   };
 }
 
-// Demo sin backend ni login: si la API no responde (status 0) o no hay sesión (401) se guarda con los datos de prueba
-async function conDatosDePrueba<T>(llamada: () => Promise<T>, local: () => T): Promise<T> {
+// Demo sin backend ni login: sin conexión (0), sin sesión (401) o con el proxy de Vercel sin API (503)
+export function esDemoSinBackend(error: unknown): boolean {
+  return error instanceof ApiError && [0, 401, 503].includes(error.status);
+}
+
+// En esos casos se guarda con los datos de prueba
+export async function conDatosDePrueba<T>(llamada: () => Promise<T>, local: () => T): Promise<T> {
   try {
     return await llamada();
   } catch (error) {
-    if (error instanceof ApiError && (error.status === 0 || error.status === 401)) return local();
+    if (esDemoSinBackend(error)) return local();
     throw error;
   }
 }

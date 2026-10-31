@@ -26,6 +26,7 @@ jest.mock('@/modules/profile/services/perfil-api', () => ({
   // El visor (HU-10) pide un enlace firmado; se responde con uno fijo
   obtenerEnlaceRespaldo: jest.fn().mockResolvedValue({ url: '/api/v1/perfil/respaldos/cert-1/archivo', expiraEn: '' }),
   enlaceDeDescarga: jest.requireActual('@/modules/profile/services/perfil-api').enlaceDeDescarga,
+  esDemoSinBackend: jest.requireActual('@/modules/profile/services/perfil-api').esDemoSinBackend,
 }));
 const obtenerCertificacionMock = obtenerCertificacion as jest.MockedFunction<typeof obtenerCertificacion>;
 const actualizarCertificacionMock = actualizarCertificacion as jest.MockedFunction<typeof actualizarCertificacion>;
@@ -111,6 +112,15 @@ describe('EditCertificationForm', () => {
 
     expect(await screen.findByLabelText('Nombre de la certificación')).toHaveValue('AWS Solutions Architect');
     expect(obtenerCertificacionMock).toHaveBeenCalledTimes(2);
+  });
+
+  // Deploy personal: en Vercel no hay API y el proxy responde 503
+  it.each([0, 401, 503])('sin backend (status %i) edita la copia guardada en el navegador', async (status) => {
+    obtenerCertificacionMock.mockRejectedValue(new ApiError(status, 'Sin backend'));
+    renderForm();
+
+    expect(await screen.findByLabelText('Nombre de la certificación')).toHaveValue('AWS Solutions Architect');
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
   });
 
   it('envía el PUT del mismo registro, actualiza la lista y muestra "Registro actualizado"', async () => {

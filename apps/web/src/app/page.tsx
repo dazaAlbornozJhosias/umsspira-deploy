@@ -1,6 +1,4 @@
 import React from 'react';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { Navbar } from '@/shared/components/navbar';
 import Image from 'next/image';
 import { Search, Calendar, Briefcase, Star, Users, ChevronRight, Bookmark } from 'lucide-react';
@@ -14,9 +12,6 @@ import eventImg2 from '@/shared/assets/images/networking.jpg';
 import eventImg3 from '@/shared/assets/images/beneficios.jpg';
 
 export default function Home() {
-  // Sin sesión, la primera pantalla es el acceso; la validez real la verifica el middleware y la API.
-  if (!cookies().get('umsspira_refresh')?.value) redirect('/login');
-
   // =====================================================================
   // APARTADO DE CONFIGURACIÓN DEL BANNER (¡Modifica a tu gusto aquí!)
   // =====================================================================

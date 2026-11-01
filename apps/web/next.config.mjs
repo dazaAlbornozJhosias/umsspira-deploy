@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   distDir: process.env.NODE_ENV === 'production' ? '.next' : '.next-dev',
+  async redirects() {
+    // La primera pantalla es la página institucional pública; desde ahí se inicia sesión.
+    return [{ source: '/', destination: '/portal/institucional', permanent: false }];
+  },
   async headers() {
     return [
       {

@@ -7,7 +7,9 @@ export const dispositivos: Array<Prisma.DispositivoCreateManyInput & { id: strin
 
 const accountId = (role: string): string => {
   const account = DEMO_ACCOUNTS.find((a) => a.role === role);
-  if (!account) {throw new Error(`Falta la cuenta demo con rol ${role}`);}
+  if (!account) {
+    throw new Error(`Falta la cuenta demo con rol ${role}`);
+  }
   return account.id;
 };
 
@@ -24,6 +26,7 @@ const CONVERSACION_ADMIN_ID = '28000000-0000-4000-8000-000000000002';
 export const conversaciones: Array<Prisma.ConversacionCreateManyInput & { id: string }> = [
   {
     id: CONVERSACION_EMPRESA_ID,
+    direct_key: [TITULADO_ID, EMPRESA_ID].sort().join(':'),
     tipo: 'directo',
     estado_conversacion: 'ACEPTADO',
     creado_por: TITULADO_ID,
@@ -32,6 +35,7 @@ export const conversaciones: Array<Prisma.ConversacionCreateManyInput & { id: st
   },
   {
     id: CONVERSACION_ADMIN_ID,
+    direct_key: [TITULADO_ID, ADMIN_ID].sort().join(':'),
     tipo: 'directo',
     estado_conversacion: 'ACEPTADO',
     creado_por: TITULADO_ID,

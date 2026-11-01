@@ -1,0 +1,28 @@
+meta {
+  name: Enviar adjunto
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/api/v1/chat/conversations/{{chatConversationId}}/attachments
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:multipart-form {
+  file: @file({{chatFilePath}})
+  clientId: {{chatClientId}}
+  content: Documento para nuestra conversación
+}
+
+docs {
+  Requiere sesión activa y user:self:read. Consultar apps/api/src/modules/chat/README.md.
+  Completar IDs manualmente. Usar un UUID nuevo por envío y conservarlo solo al reintentar el mismo mensaje.
+  Para responder solicitudes usar el token del destinatario. Cambiar decision a decline para rechazar.
+}
+

@@ -1,0 +1,33 @@
+meta {
+  name: Enviar mensaje
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/chat/conversations/{{chatConversationId}}/messages
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": "Gracias por aceptar. ¿Podemos conversar?",
+    "clientId": "{{chatClientId}}"
+  }
+}
+
+docs {
+  Requiere sesión activa y user:self:read. Consultar apps/api/src/modules/chat/README.md.
+  Completar IDs manualmente. Usar un UUID nuevo por envío y conservarlo solo al reintentar el mismo mensaje.
+  Para responder solicitudes usar el token del destinatario. Cambiar decision a decline para rechazar.
+}
+

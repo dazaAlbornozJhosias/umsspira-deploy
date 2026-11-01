@@ -1,0 +1,34 @@
+meta {
+  name: Enviar primera solicitud
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/chat/conversations
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "recipientId": "{{chatRecipientId}}",
+    "content": "Hola, me gustaría conversar sobre una oportunidad de trabajo.",
+    "clientId": "{{chatClientId}}"
+  }
+}
+
+docs {
+  Requiere sesión activa y user:self:read. Consultar apps/api/src/modules/chat/README.md.
+  Completar IDs manualmente. Usar un UUID nuevo por envío y conservarlo solo al reintentar el mismo mensaje.
+  Para responder solicitudes usar el token del destinatario. Cambiar decision a decline para rechazar.
+}
+

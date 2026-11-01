@@ -108,7 +108,7 @@ export function MessagesButton({ onOpen, isOtherMenuOpen }: MessagesButtonProps)
                         </span>
                         <small className={styles.messageRole}>{conversation.otherUser.role}</small>
                         <small className={styles.messagePreview}>
-                          {conversation.lastMessage?.content ?? ''}
+                          {conversation.lastMessage?.deletedAt ? 'Mensaje eliminado' : conversation.lastMessage?.content || conversation.lastMessage?.attachment?.name || ''}
                         </small>
                       </span>
                       <span className={styles.itemCount} aria-label={`${conversation.unreadCount} sin leer`}>

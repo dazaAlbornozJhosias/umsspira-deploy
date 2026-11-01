@@ -1,40 +1,61 @@
-// apps/web/src/features/chat/hooks/useConversations.ts
-'use client';
-
-import { useCallback, useEffect, useState } from 'react';
+"use client";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getMyConversations,
   type ConversationSummary,
-} from '@/shared/services/chat-conversation.service';
-
+} from "@/shared/services/chat-conversation.service";
+import {
+  retainChatSocket,
+  releaseChatSocket,
+} from "@/shared/services/chat-socket";
+import { onUnreadRefresh } from "../utils/unread-events";
 export const useConversations = () => {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async (showSpinner: boolean) => {
-    if (showSpinner) setLoading(true);
-    setError(null);
+  const version = useRef(0);
+  const load = useCallback(async () => {
+    const request = ++version.current;
     try {
-      setConversations(await getMyConversations());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudieron cargar tus conversaciones');
+      const items = await getMyConversations();
+      if (request === version.current) {
+        setConversations(items);
+        setError(null);
+      }
+    } catch (error) {
+      if (request === version.current)
+        setError(
+          error instanceof Error
+            ? error.message
+            : "No se pudieron cargar los mensajes",
+        );
     } finally {
-      setLoading(false);
+      if (request === version.current) setLoading(false);
     }
   }, []);
-
   useEffect(() => {
-    void load(true);
+    void load();
+    const socket = retainChatSocket();
+    const refresh = () => {
+      void load();
+    };
+    socket.on("chat:changed", refresh);
+    socket.on("connect", refresh);
+    const stop = onUnreadRefresh(refresh);
+    window.addEventListener("focus", refresh);
+    const timer = setInterval(refresh, 15000);
+    const invalidate = () => {
+      version.current++;
+    };
+    return () => {
+      invalidate();
+      socket.off("chat:changed", refresh);
+      socket.off("connect", refresh);
+      window.removeEventListener("focus", refresh);
+      clearInterval(timer);
+      stop();
+      releaseChatSocket();
+    };
   }, [load]);
-
-  return {
-    conversations,
-    loading,
-    error,
-    // Recarga sin parpadeo: se usará al enviar o recibir un mensaje (CA-03)
-    reload: () => load(false),
-    // Reintento tras un error: muestra el indicador de carga
-    retry: () => load(true),
-  };
+  return { conversations, loading, error, reload: load, retry: load };
 };

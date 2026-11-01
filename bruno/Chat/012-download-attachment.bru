@@ -1,0 +1,22 @@
+meta {
+  name: Descargar adjunto
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/api/v1/chat/conversations/{{chatConversationId}}/messages/{{chatMessageId}}/attachment
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Requiere sesión activa y user:self:read. Consultar apps/api/src/modules/chat/README.md.
+  Completar IDs manualmente. Usar un UUID nuevo por envío y conservarlo solo al reintentar el mismo mensaje.
+  Para responder solicitudes usar el token del destinatario. Cambiar decision a decline para rechazar.
+}
+

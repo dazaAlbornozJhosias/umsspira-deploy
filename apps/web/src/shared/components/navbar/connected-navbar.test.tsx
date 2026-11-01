@@ -31,8 +31,7 @@ beforeEach(() => {
   jest.mocked(revokeCurrentSession).mockResolvedValue(undefined);
 });
 
-// Deploy personal: sin sesión real la navbar muestra el titulado de prueba, por eso se omite
-it.skip('permanece como visitante sin una sesión real e ignora el rol del laboratorio', async () => {
+it('permanece como visitante sin una sesión real e ignora el rol del laboratorio', async () => {
   sessionStorage.setItem('umsspira.navbar-laboratorio.rol', 'administrador');
   render(<ConnectedNavbar />);
   expect(screen.getByText('Visitante')).toBeInTheDocument();
@@ -47,8 +46,7 @@ it('restaura el rol de empresa validado mediante el cliente autenticado', async 
   expect(fetchMock).toHaveBeenCalledWith('/api/v1/auth/me', expect.objectContaining({ cache: 'no-store' }));
 });
 
-// Deploy personal: sin sesión real la navbar muestra el titulado de prueba, por eso se omite
-it.skip('permanece como visitante si la API rechaza el token', async () => {
+it('permanece como visitante si la API rechaza el token', async () => {
   fetchMock.mockResolvedValue({ ok: false } as Response);
   render(<ConnectedNavbar />);
   await waitFor(() => expect(fetchMock).toHaveBeenCalled());

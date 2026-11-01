@@ -380,14 +380,11 @@ describe('subirRespaldo', () => {
     await expect(promesa).rejects.toMatchObject({ status: 400, message: 'Formato no permitido' });
   });
 
-  // Deploy personal: sin conexión el respaldo queda solo en el navegador (datos de prueba)
-  it('sin conexión termina sin error y marca la subida completa', async () => {
-    const onProgreso = jest.fn();
-    const promesa = subirRespaldo('c-1', archivo(), onProgreso);
+  it('rechaza con ApiError(0) si no hay conexión', async () => {
+    const promesa = subirRespaldo('c-1', archivo());
     XhrFalso.instancia.onerror?.();
 
-    await expect(promesa).resolves.toBeUndefined();
-    expect(onProgreso).toHaveBeenLastCalledWith(100);
+    await expect(promesa).rejects.toMatchObject({ status: 0 });
   });
 });
 

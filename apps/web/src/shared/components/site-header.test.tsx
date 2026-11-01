@@ -37,8 +37,7 @@ describe("PortalSiteHeader", () => {
     expect(screen.queryByRole("link", { name: "Iniciar sesión" })).not.toBeInTheDocument();
   });
 
-  // Deploy personal: sin sesión real la navbar muestra el titulado de prueba, por eso se omite
-  it.skip.each(["/portal/institucional", "/portal/institucional/"])(
+  it.each(["/portal/institucional", "/portal/institucional/"])(
     "renderiza un único encabezado oficial en %s",
     (pathname) => {
       mockUsePathname.mockReturnValue(pathname);

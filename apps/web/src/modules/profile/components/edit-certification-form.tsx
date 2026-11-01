@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 import { BackupViewerModal } from '@/modules/profile/components/backup-viewer-modal';
@@ -13,12 +13,7 @@ import {
 } from '@/modules/profile/components/edit-record-layout';
 import { urlDeArchivo } from '@/modules/profile/utils/backup-url';
 import { recordsHref } from '@/modules/profile/data/profile-records-data';
-import {
-  actualizarCertificacion,
-  esDemoSinBackend,
-  obtenerCertificacion,
-  subirRespaldo,
-} from '@/modules/profile/services/perfil-api';
+import { actualizarCertificacion, obtenerCertificacion, subirRespaldo } from '@/modules/profile/services/perfil-api';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
 import type { CertificationRecord } from '@/modules/profile/types/profile-record';
 import { MensajeError } from '@/modules/profile/validation/mensaje-error';
@@ -37,10 +32,6 @@ const DEGREES = ['Fundamentos', 'Asociado', 'Profesional', 'Especialista', 'Expe
 
 export function EditCertificationForm() {
   const { id } = useParams<{ id: string }>();
-  const { records } = useProfileStore();
-  // Último estado del perfil: al recargar, el guardado del navegador se restaura después del primer render
-  const recordsRef = useRef(records);
-  recordsRef.current = records;
   const [certification, setCertification] = useState<CertificationRecord | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'not-found' | 'error'>('loading');
   // Cambiar este número vuelve a pedir la certificación (botón "Reintentar")
@@ -58,13 +49,6 @@ export function EditCertificationForm() {
       })
       .catch((error: unknown) => {
         if (ignore) return;
-        // Demo sin backend ni login: se edita la certificación guardada en el navegador
-        if (esDemoSinBackend(error)) {
-          const local = (recordsRef.current.certification as CertificationRecord[]).find((record) => record.id === id);
-          setCertification(local ?? null);
-          setStatus(local ? 'ready' : 'not-found');
-          return;
-        }
         // 404: no existe; 403: es de otro egresado. En ambos casos no se muestra el formulario
         const notFound = error instanceof ApiError && (error.status === 404 || error.status === 403);
         setStatus(notFound ? 'not-found' : 'error');

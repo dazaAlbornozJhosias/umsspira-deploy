@@ -69,8 +69,7 @@ describe('ProfileRecordsManager', () => {
   });
 
   it('muestra error de conexión con opción de reintentar sin borrar el registro', async () => {
-    // Deploy personal: sin conexión se elimina en local; el fallo se prueba con un 500
-    responder(500, { error: { message: 'Error' } });
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
     render(<ProfileRecordsManager />);
     fireEvent.click(within(getDesktopRows()[0]).getByRole('button', { name: 'Eliminar registro' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
@@ -122,8 +121,7 @@ describe('ProfileRecordsManager', () => {
       expect(screen.queryAllByText('Universidad Mayor de San Simón')).toHaveLength(0);
     });
 
-    // Deploy personal: sin backend se muestran los datos de prueba en vez del error, por eso se omite
-    it.skip('si falla la carga muestra el error y "Reintentar" vuelve a pedir el perfil', async () => {
+    it('si falla la carga muestra el error y "Reintentar" vuelve a pedir el perfil', async () => {
       fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
       renderConectado();
 
@@ -188,8 +186,7 @@ describe('ProfileRecordsManager', () => {
     });
 
     it('no muestra el aviso si la eliminación falla', async () => {
-      // Deploy personal: sin conexión se elimina en local; el fallo se prueba con un 500
-      responder(500, { error: { message: 'Error' } });
+      fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
       render(<ProfileRecordsManager />);
       fireEvent.click(within(getDesktopRows()[0]).getByRole('button', { name: 'Eliminar registro' }));
       fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));

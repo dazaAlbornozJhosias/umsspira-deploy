@@ -23,9 +23,6 @@ function sessionFromUser(value: unknown): NavbarSession | null {
   return { name, role, initials: initials.toUpperCase() };
 }
 
-// Solo en el deploy personal (sin backend ni login): sin sesión real se muestra el titulado de prueba
-const DEMO_SESSION: NavbarSession = { name: 'Carlos Mendoza Ríos', role: 'titulado', initials: 'CM' };
-
 /** Adaptador real. Nunca consume la sesión ficticia del laboratorio. */
 export function ConnectedNavbar() {
   const pathname = usePathname();
@@ -41,7 +38,7 @@ export function ConnectedNavbar() {
       // HU-004 CA-05: un rechazo 401 no debe dejar el estado React autenticado.
       clearSession();
       authStore.reset();
-      setSession(DEMO_SESSION);
+      setSession(null);
       // El portal institucional público puede mostrarse sin sesión;
       // reportería, en cambio, requiere volver a /login.
       if (pathname === '/reports' || pathname?.startsWith('/reports/')) {
@@ -61,12 +58,12 @@ export function ConnectedNavbar() {
         const body: { data?: unknown } = response.ok ? await response.json() : {};
         if (!disposed && !controller.signal.aborted) {
           if (response.status === 401) invalidateSession();
-          else setSession((response.ok ? sessionFromUser(body.data) : null) ?? DEMO_SESSION);
+          else setSession(response.ok ? sessionFromUser(body.data) : null);
         }
       } catch (error) {
         if (!disposed && !controller.signal.aborted) {
           if (error instanceof SessionError && error.status === 401) invalidateSession();
-          else setSession(DEMO_SESSION);
+          else setSession(null);
         }
       }
     };

@@ -9,7 +9,6 @@ import type {
   ProfileRecords,
 } from '@/modules/profile/types/profile-record';
 import { ApiError, apiFetch } from '@/shared/services/api-client';
-import { SAMPLE_BACKUP_URL } from '@/modules/profile/utils/backup-url';
 import { apiUrl, readApiError } from '@/shared/services/api-contract';
 import { ensureAccessToken, getAccessToken } from '@/shared/services/auth-session';
 
@@ -119,47 +118,6 @@ export function aCertificationRecord(certificacion: CertificacionApi): Certifica
   };
 }
 
-// Demo sin backend ni login: sin conexión (0), sin sesión (401) o con el proxy de Vercel sin API (503)
-export function esDemoSinBackend(error: unknown): boolean {
-  return error instanceof ApiError && [0, 401, 503].includes(error.status);
-}
-
-// En esos casos se guarda con los datos de prueba
-export async function conDatosDePrueba<T>(llamada: () => Promise<T>, local: () => T): Promise<T> {
-  try {
-    return await llamada();
-  } catch (error) {
-    if (esDemoSinBackend(error)) return local();
-    throw error;
-  }
-}
-
-let siguienteIdLocal = 0;
-function idLocal(seccion: string): string {
-  siguienteIdLocal += 1;
-  return `${seccion}-demo-${siguienteIdLocal}`;
-}
-
-function formacionLocal(id: string, formacion: FormacionAcademica): EducationRecord {
-  const cuerpo = cuerpoFormacion(formacion);
-  return aEducationRecord({ ...cuerpo, id, idTitulado: CURRENT_GRADUATE_ID, fechaCreacion: null });
-}
-
-function experienciaLocal(id: string, experiencia: Experiencia): ExperienceRecord {
-  const cuerpo = cuerpoExperiencia(experiencia);
-  return aExperienceRecord({ ...cuerpo, fechaFin: cuerpo.fechaFin ?? null, id, idTitulado: CURRENT_GRADUATE_ID, fechaCreacion: null });
-}
-
-function certificacionLocal(id: string, cuerpo: CertificacionCuerpo): CertificationRecord {
-  return aCertificationRecord({
-    ...cuerpo,
-    grado: cuerpo.grado ?? 'Profesional',
-    id,
-    idTitulado: CURRENT_GRADUATE_ID,
-    fechaCreacion: null,
-  });
-}
-
 function cuerpoFormacion(formacion: FormacionAcademica): FormacionCuerpo {
   return {
     institucion: formacion.institucion.trim(),
@@ -172,25 +130,21 @@ function cuerpoFormacion(formacion: FormacionAcademica): FormacionCuerpo {
 
 // POST /api/v1/perfil/formacion-academica -> 201 con el registro creado, 400 por campo o 409 si ya existe
 export async function crearFormacion(formacion: FormacionAcademica): Promise<EducationRecord> {
-  return conDatosDePrueba(async () => {
-    const creada = await apiFetch<FormacionApi>(`${PERFIL_URL}/formacion-academica`, {
-      method: 'POST',
-      body: JSON.stringify(cuerpoFormacion(formacion)),
-    });
-    return aEducationRecord(creada);
-  }, () => formacionLocal(idLocal('education'), formacion));
+  const creada = await apiFetch<FormacionApi>(`${PERFIL_URL}/formacion-academica`, {
+    method: 'POST',
+    body: JSON.stringify(cuerpoFormacion(formacion)),
+  });
+  return aEducationRecord(creada);
 }
 
 // PUT /api/v1/perfil/formacion-academica/:id -> registro actualizado, 400 por campo
 // o 409 si queda igual a otra formación (el propio registro no cuenta)
 export async function actualizarFormacion(id: string, formacion: FormacionAcademica): Promise<EducationRecord> {
-  return conDatosDePrueba(async () => {
-    const actualizada = await apiFetch<FormacionApi>(`${PERFIL_URL}/formacion-academica/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(cuerpoFormacion(formacion)),
-    });
-    return aEducationRecord(actualizada);
-  }, () => formacionLocal(id, formacion));
+  const actualizada = await apiFetch<FormacionApi>(`${PERFIL_URL}/formacion-academica/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(cuerpoFormacion(formacion)),
+  });
+  return aEducationRecord(actualizada);
 }
 
 function cuerpoExperiencia(experiencia: Experiencia): ExperienciaCuerpo {
@@ -206,25 +160,21 @@ function cuerpoExperiencia(experiencia: Experiencia): ExperienciaCuerpo {
 
 // POST /api/v1/perfil/experiencia-laboral -> 201 con el registro creado o 400 por campo
 export async function crearExperiencia(experiencia: Experiencia): Promise<ExperienceRecord> {
-  return conDatosDePrueba(async () => {
-    const creada = await apiFetch<ExperienciaApi>(`${PERFIL_URL}/experiencia-laboral`, {
-      method: 'POST',
-      body: JSON.stringify(cuerpoExperiencia(experiencia)),
-    });
-    return aExperienceRecord(creada);
-  }, () => experienciaLocal(idLocal('experience'), experiencia));
+  const creada = await apiFetch<ExperienciaApi>(`${PERFIL_URL}/experiencia-laboral`, {
+    method: 'POST',
+    body: JSON.stringify(cuerpoExperiencia(experiencia)),
+  });
+  return aExperienceRecord(creada);
 }
 
 // PUT /api/v1/perfil/experiencia-laboral/:id -> registro actualizado o 400 por campo.
 // Sin fechaFin el backend la guarda como null (trabajo actual) en vez de conservar la anterior
 export async function actualizarExperiencia(id: string, experiencia: Experiencia): Promise<ExperienceRecord> {
-  return conDatosDePrueba(async () => {
-    const actualizada = await apiFetch<ExperienciaApi>(`${PERFIL_URL}/experiencia-laboral/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(cuerpoExperiencia(experiencia)),
-    });
-    return aExperienceRecord(actualizada);
-  }, () => experienciaLocal(id, experiencia));
+  const actualizada = await apiFetch<ExperienciaApi>(`${PERFIL_URL}/experiencia-laboral/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(cuerpoExperiencia(experiencia)),
+  });
+  return aExperienceRecord(actualizada);
 }
 
 // GET /api/v1/perfil -> registros de las 3 secciones y descripción profesional del egresado
@@ -259,25 +209,21 @@ export async function actualizarCertificacion(
     // El formulario guarda el año como texto y el esquema del backend exige un entero
     anioEmision: Number(certificacion.anioEmision),
   };
-  return conDatosDePrueba(async () => {
-    const actualizada = await apiFetch<CertificacionApi>(`${PERFIL_URL}/certificaciones/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(cuerpo),
-    });
-    return aCertificationRecord(actualizada);
-  }, () => certificacionLocal(id, cuerpo));
+  const actualizada = await apiFetch<CertificacionApi>(`${PERFIL_URL}/certificaciones/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(cuerpo),
+  });
+  return aCertificationRecord(actualizada);
 }
 
 // PUT /api/v1/perfil/descripcion-profesional -> la descripción guardada (recortada) o 400 si supera 5000
 // caracteres. Solo cambia la del egresado con sesión; vacía la borra
 export async function guardarDescripcion(descripcion: string): Promise<string> {
-  return conDatosDePrueba(async () => {
-    const guardada = await apiFetch<DescripcionApi>(`${PERFIL_URL}/descripcion-profesional`, {
-      method: 'PUT',
-      body: JSON.stringify({ descripcionProfesional: descripcion }),
-    });
-    return guardada.descripcionProfesional;
-  }, () => descripcion.trim());
+  const guardada = await apiFetch<DescripcionApi>(`${PERFIL_URL}/descripcion-profesional`, {
+    method: 'PUT',
+    body: JSON.stringify({ descripcionProfesional: descripcion }),
+  });
+  return guardada.descripcionProfesional;
 }
 
 // GET /api/v1/perfil -> registros de las 3 secciones con el formato del estado del perfil
@@ -298,13 +244,11 @@ function cuerpoCertificacion(certificacion: Certificacion): CertificacionCuerpo 
 
 // POST /api/v1/perfil/certificaciones -> 201 con el registro creado (con su id) o 400 por campo
 export async function crearCertificacion(certificacion: Certificacion): Promise<CertificationRecord> {
-  return conDatosDePrueba(async () => {
-    const creada = await apiFetch<CertificacionApi>(`${PERFIL_URL}/certificaciones`, {
-      method: 'POST',
-      body: JSON.stringify(cuerpoCertificacion(certificacion)),
-    });
-    return aCertificationRecord(creada);
-  }, () => certificacionLocal(idLocal('certification'), cuerpoCertificacion(certificacion)));
+  const creada = await apiFetch<CertificacionApi>(`${PERFIL_URL}/certificaciones`, {
+    method: 'POST',
+    body: JSON.stringify(cuerpoCertificacion(certificacion)),
+  });
+  return aCertificationRecord(creada);
 }
 
 function mensajeDeRespuesta(texto: string, porDefecto: string): string {
@@ -318,15 +262,6 @@ function mensajeDeRespuesta(texto: string, porDefecto: string): string {
 // POST /api/v1/perfil/certificaciones/:id/respaldo (multipart, campo "archivo").
 // Usa XMLHttpRequest porque fetch no informa el avance de la subida; onProgreso recibe 0 a 100.
 export async function subirRespaldo(
-  id: string,
-  archivo: File,
-  onProgreso?: (porcentaje: number) => void,
-): Promise<void> {
-  // En la demo el respaldo queda solo en el navegador (backupUrl local del registro)
-  return conDatosDePrueba(() => enviarRespaldo(id, archivo, onProgreso), () => onProgreso?.(100));
-}
-
-async function enviarRespaldo(
   id: string,
   archivo: File,
   onProgreso?: (porcentaje: number) => void,
@@ -370,11 +305,7 @@ export type EnlaceRespaldoApi = {
 
 // Se pide uno nuevo en cada apertura del visor: el anterior pudo haber vencido
 export async function obtenerEnlaceRespaldo(idCertificacion: string): Promise<EnlaceRespaldoApi> {
-  return conDatosDePrueba(
-    () => apiFetch<EnlaceRespaldoApi>(`${PERFIL_URL}/certificaciones/${idCertificacion}/respaldo/enlace`),
-    // Demo sin backend: se muestra la imagen de ejemplo de los registros de prueba
-    () => ({ url: SAMPLE_BACKUP_URL, expiraEn: '' }),
-  );
+  return apiFetch<EnlaceRespaldoApi>(`${PERFIL_URL}/certificaciones/${idCertificacion}/respaldo/enlace`);
 }
 
 // El mismo enlace con descargar=1 hace que la API responda como adjunto y el navegador baje el JPG

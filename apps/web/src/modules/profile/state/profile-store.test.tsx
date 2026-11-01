@@ -22,9 +22,6 @@ function AddEducationButton() {
   );
 }
 
-// El store de la demo guarda los registros en localStorage: cada prueba empieza sin datos guardados
-beforeEach(() => localStorage.clear());
-
 describe('ProfileStoreProvider', () => {
   it('lo agregado en el estado compartido aparece en el resumen del perfil', () => {
     render(
@@ -90,8 +87,7 @@ describe('ProfileStoreProvider · carga desde la API', () => {
     expect(fetchMock.mock.calls[0][0]).toMatch(/\/api\/v1\/perfil$/);
   });
 
-  // Deploy personal: sin backend se muestran los datos de prueba en vez del error, por eso se omite
-  it.skip('si la API no responde, "Mis registros" muestra el error en vez de los datos de prueba (T9.1)', async () => {
+  it('si la API no responde, "Mis registros" muestra el error en vez de los datos de prueba (T9.1)', async () => {
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
 
     render(

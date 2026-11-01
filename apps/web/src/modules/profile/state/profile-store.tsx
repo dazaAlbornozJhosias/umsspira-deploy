@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { CURRENT_GRADUATE_ID, PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
 import { obtenerResumenPerfil } from '@/modules/profile/services/perfil-api';
@@ -34,29 +34,6 @@ type ProfileStore = {
 
 const ProfileStoreContext = createContext<ProfileStore | null>(null);
 
-// Demo sin backend: los cambios se guardan en el navegador para que se conserven al recargar
-// v2: los respaldos de prueba pasaron a JPG; se descartan los datos guardados con la versión anterior
-const STORAGE_KEY = 'umsspira-perfil-demo-v2';
-
-const DESCRIPTION_STORAGE_KEY = `${STORAGE_KEY}-descripcion`;
-
-function leerDescripcionGuardada(): string | null {
-  try {
-    return localStorage.getItem(DESCRIPTION_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function leerGuardado(): ProfileRecords | null {
-  try {
-    const guardado = localStorage.getItem(STORAGE_KEY);
-    return guardado ? (JSON.parse(guardado) as ProfileRecords) : null;
-  } catch {
-    return null;
-  }
-}
-
 let nextId = 0;
 function createId(section: RecordSection): string {
   nextId += 1;
@@ -84,59 +61,48 @@ export function ProfileStoreProvider({
   const [loadAttempt, setLoadAttempt] = useState(0);
 
   const cargarDesdeApi = initialRecords === undefined;
-  const restaurado = useRef(false);
 
-  useEffect(() => {
-    if (!cargarDesdeApi) {
-      setIsLoading(false);
-      setLoadError(null);
-      return;
-    }
-    const guardado = leerGuardado();
-    if (guardado) setRecords(guardado);
-    const descripcionGuardada = leerDescripcionGuardada();
-    if (descripcionGuardada !== null) setDescription(descripcionGuardada);
-    restaurado.current = true;
+useEffect(() => {
+  if (!cargarDesdeApi) {
+    setIsLoading(false);
+    setLoadError(null);
+    return;
+  }
 
-    let vigente = true;
+  let vigente = true;
 
-    async function cargarPerfil() {
-      setIsLoading(true);
-      setLoadError(null);
+  async function cargarPerfil() {
+    setIsLoading(true);
+    setLoadError(null);
 
-      try {
-        const perfil = await obtenerResumenPerfil();
+    try {
+      const perfil = await obtenerResumenPerfil();
 
-        if (vigente) {
-          setRecords(perfil.records);
-          setDescription(perfil.description);
-        }
-      } catch {
-        // Demo sin backend: sin conexión con la API se mantienen los datos de prueba (o los guardados)
-      } finally {
-        if (vigente) {
-          setIsLoading(false);
-        }
+      if (vigente) {
+        setRecords(perfil.records);
+        setDescription(perfil.description);
+      }
+    } catch (error) {
+      if (vigente) {
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : 'No se pudo cargar tu perfil. Vuelve a intentarlo.',
+        );
+      }
+    } finally {
+      if (vigente) {
+        setIsLoading(false);
       }
     }
+  }
 
-    void cargarPerfil();
+  void cargarPerfil();
 
-    return () => {
-      vigente = false;
-    };
-  }, [cargarDesdeApi, loadAttempt]);
-
-  useEffect(() => {
-    if (!cargarDesdeApi || !restaurado.current) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-      localStorage.setItem(DESCRIPTION_STORAGE_KEY, description);
-    } catch {
-      // Sin acceso al almacenamiento: los cambios duran hasta recargar
-    }
-  }, [cargarDesdeApi, records, description]);
-
+  return () => {
+    vigente = false;
+  };
+}, [cargarDesdeApi, loadAttempt]);
   const addRecord = useCallback((section: RecordSection, record: NewRecord<ProfileRecord>) => {
     const created = { ...record, id: record.id ?? createId(section), ownerId: CURRENT_GRADUATE_ID } as ProfileRecord;
     setRecords((current) => ({ ...current, [section]: [...current[section], created] }));

@@ -1,4 +1,4 @@
-import { conDatosDePrueba, PERFIL_URL } from '@/modules/profile/services/perfil-api';
+import { PERFIL_URL } from '@/modules/profile/services/perfil-api';
 import type { DeleteRecordErrorCode, ProfileRecord, RecordSection } from '@/modules/profile/types/profile-record';
 import { ApiError, apiFetch } from '@/shared/services/api-client';
 
@@ -21,11 +21,7 @@ export class DeleteRecordException extends Error {
 // y la lista no cambia.
 export async function deleteProfileRecord(section: RecordSection, record: ProfileRecord): Promise<void> {
   try {
-    // Demo sin backend: el registro se quita solo de la lista guardada en el navegador
-    await conDatosDePrueba(
-      () => apiFetch<void>(`${PERFIL_URL}/${API_SECTIONS[section]}/${record.id}`, { method: 'DELETE' }),
-      () => undefined,
-    );
+    await apiFetch<void>(`${PERFIL_URL}/${API_SECTIONS[section]}/${record.id}`, { method: 'DELETE' });
   } catch (error) {
     // 404 = ya no existe en la base: el resultado es el mismo que haberlo eliminado
     if (error instanceof ApiError && error.status === 404) return;

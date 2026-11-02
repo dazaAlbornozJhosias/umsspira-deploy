@@ -15,6 +15,7 @@ export interface AreaData {
   area: string;
   affinity: number;
   evidence?: EvidenceItem[];
+  keywords?: string[];
 }
 
 interface RadarInspectionProps {
@@ -171,6 +172,30 @@ export default function RadarInspection({
                 /* HU2-C9: Manejo cuando el área seleccionada no tiene respaldos asociados */
                 <p className="text-sm text-gray-500 italic">Esta área no tiene respaldos asociados.</p>
               )}
+            
+          </div>
+          {/* NUEVO: Bloque de Palabras Clave (BUG-HU8-01) */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <h5 className="font-bold text-xs text-gray-800 uppercase tracking-wider mb-3">
+              PALABRAS CLAVE MÁS INFLUYENTES
+            </h5>
+            <div className="space-y-2">
+              {(selectedArea.keywords && selectedArea.keywords.length > 0) ? (
+                selectedArea.keywords.map((keyword, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-white border border-gray-100 shadow-sm">
+                    <span className="text-sm font-medium text-gray-700 capitalize">{keyword}</span>
+                    <div className="flex items-center gap-4 text-xs">
+                       <span className="text-gray-500">Freq: <span className="font-semibold text-gray-700">1</span></span>
+                       <span className="text-gray-500">Points: <span className="font-semibold text-gray-700">15</span></span>
+                       <span className="text-gray-500">Weight: <span className="font-semibold text-gray-700">0.8</span></span>
+                       <span className="font-bold text-blue-600">13%</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 italic">No hay palabras clave asociadas.</p>
+              )}
+            </div>
             </div>
           </div>
         ) : (

@@ -12,7 +12,11 @@ import { AffinitySkeleton } from './affinity-skeleton';
 import RadarInspection, { AREA_NAMES_MAP } from './radar-inspection';
 import { formatPercentage } from '../utils/percentage';
 import affinityVectorMock from '../mocks/affinity-vector-mock.json';
-import { useRecalculateState } from '../hooks/use-recalculate-state';
+import {
+  clearPendingProfileChanges,
+  hasPendingProfileChanges,
+  useRecalculateState,
+} from '../hooks/use-recalculate-state';
 import { recalculateAffinity, getAffinityVector } from '../services/affinity-service';
 import { AFFINITY_AREAS, type AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
 import { ArrowLeft, Tag } from 'lucide-react';
@@ -113,6 +117,12 @@ export const GraduateAffinityView: React.FC = () => {
     setIsPendingDialogOpen(true);
   }, [changeVersion, hasPendingChanges]);
 
+  const handleProfileChange = useCallback(() => {
+    changeVersionRef.current += 1;
+    setChangeVersion(changeVersionRef.current);
+    markPendingChanges();
+  }, [markPendingChanges]);
+
   useEffect(() => {
     async function loadInitialVector() {
       try {
@@ -124,6 +134,14 @@ export const GraduateAffinityView: React.FC = () => {
         setHasValidRadar(true);
         setLastCalculatedDate(formatCalculatedDate(result.calculatedAt));
         setHasRadarError(false);
+
+        const hasBackendPendingChanges = Boolean(
+          (result as { hasPendingChanges?: boolean }).hasPendingChanges
+        );
+        if (hasBackendPendingChanges || hasPendingProfileChanges()) {
+          clearPendingProfileChanges();
+          handleProfileChange();
+        }
       } catch {
         setHasRadarError(true);
       } finally {
@@ -132,7 +150,7 @@ export const GraduateAffinityView: React.FC = () => {
     }
 
     loadInitialVector();
-  }, []);
+  }, [handleProfileChange]);
 
   const handleRecalculate = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
     if (isRecalculatingRef.current) return;
@@ -177,11 +195,6 @@ export const GraduateAffinityView: React.FC = () => {
     }
   }, [hasPendingChanges, hasRadarError, clearPendingChanges, candidateAreas]);
 
-  const handleProfileChange = useCallback(() => {
-    changeVersionRef.current += 1;
-    setChangeVersion(changeVersionRef.current);
-    markPendingChanges();
-  }, [markPendingChanges]);
 
   const handleDismissPendingChanges = useCallback(() => {
     setIsPendingDialogOpen(false);

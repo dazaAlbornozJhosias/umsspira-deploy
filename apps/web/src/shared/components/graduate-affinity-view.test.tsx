@@ -9,6 +9,7 @@ import {
   act,
 } from '@testing-library/react';
 import { GraduateAffinityView } from './graduate-affinity-view';
+import { clearPendingProfileChanges, markPendingProfileChanges } from '../hooks/use-recalculate-state';
 import * as affinityService from '../services/affinity-service';
 
 const mockPush = jest.fn();
@@ -189,6 +190,7 @@ describe('GraduateAffinityView', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    clearPendingProfileChanges();
 
     mockGetAffinityVector.mockResolvedValue(makeVector());
     mockGetAffinityConfig.mockResolvedValue({
@@ -606,5 +608,32 @@ describe('GraduateAffinityView', () => {
 
     const link = await screen.findByRole('link', { name: /Volver a mi perfil/i });
     expect(link).toHaveAttribute('href', '/profile');
+  });
+
+  it('BUG-HU8-02: habilita el botón "Recalcular" y muestra "Se detectaron modificaciones" tras eliminar un registro del perfil', async () => {
+    markPendingProfileChanges();
+
+    render(<GraduateAffinityView />);
+
+    expect(await screen.findByText('Se detectaron modificaciones')).toBeInTheDocument();
+
+    const recalculateButtons = screen.getAllByRole('button', { name: /^Recalcular$/i });
+    recalculateButtons.forEach((btn) => {
+      expect(btn).toBeEnabled();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Ahora no/i }));
+    expect(screen.queryByText('Se detectaron modificaciones')).not.toBeInTheDocument();
+
+    const mainRecalculateButton = screen.getByRole('button', { name: /^Recalcular$/i });
+    expect(mainRecalculateButton).toBeEnabled();
+
+    fireEvent.click(mainRecalculateButton);
+
+    await waitFor(() => {
+      expect(mockRecalculateAffinity).toHaveBeenCalledTimes(1);
+    });
+    expect(await screen.findByText('Radar actualizado')).toBeInTheDocument();
+    expect(mainRecalculateButton).toBeDisabled();
   });
 });

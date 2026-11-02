@@ -16,6 +16,7 @@ import type {
   RecordSection,
 } from '@/modules/profile/types/profile-record';
 import { removeProfileRecord } from '@/modules/profile/utils/remove-profile-record';
+import { markPendingProfileChanges } from '@/shared/hooks/use-recalculate-state';
 import { cn } from '@/shared/utils/cn';
 
 // Mismo orden de pestañas que la v3 del Figma
@@ -64,6 +65,7 @@ export function ProfileRecordsManager({
     setDeleteError(null);
     try {
       await deleteProfileRecord(activeSection, recordToDelete);
+      markPendingProfileChanges();
       // Se actualiza solo la lista en memoria, sin recargar la pantalla
       if (store) {
         store.removeRecord(activeSection, recordToDelete.id);

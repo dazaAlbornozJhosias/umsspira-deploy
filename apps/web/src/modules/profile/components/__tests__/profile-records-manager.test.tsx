@@ -2,6 +2,7 @@ import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 import { ProfileRecordsManager } from '@/modules/profile/components/profile-records-manager';
+import { clearPendingProfileChanges, hasPendingProfileChanges } from '@/shared/hooks/use-recalculate-state';
 import { PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
 import { ProfileStoreProvider } from '@/modules/profile/state/profile-store';
 import { clearAccessToken, setAccessToken } from '@/shared/services/auth-session';
@@ -193,6 +194,21 @@ describe('ProfileRecordsManager', () => {
 
       expect(await screen.findByText('No se pudo eliminar el registro')).toBeInTheDocument();
       expect(screen.queryByText('Registro eliminado')).not.toBeInTheDocument();
+    });
+
+    it('BUG-HU8-02: registra cambios pendientes para el radar al eliminar un registro de educación o experiencia', async () => {
+      clearPendingProfileChanges();
+      responder(204);
+      render(<ProfileRecordsManager />);
+
+      expect(hasPendingProfileChanges()).toBe(false);
+
+      fireEvent.click(within(getDesktopRows()[0]).getByRole('button', { name: 'Eliminar registro' }));
+      fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar' }));
+
+      expect(await screen.findByRole('status')).toHaveTextContent('Registro eliminado');
+      expect(hasPendingProfileChanges()).toBe(true);
+      clearPendingProfileChanges();
     });
   });
 });

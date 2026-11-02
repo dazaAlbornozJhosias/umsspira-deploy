@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 const MODULES = new Set([
   'auth', 'user', 'companies', 'job-postings', 'registrations', 'applications',
   'email-verification', 'documents', 'perfil', 'events', 'mentorship', 'reports', 'surveys',
-  'nlp', 'radar',
+  'nlp', 'radar', 'chat',
 ]);
 
 async function proxy(request: NextRequest, context: { params: { path: string[] } }): Promise<Response> {

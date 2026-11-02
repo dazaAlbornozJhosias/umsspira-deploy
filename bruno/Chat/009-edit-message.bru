@@ -1,0 +1,32 @@
+meta {
+  name: Editar mensaje
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/chat/conversations/{{chatConversationId}}/messages/{{chatMessageId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "content": "Texto corregido"
+  }
+}
+
+docs {
+  Requiere sesión activa y user:self:read. Consultar apps/api/src/modules/chat/README.md.
+  Completar IDs manualmente. Usar un UUID nuevo por envío y conservarlo solo al reintentar el mismo mensaje.
+  Para responder solicitudes usar el token del destinatario. Cambiar decision a decline para rechazar.
+}
+

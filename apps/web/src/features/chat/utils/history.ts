@@ -1,7 +1,7 @@
 // apps/web/src/features/chat/utils/history.ts
 // HU-08: utilidades para mostrar el historial agrupado por día.
 
-const NO_DATE = 'sin-fecha';
+const NO_DATE = "sin-fecha";
 
 const toDate = (iso: string | null | undefined): Date | null => {
   if (!iso) return null;
@@ -13,22 +13,22 @@ const toDate = (iso: string | null | undefined): Date | null => {
 export const dayKey = (iso: string | null | undefined): string => {
   const date = toDate(iso);
   if (!date) return NO_DATE;
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${date.getFullYear()}-${month}-${day}`;
 };
 
 /** Texto del separador, por ejemplo «16 oct 2025». Vacío si no hay fecha. */
 export const formatDayLabel = (iso: string | null | undefined): string => {
   const date = toDate(iso);
-  if (!date) return '';
+  if (!date) return "";
   return date
-    .toLocaleDateString('es-BO', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
+    .toLocaleDateString("es-BO", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     })
-    .replace(/\./g, '');
+    .replace(/\./g, "");
 };
 
 /**

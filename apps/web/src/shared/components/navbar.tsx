@@ -292,7 +292,7 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
                                 {conversation.otherUser.role}
                               </span>
                               <span className="block truncate text-xs font-bold text-slate-800">
-                                {conversation.lastMessage?.content ?? ''}
+                                {conversation.lastMessage?.deletedAt ? 'Mensaje eliminado' : conversation.lastMessage?.content || conversation.lastMessage?.attachment?.name || ''}
                               </span>
                             </span>
                             <span

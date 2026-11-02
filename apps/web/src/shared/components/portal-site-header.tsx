@@ -2,8 +2,7 @@
 
 import { ConnectedNavbar } from '@/shared/components/navbar/index';
 
-// Encabezado único del portal: todas las páginas del portal (inicio, eventos,
-// mensajes, institucional, etc.) usan la misma barra de navegación oficial.
+// Todas las páginas del portal comparten la navegación oficial del sistema.
 export function PortalSiteHeader() {
   return <ConnectedNavbar />;
 }

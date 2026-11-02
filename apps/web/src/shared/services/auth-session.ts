@@ -12,6 +12,7 @@ export function clearAccessToken(): void {
   accessToken = null;
   generation++;
   if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('umsspira:session-cleared'));
     try {
       window.localStorage.removeItem('token');
       window.sessionStorage.removeItem('umsspira.access-token');

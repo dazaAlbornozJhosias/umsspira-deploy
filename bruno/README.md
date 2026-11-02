@@ -1,6 +1,6 @@
 # UMSSPIRA en Bruno
 
-Esta colección contiene 79 peticiones, una por operación HTTP existente. Los archivos se agrupan por módulo o responsabilidad. Se utilizan manualmente desde Bruno; la carpeta NLP incluye scripts de prueba para validar el contrato de `POST /api/v1/nlp/extract`. El resto de las peticiones no contiene scripts ni captura de variables.
+Esta colección contiene peticiones agrupadas por operación HTTP. Se utilizan manualmente desde Bruno; la carpeta NLP incluye scripts de prueba para validar el contrato de `POST /api/v1/nlp/extract`. El resto de las peticiones no contiene scripts ni captura de variables.
 
 ## Abrir la colección
 
@@ -30,6 +30,7 @@ Los cuerpos contienen datos de ejemplo editables. Las referencias `{{variable}}`
 | Eventos    |         12 | Catálogo público, gestión propia e inscripción de Titulados       |
 | Reportes   |          5 | Indicadores y exportaciones por carreras autorizadas              |
 | NLP        |          8 | Extracción de keywords con casos 200, 400, 401 y 403              |
+| Chat       |         13 | Solicitudes, conversaciones, mensajes privados y adjuntos        |
 
 `folder.bru` ordena la carpeta; cada archivo numerado representa un endpoint. Las instrucciones particulares están en la pestaña Docs de la petición.
 

@@ -1183,6 +1183,7 @@ model Dispositivo {
 }
 
 model Conversacion {
+  direct_key          String?   @unique @db.VarChar(73)
   tipo                String?   @db.VarChar
   nombre              String?   @db.VarChar
   estado_conversacion String?   @db.VarChar
@@ -1199,6 +1200,7 @@ model Conversacion {
 }
 
 model ParticipanteConversacion {
+  ultima_lectura       DateTime? @db.Timestamp(6)
   conversacion_id String?   @db.Uuid
   usuario_id      String?   @db.Uuid
   rol_en_chat     String?   @db.VarChar
@@ -1209,9 +1211,18 @@ model ParticipanteConversacion {
   usuario      Usuario?      @relation("participante_conversacion_usuario_id_usuario", fields: [usuario_id], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "participante_conversacion_usuario_id_fkey")
 
   @@map("participante_conversacion")
+  @@index([usuario_id, conversacion_id])
+  @@unique([conversacion_id, usuario_id])
 }
 
 model Mensaje {
+  archivo_nombre  String? @db.VarChar(255)
+  archivo_mime    String? @db.VarChar(150)
+  archivo_bytes   Bytes?
+  archivo_tamano  Int?
+  client_id       String?   @db.Uuid
+  editado_en      DateTime? @db.Timestamp(6)
+  eliminado_en    DateTime? @db.Timestamp(6)
   id_conversacion String?   @db.Uuid
   emisor_id       String?   @db.Uuid
   contenido       String?   @db.Text
@@ -1226,6 +1237,8 @@ model Mensaje {
   mensaje_estado_registros MensajeEstado[] @relation("mensaje_estado_id_mensaje_mensaje")
 
   @@map("mensaje")
+  @@unique([emisor_id, client_id])
+  @@index([id_conversacion, fecha_mensaje, id])
 }
 
 model MensajeEstado {

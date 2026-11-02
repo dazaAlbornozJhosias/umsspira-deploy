@@ -1,70 +1,81 @@
-// apps/web/src/shared/services/chat-socket.ts
-import { io, Socket } from 'socket.io-client';
-
-const CHAT_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
-
-// Una conexión por pestaña (HU-01 CA-07): cada pestaña tiene su propio módulo JS,
-// por lo que cerrar una no afecta a la otra.
+import { io, type Socket } from "socket.io-client";
+import { ensureAccessToken, refreshSession } from "./auth-session";
 let socket: Socket | null = null;
-
+let holders = 0;
+let closeTimer: ReturnType<typeof setTimeout> | null = null;
+let renewed = false;
 export const getChatSocket = (): Socket => {
   if (!socket) {
-    socket = io(`${CHAT_URL}/chat`, {
-      withCredentials: true, // el navegador envía la cookie de sesión
-      autoConnect: false, // la conexión la abre quien use el socket
-      // Reintentos automáticos (HU-02 CA-02): 2s -> 4s -> 8s, sin aleatoriedad.
+    const origin = (
+      process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000"
+    ).replace(/\/$/, "");
+    const instance = io(`${origin}/chat`, {
+      autoConnect: false,
+      auth: (callback) => {
+        void ensureAccessToken()
+          .then((token) => callback({ token }))
+          .catch(() => callback({}));
+      },
       reconnection: true,
-      reconnectionAttempts: 3,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 2000,
-      reconnectionDelayMax: 8000,
-      randomizationFactor: 0,
+      reconnectionDelayMax: 15000,
     });
+    instance.on("connect", () => {
+      renewed = false;
+    });
+    instance.on(
+      "connect_error",
+      (error: Error & { data?: { code?: string } }) => {
+        if (error.data?.code === "UNAUTHENTICATED" && !renewed && holders > 0) {
+          renewed = true;
+          void refreshSession()
+            .then(() => {
+              if (socket === instance && holders > 0) instance.connect();
+            })
+            .catch(() => undefined);
+        }
+      },
+    );
+    instance.on("chat:session_expired", () => {
+      void refreshSession()
+        .then(() => {
+          if (socket === instance && holders > 0) instance.connect();
+        })
+        .catch(() => undefined);
+    });
+    socket = instance;
   }
   return socket;
 };
-
-// HU-10: la barra superior y la página de chat comparten el mismo socket.
-// Cada uno lo "retiene" al montarse y lo "suelta" al desmontarse; la conexión
-// solo se cierra cuando ya nadie la usa (con una pequeña espera para no
-// cerrar y reabrir al cambiar de pantalla).
-let holders = 0;
-let closeTimer: ReturnType<typeof setTimeout> | null = null;
-const CLOSE_GRACE_MS = 300;
-
 export const retainChatSocket = (): Socket => {
-  holders += 1;
-  if (closeTimer) {
-    clearTimeout(closeTimer);
-    closeTimer = null;
-  }
-  return getChatSocket();
+  holders++;
+  if (closeTimer) clearTimeout(closeTimer);
+  closeTimer = null;
+  const instance = getChatSocket();
+  if (!instance.connected) instance.connect();
+  return instance;
 };
-
 export const releaseChatSocket = (): void => {
   holders = Math.max(0, holders - 1);
-  if (holders > 0 || closeTimer) return;
-  closeTimer = setTimeout(() => {
-    closeTimer = null;
-    if (holders === 0) disconnectChatSocket();
-  }, CLOSE_GRACE_MS);
+  if (holders === 0 && !closeTimer)
+    closeTimer = setTimeout(() => {
+      closeTimer = null;
+      if (holders === 0) disconnectChatSocket();
+    }, 300);
 };
-
-// Cierre forzado (por ejemplo, al cerrar sesión).
 export const disconnectChatSocket = (): void => {
   holders = 0;
-  if (closeTimer) {
-    clearTimeout(closeTimer);
-    closeTimer = null;
-  }
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
+  if (closeTimer) clearTimeout(closeTimer);
+  closeTimer = null;
+  const previous = socket;
+  socket = null;
+  previous?.removeAllListeners();
+  previous?.io.removeAllListeners();
+  previous?.disconnect();
 };
-
-// Reinicia el ciclo de intentos manualmente.
 export const retryConnection = (): void => {
-  if (!socket) return;
-  socket.disconnect();
-  socket.connect();
+  getChatSocket().connect();
 };
+if (typeof window !== "undefined")
+  window.addEventListener("umsspira:session-cleared", disconnectChatSocket);

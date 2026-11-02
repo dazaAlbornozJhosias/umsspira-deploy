@@ -6,8 +6,8 @@ import affinityConfigMock from '../mocks/affinity-config-mock.json';
 import affinitySnapshotsMock from '../mocks/affinity-snapshots-mock.json';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
-const AFFINITY_ENDPOINT = '/affinity/me';
-const AFFINITY_CALCULATE_ENDPOINT = '/affinity/calculate';
+const AFFINITY_ENDPOINT = '/api/v1/radar';
+const AFFINITY_CALCULATE_ENDPOINT = '/api/v1/radar/recalculate';
 const AFFINITY_CONFIG_ENDPOINT = '/affinity/config';
 export const RECALCULATE_TIMEOUT_MS = 7000;
 // Por defecto se usa el mock a menos que explícitamente se desactive con 'false'

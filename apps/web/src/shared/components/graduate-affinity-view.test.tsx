@@ -279,6 +279,75 @@ describe('GraduateAffinityView', () => {
     expect(
       screen.getByRole('button', { name: /reintentar/i })
     ).toBeInTheDocument();
+         expect(screen.getByTestId('radar')).toBeInTheDocument();
+
+    expect(
+      screen.getByText('Resumen de tu afinidad')
+    ).toBeInTheDocument();
+  });
+
+  it('permite reintentar y muestra el estado de actualización', async () => {
+    render(<GraduateAffinityView />);
+
+    await waitFor(() => {
+      expect(mockGetAffinityVector).toHaveBeenCalledTimes(1);
+    });
+
+    // Primer intento: falla.
+    mockRecalculateAffinity.mockRejectedValueOnce(
+      new Error('fallo de red')
+    );
+
+    await clickSimulateProfileChange();
+
+    expect(
+      await screen.findByText('No se pudo actualizar tu radar')
+    ).toBeInTheDocument();
+
+    // El radar anterior debe seguir visible.
+    expect(screen.getByTestId('radar')).toBeInTheDocument();
+
+    // Segundo intento: dejamos la petición pendiente.
+    let resolveRetry!: (value: ReturnType<typeof makeVector>) => void;
+
+    const retryPromise = new Promise<ReturnType<typeof makeVector>>(
+      (resolve) => {
+        resolveRetry = resolve;
+      }
+    );
+
+    mockRecalculateAffinity.mockReturnValueOnce(retryPromise);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /reintentar/i })
+    );
+
+    // Mensaje visible mientras se actualiza.
+    expect(
+      await screen.findByRole('status')
+    ).toHaveTextContent('Actualizando tu afinidad…');
+
+    // El botón queda deshabilitado durante la petición.
+    expect(
+      screen.getByRole('button', { name: /reintentar/i })
+    ).toBeDisabled();
+
+    // Finalizamos la petición correctamente.
+    await act(async () => {
+      resolveRetry(makeVector());
+      await retryPromise;
+    });
+
+    // Se realizaron dos intentos y desapareció el error.
+    await waitFor(() => {
+      expect(mockRecalculateAffinity).toHaveBeenCalledTimes(2);
+
+      expect(
+        screen.queryByText('No se pudo actualizar tu radar')
+      ).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('radar')).toBeInTheDocument();
   });
 
   it('navega al flujo de certificaciones con returnTo', async () => {

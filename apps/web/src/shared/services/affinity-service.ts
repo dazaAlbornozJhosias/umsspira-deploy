@@ -4,8 +4,8 @@ import { apiClient } from './api-client';
 import affinityVectorMock from '../mocks/affinity-vector-mock.json';
 import affinityConfigMock from '../mocks/affinity-config-mock.json';
 import affinitySnapshotsMock from '../mocks/affinity-snapshots-mock.json';
+import { apiUrl } from './api-contract';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 const AFFINITY_ENDPOINT = '/affinity/me';
 const AFFINITY_CALCULATE_ENDPOINT = '/affinity/calculate';
 const AFFINITY_CONFIG_ENDPOINT = '/affinity/config';
@@ -15,6 +15,46 @@ const USE_AFFINITY_MOCK = process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK !== 'false';
 
 // Avanza en cada recálculo con mock para mostrar un radar distinto por intento
 let snapshotIndex = 0;
+
+async function requestAffinityWithTimeout<T>(
+  endpoint: string,
+  options: RequestInit,
+  errorContext: string,
+): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    RECALCULATE_TIMEOUT_MS,
+  );
+
+  try {
+    const response = await fetch(apiUrl(endpoint), {
+      ...options,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw Object.assign(
+        new Error(`Error ${response.status} al ${errorContext}`),
+        { status: response.status },
+      );
+    }
+
+    return (await response.json()) as T;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('No se pudo actualizar tu radar');
+    }
+
+    if (error instanceof TypeError) {
+      throw new Error('No se pudo actualizar tu radar');
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 export interface AffinityAxisConfig {
   area: AffinityArea;
@@ -46,7 +86,12 @@ export async function getAffinityVector(): Promise<AffinityVectorResponse> {
   if (USE_AFFINITY_MOCK) {
     return affinityVectorMock as AffinityVectorResponse;
   }
-  return apiClient.get<AffinityVectorResponse>(AFFINITY_ENDPOINT);
+
+  return requestAffinityWithTimeout<AffinityVectorResponse>(
+    AFFINITY_ENDPOINT,
+    { method: 'GET' },
+    'consultar afinidad',
+  );
 }
 
 /**
@@ -105,37 +150,23 @@ export async function saveAffinityConfig(config: AffinityConfigPayload): Promise
 export async function recalculateAffinity(): Promise<AffinityVectorResponse> {
   if (USE_AFFINITY_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    // Rotación entre los snapshots: cada recálculo responde con un radar distinto
+
     const snapshot = affinitySnapshotsMock[snapshotIndex];
     snapshotIndex = (snapshotIndex + 1) % affinitySnapshotsMock.length;
+
     return {
       ...snapshot,
       calculatedAt: new Date().toISOString(),
     } as AffinityVectorResponse;
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), RECALCULATE_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(`${API_BASE_URL}${AFFINITY_CALCULATE_ENDPOINT}`, {
+  return requestAffinityWithTimeout<AffinityVectorResponse>(
+    AFFINITY_CALCULATE_ENDPOINT,
+    {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status} al recalcular afinidad`);
-    }
-
-    return (await response.json()) as AffinityVectorResponse;
-  } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
-      throw new Error('No se pudo actualizar tu radar');
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+    },
+    'recalcular afinidad',
+  );
 }

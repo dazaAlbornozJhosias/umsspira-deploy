@@ -16,6 +16,8 @@ import {
   type PersonalDataValues,
 } from '../validation/personal-data.schema';
 import { FormSelect } from './form-select';
+import { useExitRegistration } from '../hooks/use-exit-registration';
+import { ExitRegistrationDialog } from './exit-registration-dialog';
 
 export const VERIFY_EMAIL_PATH = '/register/verify-email';
 
@@ -83,11 +85,13 @@ export function RegistrationForm() {
     reset,
     setError,
     setFocus,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<PersonalDataInput, unknown, PersonalDataValues>({
     resolver: zodResolver(personalDataSchema),
     defaultValues: EMPTY_VALUES,
   });
+
+  const { isDialogOpen, requestExit, confirmExit, cancelExit } = useExitRegistration(isDirty);
 
   // Si hay un registro en curso, el formulario se muestra con los datos ya cargados (CA-02.7).
   useEffect(() => {
@@ -214,7 +218,7 @@ export function RegistrationForm() {
         </fieldset>
 
         <div className="flex flex-col-reverse gap-3 border-t border-oatmeal/60 pt-6 sm:flex-row sm:justify-end">
-          <Button type="button" variant="secondary" onClick={() => router.push('/login')}>
+          <Button type="button" variant="secondary" onClick={requestExit}>
             Cancelar
           </Button>
           <Button
@@ -226,6 +230,7 @@ export function RegistrationForm() {
           </Button>
         </div>
       </form>
+      <ExitRegistrationDialog isOpen={isDialogOpen} onConfirm={confirmExit} onCancel={cancelExit} />
     </section>
   );
 }

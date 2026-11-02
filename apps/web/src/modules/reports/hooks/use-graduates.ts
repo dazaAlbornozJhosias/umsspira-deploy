@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import type { Graduate } from '../data/graduates.mock';
 import { getGraduates } from '../services/reports.service';
+import {
+  isSessionExpiredError,
+  notifySessionExpired,
+} from '@/modules/auth/frontend/services/session-expired';
 
 export function useGraduates() {
   const [data, setData] = useState<Graduate[]>([]);
@@ -15,8 +19,12 @@ export function useGraduates() {
         setLoading(true);
         setError(null);
         setData(await getGraduates());
-      } catch {
+      } catch (reason) {
         setData([]);
+        if (isSessionExpiredError(reason)) {
+          notifySessionExpired();
+          return;
+        }
         setError('No se pudo cargar el padrón de titulados');
       } finally {
         setLoading(false);

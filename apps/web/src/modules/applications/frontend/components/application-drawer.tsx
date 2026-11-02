@@ -16,6 +16,8 @@ import { ApproveDialog } from "./approve-dialog";
 import { ObserveDialog } from "./observe-dialog";
 import { RejectDialog } from "./reject-dialog";
 import { btnAccent, btnDanger, btnSecondary } from "./review-ui";
+import { ReviewSummaryNotice } from './review-summary-notice';
+import type { BoardDetail } from '../services/applications-board.service';
 
 type Props = {
   open: boolean;
@@ -36,6 +38,7 @@ export function ApplicationDrawer({
   const [application, setApplication] = useState<Application | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [reviewData, setReviewData] = useState<BoardDetail | null>(null);
 
   // CA-04.3: trae el expediente real y la URL firmada del documento (5 min).
   useEffect(() => {
@@ -44,6 +47,8 @@ export function ApplicationDrawer({
     setIsLoading(true);
     setLoadError(null);
     setApplication(null);
+    setReviewData(null);
+    setActiveDialog(null);
     (async () => {
       const detail = await fetchApplicationDetail(applicationId);
       if (cancelled) return;
@@ -55,6 +60,7 @@ export function ApplicationDrawer({
       const doc = await fetchDocumentUrl(applicationId);
       if (cancelled) return;
       const data = detail.data;
+      setReviewData(data);
       setApplication({
         id: data.id,
         code: data.code,
@@ -164,7 +170,11 @@ export function ApplicationDrawer({
               {loadError}
             </p>
           )}
-          {application && !isLoading && <ApplicationDetail application={application} />}
+          {application && !isLoading && <>
+            <ReviewSummaryNotice summary={reviewData?.reviewSummary} currentReviewer={reviewData?.currentReviewer}
+              reviewAuthor={reviewData?.reviewAuthor} pending={canReview} />
+            <ApplicationDetail application={application} />
+          </>}
         </div>
 
         {/* Barra inferior: ID, prioridad y acciones */}
@@ -190,7 +200,9 @@ export function ApplicationDrawer({
               </button>
               <button
                 type="button"
-                onClick={() => setActiveDialog("observe")}
+                onClick={() => { if (reviewData?.reviewSummary?.canObserve) setActiveDialog("observe"); }}
+                disabled={!reviewData?.reviewSummary?.canObserve}
+                title={reviewData?.reviewSummary?.canObserve ? undefined : 'Consulta el aviso de observaciones del expediente'}
                 className={btnSecondary}
               >
                 Observar

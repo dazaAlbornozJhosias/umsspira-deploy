@@ -3,7 +3,7 @@ import { authenticatedFetch, SessionError } from '@/shared/services/auth-session
 import { mentorDetailProfileSchema, type MentorDetailProfile } from '../model/mentor-detail';
 
 export class MentorNotFoundError extends Error {
-  constructor(message = 'Este perfil ya no está disponible.') {
+  constructor(message = 'Perfil no encontrado.') {
     super(message);
     this.name = 'MentorNotFoundError';
   }

@@ -30,7 +30,7 @@ auth:bearer {
 docs {
   Requiere administrador. Los filtros desmarcados son opcionales; career filtra por texto del nombre de carrera. Copia el UUID de una solicitud a applicationId.
   pageSize admite 10, 15, 25 o 50 (por defecto 15); otro valor responde 400. La respuesta trae items, total, page, pageSize y totalPages.
-  search busca por nombre, apellido, C.I. (parcial), correo o Código SIS (exacto, de 6 a 9 dígitos). Los filtros se combinan: deben cumplirse todos.
-  period filtra por fecha de registro con el día de Bolivia: last15, last30 (incluyen hoy), semester1, semester2 (con year opcional, por defecto el año actual) o custom (con from y/o to en formato AAAA-MM-DD; to incluye todo ese día). year, from y to solo se usan con su periodo.
-  Permiso: solicitudes:read.
+  search separa el texto en hasta 6 palabras distintas. Cada palabra debe coincidir con nombre, apellido, C.I., correo o Codigo SIS. Nombre y apellido ignoran
+  tildes y mayusculas: "Jose Garcia" encuentra "José García". El orden de las palabras no importa. C.I. mantiene coincidencia parcial;
+  Codigo SIS mantiene coincidencia exacta para 6 a 9 digitos. Requiere unaccent habilitada en PostgreSQL. Los filtros se combinan: deben cumplirse todos.
 }

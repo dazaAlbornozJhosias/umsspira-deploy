@@ -101,22 +101,22 @@ export class PrismaReportRepository implements ReportRepository {
     filter: ReportFilter,
   ): Promise<Prisma.SolicitudWhereInput> {
     const base = { id_carrera: { in: [...careerIds] } };
-    if (!filter.search) {
+    // Task 4.4: se busca por palabras (sin importar orden, comas ni espacios repetidos).
+    const tokens = (filter.search ?? '').split(/[\s,;]+/).filter(Boolean);
+    if (!tokens.length) {
       return { ...(filter.status ? { estado: filter.status } : {}), detalle_solicitud: base };
     }
-    const term = filter.search;
-    // SIS es NUMERIC en el esquema original: la búsqueda parcial requiere convertirlo a texto.
-    // Los valores y las carreras se parametrizan mediante Prisma, nunca se interpolan como SQL.
-    const sis =
-      /^[0-9]+$/.test(term) && careerIds.length
-        ? await tx.$queryRaw<
-            { id: string }[]
-          >`SELECT id FROM detalle_solicitud WHERE id_carrera IN (${Prisma.join(careerIds.map((id) => Prisma.sql`${id}::uuid`))}) AND cod_sis::text LIKE ${'%' + term + '%'}`
-        : [];
-    return {
-      ...(filter.status ? { estado: filter.status } : {}),
-      detalle_solicitud: {
-        ...base,
+    const conditions: Prisma.DetalleSolicitudWhereInput[] = [];
+    for (const term of tokens) {
+      // SIS es NUMERIC en el esquema original: la búsqueda parcial requiere convertirlo a texto.
+      // Los valores y las carreras se parametrizan mediante Prisma, nunca se interpolan como SQL.
+      const sis =
+        /^[0-9]+$/.test(term) && careerIds.length
+          ? await tx.$queryRaw<
+              { id: string }[]
+            >`SELECT id FROM detalle_solicitud WHERE id_carrera IN (${Prisma.join(careerIds.map((id) => Prisma.sql`${id}::uuid`))}) AND cod_sis::text LIKE ${'%' + term + '%'}`
+          : [];
+      conditions.push({
         OR: [
           { nombre: { contains: term, mode: 'insensitive' } },
           { apellido: { contains: term, mode: 'insensitive' } },
@@ -124,7 +124,11 @@ export class PrismaReportRepository implements ReportRepository {
           { ci: { contains: term } },
           ...(sis.length ? [{ id: { in: sis.map((row) => row.id) } }] : []),
         ],
-      },
+      });
+    }
+    return {
+      ...(filter.status ? { estado: filter.status } : {}),
+      detalle_solicitud: { ...base, AND: conditions },
     };
   }
 }

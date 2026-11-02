@@ -18,6 +18,7 @@ jest.mock("../services/navigation", () => ({
 
 describe("LogoutButton", () => {
   beforeEach(() => {
+    window.localStorage.clear();
     mockHardRedirect.mockClear();
     jest.mocked(revokeCurrentSession).mockResolvedValue(undefined);
     saveSession("token-abc", "titulado", false);
@@ -43,6 +44,32 @@ describe("LogoutButton", () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo cerrar la sesión');
     expect(authStore.getState().status).toBe('authenticated');
+    expect(mockHardRedirect).not.toHaveBeenCalled();
+  });
+
+  it('al cerrar sesión elimina todos los borradores de encuesta, sin afectar otras claves', async () => {
+    window.localStorage.setItem('umsspira:survey-draft:titulado-a', '{"workCondition":"works"}');
+    window.localStorage.setItem('umsspira:survey-draft:titulado-b', '{"workCondition":"not-works"}');
+    window.localStorage.setItem('otra-preferencia', 'conservar');
+
+    render(<LogoutButton />);
+    fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
+
+    await waitFor(() => expect(mockHardRedirect).toHaveBeenCalledWith('/login'));
+    expect(window.localStorage.getItem('umsspira:survey-draft:titulado-a')).toBeNull();
+    expect(window.localStorage.getItem('umsspira:survey-draft:titulado-b')).toBeNull();
+    expect(window.localStorage.getItem('otra-preferencia')).toBe('conservar');
+  });
+
+  it('no borra borradores cuando falla la revocación de la sesión', async () => {
+    window.localStorage.setItem('umsspira:survey-draft:titulado-a', '{"workCondition":"works"}');
+    jest.mocked(revokeCurrentSession).mockRejectedValueOnce(new Error('Sin conexión'));
+
+    render(<LogoutButton />);
+    fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo cerrar la sesión');
+    expect(window.localStorage.getItem('umsspira:survey-draft:titulado-a')).not.toBeNull();
     expect(mockHardRedirect).not.toHaveBeenCalled();
   });
 });

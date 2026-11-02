@@ -243,3 +243,14 @@ asi que tomarlo en cuenta
 Ejemplo de rama HU: feat/G1-HU2-login
 
 ---
+### ⚠️ Nota para Windows: crear el `.env` sin BOM
+
+Si estás en Windows y creas el archivo `apps/api/.env` desde PowerShell o Notepad, es probable que se guarde con **BOM (Byte Order Mark)** o en **UTF-16**, y eso rompe el parser de `dotenv` de Node. El síntoma típico es:
+
+Aunque el `.env` exista y tenga las variables, NestJS no las lee.
+
+**Solución:** reescribir el `.env` en UTF-8 sin BOM desde PowerShell:
+
+```powershell
+$content = [System.IO.File]::ReadAllText("apps/api/.env")
+[System.IO.File]::WriteAllText("$PWD\apps\api\.env", $content, (New-Object System.Text.UTF8Encoding $false))

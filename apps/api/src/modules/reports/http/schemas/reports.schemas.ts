@@ -7,7 +7,11 @@ const fields = {
     .transform((value) => value.toLowerCase())
     .optional(),
   status: z.enum(REPORT_STATUSES).optional(),
-  search: z.string().trim().max(100).optional(),
+  search: z
+    .string()
+    .max(100)
+    .transform((value) => value.replace(/\s+/g, ' ').trim())
+    .optional(),
 };
 export const reportFilterSchema = z.strictObject(fields);
 export const reportMetricsSchema = z.strictObject({ careerId: fields.careerId });

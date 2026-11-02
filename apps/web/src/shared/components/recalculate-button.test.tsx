@@ -13,6 +13,40 @@ describe('RecalculateButton Component', () => {
     jest.clearAllMocks();
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  describe.each(['development', 'production', 'test'] as const)('en %s', (environment) => {
+    it.each([
+      [false, false, true],
+      [true, false, false],
+      [false, true, true],
+      [true, true, true],
+    ])(
+      'con cambios=%s y cargando=%s, deshabilitado=%s',
+      (hasPendingChanges, isLoading, disabled) => {
+        jest.replaceProperty(process, 'env', { ...process.env, NODE_ENV: environment });
+        const onRecalculate = jest.fn();
+        render(
+          <RecalculateButton
+            hasPendingChanges={hasPendingChanges}
+            isLoading={isLoading}
+            onRecalculate={onRecalculate}
+          />
+        );
+        const button = screen.getByRole('button', { name: /recalc/i });
+        if (disabled) {
+          expect(button).toBeDisabled();
+        } else {
+          expect(button).toBeEnabled();
+        }
+        fireEvent.click(button);
+        expect(onRecalculate).toHaveBeenCalledTimes(disabled ? 0 : 1);
+      }
+    );
+  });
+
   it('muestra botón deshabilitado cuando no hay cambios pendientes', () => {
     render(<RecalculateButton {...defaultProps} hasPendingChanges={false} />);
 

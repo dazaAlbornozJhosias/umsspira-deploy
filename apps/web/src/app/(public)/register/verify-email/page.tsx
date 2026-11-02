@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { VerifyEmailForm } from '@/modules/email-verification/frontend/components/verify-email-form';
 import { ProgressSteps } from '@/shared/components/progress-steps';
+import { ExitRegistrationButton } from '@/modules/registration/frontend/components/exit-registration-button';
 
 type VerifyEmailMode = 'initial' | 'update';
 
@@ -46,6 +47,9 @@ export default function VerifyEmailPage() {
           onEditData={isUpdate ? undefined : handleEditData}
           onBackToReview={isUpdate ? handleBackToReview : undefined}
         />
+        <div className="mt-4 flex justify-center">
+          <ExitRegistrationButton />
+        </div>
       </div>
     </main>
   );

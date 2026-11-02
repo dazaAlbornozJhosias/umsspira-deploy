@@ -47,10 +47,9 @@ it('HU-004/T4.1: muestra reportes al administrador y reserva encuestas para titu
   expect(graduateLinks.map(link => link.href)).not.toContain('/reports');
   expect(graduateLinks.map(link => link.href)).not.toContain('/reports/encuestas');
   expect(graduateLinks).toEqual(expect.arrayContaining([
-    expect.objectContaining({ id: 'employment-surveys', pending: expect.any(String) }),
+    expect.objectContaining({ id: 'employment-surveys', href: '/surveys' }),
   ]));
-  // /surveys aún no está en epic9: sin href hasta que llegue la vista.
-  expect(graduateLinks.find(link => link.id === 'employment-surveys')?.href).toBeUndefined();
+  expect(graduateLinks.find(link => link.id === 'employment-surveys')?.pending).toBeUndefined();
 
   for (const role of ['empresa', null] as const) {
     const links = visibleLinks(NAVBAR_ACCOUNT_LINKS, role).map(link => link.id);

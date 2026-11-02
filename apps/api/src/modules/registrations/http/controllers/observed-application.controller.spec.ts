@@ -1,6 +1,11 @@
 import { ObservedApplicationController } from './observed-application.controller';
 import type { ObservedApplicationService } from '../../application/services/observed-application.service';
-import { updateObservedDataSchema } from '../schemas/registrations.schemas';
+import {
+  replaceDocumentSchema,
+  submitCorrectionSchema,
+  updateObservedDataSchema,
+} from '../schemas/registrations.schemas';
+import type { UploadedDocument } from '../../application/contracts/registration-inputs';
 
 describe('ObservedApplicationController', () => {
   let controller: ObservedApplicationController;
@@ -10,6 +15,8 @@ describe('ObservedApplicationController', () => {
     service = {
       getObservedApplication: jest.fn(),
       updateObservedApplication: jest.fn(),
+      replaceDocument: jest.fn(),
+      submitCorrection: jest.fn(),
     } as unknown as jest.Mocked<ObservedApplicationService>;
 
     controller = new ObservedApplicationController(service);
@@ -102,6 +109,75 @@ describe('ObservedApplicationController', () => {
         'app-123',
         validBody,
       );
+      expect(response).toEqual({ data: mockResult });
+    });
+  });
+
+  describe('POST /registrations/observed/document', () => {
+    it('valida el esquema de reemplazo de documento y restringe longitud a 40', () => {
+      const parsed = replaceDocumentSchema.parse({ tipoDocumento: 'diploma_academico' });
+      expect(parsed.tipoDocumento).toBe('diploma_academico');
+
+      const maxLimit = replaceDocumentSchema.parse({ tipoDocumento: 'a'.repeat(40) });
+      expect(maxLimit.tipoDocumento).toHaveLength(40);
+
+      expect(() =>
+        replaceDocumentSchema.parse({ tipoDocumento: 'a'.repeat(41) }),
+      ).toThrow();
+    });
+    it('reemplaza el documento con exito pasando archivo', async () => {
+      const mockResult = {
+        id: 'app-123',
+        documentoId: 'doc-new',
+        nombre: 'nuevo.pdf',
+        tipoDocumento: 'diploma_academico',
+        sizeBytes: 1024,
+        message: 'Documento de respaldo reemplazado correctamente',
+      };
+      service.replaceDocument.mockResolvedValueOnce(mockResult);
+
+      const mockFile = {
+        originalname: 'nuevo.pdf',
+        buffer: Buffer.from('%PDF-1.4 test'),
+        size: 1024,
+      } as UploadedDocument;
+
+      const response = await controller.replaceDocument('app-123', [mockFile], {
+        tipoDocumento: 'diploma_academico',
+      });
+
+      expect(service.replaceDocument).toHaveBeenCalledWith(
+        'app-123',
+        mockFile,
+        'diploma_academico',
+      );
+      expect(response).toEqual({ data: mockResult });
+    });
+  });
+
+  describe('POST /registrations/observed/submit', () => {
+    it('valida el esquema de entrega correctamente', () => {
+      const parsed = submitCorrectionSchema.parse({ expectedVersion: 2 });
+      expect(parsed.expectedVersion).toBe(2);
+      expect(() => submitCorrectionSchema.parse({ expectedVersion: -1 })).toThrow();
+    });
+
+    it('ejecuta la entrega exitosamente y retorna el resultado', async () => {
+      const mockResult = {
+        id: 'app-123',
+        estado: 'PENDIENTE',
+        version: 3,
+        message: 'Corrección entregada exitosamente',
+      };
+      service.submitCorrection.mockResolvedValueOnce(mockResult);
+
+      const response = await controller.submitCorrection('app-123', {
+        expectedVersion: 2,
+      });
+
+      expect(service.submitCorrection).toHaveBeenCalledWith('app-123', {
+        expectedVersion: 2,
+      });
       expect(response).toEqual({ data: mockResult });
     });
   });

@@ -15,7 +15,6 @@ const interestReference = areaReference.extend({ area: areaReference });
  * No confundir con los estados en español de PATCH /mentorship/availability.
  */
 const directoryAvailabilityStatuses = ['AVAILABLE', 'PAUSED', 'UNAVAILABLE'] as const;
-
 const directoryResponse: z.ZodType<MentorDirectoryResponse> = z.object({ data: z.array(z.object({
   id: z.string().min(1),
   nombre: z.string(),

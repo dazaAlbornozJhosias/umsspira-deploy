@@ -4,12 +4,14 @@ import { AuthModule } from '../auth/auth.module';
 import { OptionalAuthenticationGuard } from '../../shared/http/auth/guards/optional-authentication.guard';
 import { eventsProviders } from './infrastructure/providers/events.providers';
 import { GetEventCatalogController } from './http/controllers/get-event-catalog.controller';
+import { ListMyEventRegistrationsController } from './http/controllers/list-my-event-registrations.controller';
 import { GetPublishedEventController } from './http/controllers/get-published-event.controller';
 import { ListOwnedEventsController } from './http/controllers/list-owned-events.controller';
 import { GetOwnedEventController } from './http/controllers/get-owned-event.controller';
 import { GetEventDraftController } from './http/controllers/get-event-draft.controller';
 import { CreateEventController } from './http/controllers/create-event.controller';
 import { UpdateEventDraftController } from './http/controllers/update-event-draft.controller';
+import { UpdatePublishedEventController } from './http/controllers/update-published-event.controller';
 import { PublishEventDraftController } from './http/controllers/publish-event-draft.controller';
 import { ListInactiveEventsController } from './http/controllers/list-inactive-events.controller';
 import { RetireEventController } from './http/controllers/retire-event.controller';
@@ -22,16 +24,19 @@ import { GenerateEventPassService } from './application/generate-event-pass.serv
 import { ListUserPassesService } from './application/list-user-passes.service'; // <-- 1. AÑADIDO AQUÍ
 import { EventPassesController } from './http/event-passes.controller';
 import { CancelPublishedEventController } from './http/controllers/cancel-published-event.controller';
+import { CancelEventRegistrationController } from './http/controllers/cancel-event-registration.controller';
 
 @Module({
   imports: [PrismaModule, AuthModule],
   controllers: [
     GetEventCatalogController,
+    ListMyEventRegistrationsController,
     ListOwnedEventsController,
     GetOwnedEventController,
     GetEventDraftController,
     CreateEventController,
     UpdateEventDraftController,
+    UpdatePublishedEventController,
     PublishEventDraftController,
     ListInactiveEventsController,
     RetireEventController,
@@ -40,6 +45,7 @@ import { CancelPublishedEventController } from './http/controllers/cancel-publis
     UploadEventCoverController,
     GetPublishedEventController,
     RegisterEventController,
+    CancelEventRegistrationController,
     GetEventParticipantsController,
     EventPassesController,
     CancelPublishedEventController,

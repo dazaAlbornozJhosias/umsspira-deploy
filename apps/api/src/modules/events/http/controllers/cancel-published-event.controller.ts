@@ -17,6 +17,13 @@ export class CancelPublishedEventController {
     @CurrentActor() actor: ActorContext,
     @Param('id', new ZodValidationPipe(eventIdSchema)) id: string,
   ) {
-    return { data: presentEvent(await this.useCase.execute(actor, id)) };
+    const result = await this.useCase.execute(actor, id);
+    return {
+      data: {
+        event: presentEvent(result.event),
+        registrationsCount: result.registrationsCount,
+        invalidatedPassesCount: result.invalidatedPassesCount,
+      },
+    };
   }
 }

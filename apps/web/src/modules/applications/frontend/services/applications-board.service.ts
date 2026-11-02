@@ -4,6 +4,14 @@ import { readApiError } from '@/shared/services/api-contract';
 const APPLICATIONS_URL = '/api/v1/applications';
 
 export type BoardStatus = 'PENDIENTE' | 'OBSERVADA' | 'APROBADA' | 'RECHAZADA';
+export type BoardPeriod = 'last15' | 'last30' | 'semester1' | 'semester2' | 'custom';
+
+export interface PeriodFilters {
+  period?: '' | BoardPeriod;
+  year?: number;
+  from?: string;
+  to?: string;
+}
 
 export interface BoardItem {
   id: string;
@@ -20,6 +28,9 @@ export interface BoardItem {
 }
 
 export interface BoardDetail extends BoardItem {
+  reviewSummary?: ReviewSummary;
+  currentReviewer?: ReviewAuthor;
+  reviewAuthor?: ReviewAuthor & { id: string; reviewedAt: string } | null;
   firstName: string;
   lastName: string;
   phone: string;
@@ -29,6 +40,12 @@ export interface BoardDetail extends BoardItem {
   documentFormat: string;
 }
 
+export interface ReviewAuthor { name: string | null; email: string }
+export interface ReviewSummary {
+  observations: number; maxObservations: number; rejections: number; maxRejections: number;
+  latestObservation: string | null; canObserve: boolean;
+}
+
 export interface BoardPage {
   items: BoardItem[];
   total: number;
@@ -36,7 +53,7 @@ export interface BoardPage {
   pageSize: number;
 }
 
-export interface BoardQuery {
+export interface BoardQuery extends PeriodFilters {
   page: number;
   pageSize: number;
   career?: string;
@@ -93,6 +110,14 @@ export function fetchApplicationsBoard(query: BoardQuery): Promise<BoardResult<B
   if (query.status) params.set('status', query.status);
   if (query.search) params.set('search', query.search);
   if (query.age) params.set('age', query.age);
+  if (query.period) params.set('period', query.period);
+  if (query.period === 'semester1' || query.period === 'semester2') {
+    if (query.year !== undefined) params.set('year', String(query.year));
+  }
+  if (query.period === 'custom') {
+    if (query.from) params.set('from', query.from);
+    if (query.to) params.set('to', query.to);
+  }
   return boardFetch<BoardPage>(`${APPLICATIONS_URL}?${params.toString()}`);
 }
 
@@ -104,4 +129,17 @@ export function fetchApplicationDetail(id: string): Promise<BoardResult<BoardDet
 // Acceso temporal al adjunto (URL firmada de 5 minutos, CA-04.3).
 export function fetchDocumentUrl(id: string): Promise<BoardResult<{ url: string; expiresIn?: number; requiresAuthentication?: boolean }>> {
   return boardFetch(`${APPLICATIONS_URL}/${encodeURIComponent(id)}/document`);
+}
+
+export interface BoardMetrics {
+  receivedToday: number;
+  pending: number;
+  urgent: number;
+  resolvedToday: number;
+  generatedAt: string;
+  timeZone: string;
+}
+
+export function fetchApplicationsMetrics(): Promise<BoardResult<BoardMetrics>> {
+  return boardFetch<BoardMetrics>(`${APPLICATIONS_URL}/metrics`);
 }

@@ -103,3 +103,29 @@ export interface EventParticipantsDto {
   occupation: EventOccupationSummary;
   participants: EventParticipantItem[];
 }
+
+export const EVENT_PARTICIPATION_STATUS = {
+  VIGENTE: 'VIGENTE',
+  INSCRIPCION_CANCELADA: 'INSCRIPCION_CANCELADA',
+  EVENTO_CANCELADO: 'EVENTO_CANCELADO',
+  FINALIZADO: 'FINALIZADO',
+} as const;
+
+export type EventParticipationStatus =
+  (typeof EVENT_PARTICIPATION_STATUS)[keyof typeof EVENT_PARTICIPATION_STATUS];
+
+export interface MyEventRegistrationItem {
+  id: string;
+  status: EventRegistrationStatus;
+  participationStatus: EventParticipationStatus;
+  registeredAt: string;
+  hasPass: boolean;
+  event: {
+    id: string;
+    title: string;
+    startDate: string;
+    endDate: string;
+    location: string | null;
+    status: EventStatus;
+  };
+}

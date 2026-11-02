@@ -32,6 +32,7 @@ import { ReviewApplicationController } from './http/controllers/review-applicati
 import { GetApplicationDocumentLinkController } from './http/controllers/get-application-document-link.controller';
 import { GetApplicationDocumentController } from './http/controllers/get-application-document.controller';
 import { GetApplicationMetricsController } from './http/controllers/get-application-metrics.controller';
+import { MailEventsController } from './http/controllers/mail-events.controller';
 
 @Module({
   imports: [PrismaModule, AuthModule],
@@ -58,6 +59,7 @@ import { GetApplicationMetricsController } from './http/controllers/get-applicat
     ValidateCorrectionAccessController,
     RequestCorrectionLinkController,
     ObservedApplicationController,
+    MailEventsController,
   ],
   providers: [
     ActivationAccessService,

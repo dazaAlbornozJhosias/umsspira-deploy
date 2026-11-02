@@ -21,6 +21,10 @@ import { LogoutAllController } from './http/controllers/logout-all.controller';
 import { ListSessionsController } from './http/controllers/list-sessions.controller';
 import { RevokeSessionController } from './http/controllers/revoke-session.controller';
 import { ChangePasswordController } from './http/controllers/change-password.controller';
+import { RequestPasswordRecoveryController } from './http/controllers/request-password-recovery.controller';
+import { ValidatePasswordRecoveryController } from './http/controllers/validate-password-recovery.controller';
+import { ResetPasswordController } from './http/controllers/reset-password.controller';
+import { PasswordResetMailWorker } from './infrastructure/notifications/password-reset-mail.worker';
 
 @Module({
   imports: [PrismaModule, RedisModule, UserModule],
@@ -34,12 +38,16 @@ import { ChangePasswordController } from './http/controllers/change-password.con
     ListSessionsController,
     RevokeSessionController,
     ChangePasswordController,
+    RequestPasswordRecoveryController,
+    ValidatePasswordRecoveryController,
+    ResetPasswordController,
   ],
   providers: [
     ...authProviders,
     SessionCookies,
     { provide: AUTHENTICATOR, useExisting: AuthenticateUseCase },
     TrustedOriginGuard,
+    PasswordResetMailWorker,
     { provide: APP_GUARD, useClass: AuthenticationGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
   ],

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback, useRef } from 'react';
 import type { AffinityVectorResponse } from '@umsspira/shared-types/src/affinity';
 import { calculateAffinityVector } from '../services/affinity-service';
 
@@ -22,7 +22,7 @@ export interface UseAffinityCalculationReturn {
 
 /**
  * Hook personalizado de React para gestionar el estado del cálculo del vector de afinidad,
- * incluyendo los estados de carga, manejo de errores y reintento.
+ * incluyendo los estados de carga, manejo de errores, reintento y descarte de respuestas tardías.
  *
  * @returns Objeto con los datos del vector de afinidad, estado de carga, error y funciones de control.
  */
@@ -30,20 +30,30 @@ export function useAffinityCalculation(): UseAffinityCalculationReturn {
   const [data, setData] = useState<AffinityVectorResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef<number>(0);
 
   const calculate = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await calculateAffinityVector();
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
       setData(response);
     } catch (err) {
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
       const errorMessage =
         err instanceof Error ? err.message : 'Ocurrió un error inesperado al calcular la afinidad.';
       setError(errorMessage);
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -52,6 +62,7 @@ export function useAffinityCalculation(): UseAffinityCalculationReturn {
   }, [calculate]);
 
   const reset = useCallback(() => {
+    requestIdRef.current += 1;
     setData(null);
     setError(null);
     setIsLoading(false);

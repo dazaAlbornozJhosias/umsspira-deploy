@@ -11,6 +11,12 @@ export const TOP_FREQUENCY = 3;
 // Cada área calcula su porcentaje independientemente: (puntaje * 100) / MAX_POSSIBLE_SCORE.
 export const MAX_POSSIBLE_SCORE = 40;
 
+// Máximo de palabras clave influyentes que se exponen y persisten por área.
+export const TOP_KEYWORDS_LIMIT = 5;
+
+// Decimales con los que se publican los porcentajes (afinidad y aporte individual).
+export const AFFINITY_PERCENTAGE_DECIMALS = 2;
+
 // Versión del algoritmo y diccionario. Si en el futuro cambia el diccionario o las constantes,
 // esta cadena cambia e invalida automáticamente los hashes anteriores, forzando un recálculo perezoso.
 export const ALGORITHM_VERSION = '1.0.0/2026-10-22.1';

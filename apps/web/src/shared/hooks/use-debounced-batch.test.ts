@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
+﻿import { renderHook, act, waitFor } from '@testing-library/react';
 import { useDebouncedBatch, DEBOUNCE_MS } from './use-debounced-batch';
 
 describe('useDebouncedBatch Hook', () => {
@@ -8,6 +8,10 @@ describe('useDebouncedBatch Hook', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+  });
+
+  it('define la ventana de debounce en 500 ms', () => {
+    expect(DEBOUNCE_MS).toBe(500);
   });
 
   it('agrupa múltiples guardados en un solo envío tras el debounce', async () => {

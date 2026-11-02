@@ -1,6 +1,6 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
+﻿import { useRef, useCallback, useEffect, useState } from 'react';
 
-export const DEBOUNCE_MS = 2000;
+export const DEBOUNCE_MS = 500;
 
 export interface UseDebouncedBatchReturn<T> {
   add: (item: T) => void;

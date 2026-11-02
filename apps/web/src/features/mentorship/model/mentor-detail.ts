@@ -64,6 +64,13 @@ export const mentorDetailProfileSchema = z.object({
 
 export { mentorInitials };
 
+const MENTOR_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** El API identifica a los mentores por UUID; otro formato es un enlace mal formado. */
+export function isMentorId(value: string): boolean {
+  return MENTOR_ID_PATTERN.test(value.trim());
+}
+
 export function formatProfession(jobTitle?: string | null, company?: string | null): string | null {
   const parts = [jobTitle?.trim(), company?.trim()].filter(Boolean);
   return parts.length > 0 ? parts.join(' | ') : null;

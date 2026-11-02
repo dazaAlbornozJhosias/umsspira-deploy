@@ -1,0 +1,25 @@
+meta {
+  name: Estado de activación
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/activate/status
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "applicationId": "{{applicationId}}"
+  }
+}
+
+docs {
+  Devuelve el correo enmascarado, cuándo vence el código, los segundos de espera para reenviar, cuántos reenvíos lleva el ciclo y los intentos fallidos.
+}

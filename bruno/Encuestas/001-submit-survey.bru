@@ -1,0 +1,44 @@
+meta {
+  name: Enviar encuesta
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/surveys
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "id_encuesta": "{{surveyId}}",
+    "condicion_laboral": true,
+    "cargo": "Analista",
+    "empresa": "Empresa de ejemplo",
+    "area": "Sistemas",
+    "modalidad": "Remoto",
+    "salario_mensual": "3500",
+    "tiempo_insercion": "3"
+  }
+}
+
+tests {
+  const body = res.getBody();
+  test("status 201", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("devuelve id del registro", function () {
+    expect(body?.data?.id).to.be.a("string");
+    expect(body.data.id).to.not.be.empty;
+  });
+}

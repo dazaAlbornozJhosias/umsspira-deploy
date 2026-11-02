@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { ApiError } from '@/shared/services/api-client';
 
@@ -39,8 +39,9 @@ describe('FormularioDescripcion (T6.2)', () => {
     expect(cuadro).toHaveAttribute('maxLength', String(MAX_DESCRIPCION));
   });
 
-  it('Guardar envía el texto sin espacios al inicio ni al final', () => {
-    const onGuardar = jest.fn();
+  // 👇 Corregido: async y waitFor
+  it('Guardar envía el texto sin espacios al inicio ni al final', async () => {
+    const onGuardar = jest.fn().mockResolvedValue(undefined);
     render(<FormularioDescripcion descripcion="" onGuardar={onGuardar} />);
 
     fireEvent.change(screen.getByLabelText('Descripción profesional'), {
@@ -48,7 +49,9 @@ describe('FormularioDescripcion (T6.2)', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
-    expect(onGuardar).toHaveBeenCalledWith('Analista de datos');
+    await waitFor(() => {
+      expect(onGuardar).toHaveBeenCalledWith('Analista de datos');
+    });
   });
 });
 

@@ -33,7 +33,7 @@ it('conserva la estructura de carga y después muestra datos públicos y enlaces
   await act(async () => pending.resolve(page()));
   expect(await screen.findByRole('article')).toHaveTextContent('Mentor 1');
   expect(screen.getByRole('link', { name: 'Ver perfil de Mentor 1' })).toHaveAttribute('href', '/mentorship/mentors/1');
-  expect(screen.getByRole('link', { name: 'Explorar mentores' })).toHaveAttribute('aria-current', 'page');
+  expect(screen.queryByRole('navigation', { name: 'Navegación de mentorías' })).not.toBeInTheDocument();
   expect(screen.getByRole('status')).toHaveTextContent('1 mentor encontrado');
 });
 
@@ -111,10 +111,10 @@ it('ignora páginas obsoletas cuando se aplican otros filtros', async () => {
 it('agrupa intereses y elimina selecciones incompatibles antes de aplicar', () => {
   const onApply = jest.fn();
   render(<MentorDirectoryFilters catalog={catalog} applied={{ areaIds: [], topicIds: [] }} interestsSupported disabled={false} onApply={onApply} />);
-  fireEvent.click(screen.getByRole('checkbox', { name: 'PostgreSQL' }));
+  fireEvent.click(screen.getByRole('button', { name: 'PostgreSQL' }));
   fireEvent.click(screen.getByRole('checkbox', { name: 'Desarrollo de Software' }));
-  expect(screen.queryByRole('checkbox', { name: 'PostgreSQL' })).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('checkbox', { name: 'APIs REST' }));
+  expect(screen.queryByRole('button', { name: 'PostgreSQL' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'APIs REST' }));
   fireEvent.click(screen.getByRole('button', { name: 'Aplicar filtros' }));
   expect(onApply).toHaveBeenCalledWith({ areaIds: ['software'], topicIds: ['api'] });
 });
@@ -133,10 +133,10 @@ it('expande las categorías restantes de intereses sin consultar ni modificar re
   const onApply = jest.fn();
   render(<MentorDirectoryFilters catalog={groups} applied={{ areaIds: [], topicIds: [] }} interestsSupported disabled={false} onApply={onApply} />);
   expect(screen.getByRole('button', { name: 'Aplicar filtros' })).toBeDisabled();
-  expect(screen.queryByRole('checkbox', { name: 'Interés Ciencia de Datos' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Interés Ciencia de Datos' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Cargar más intereses' }));
   for (const name of ['Ciencia de Datos', 'Redes de Computadoras', 'DevOps', 'Gestión de Proyectos TI']) {
-    expect(screen.getByRole('checkbox', { name: `Interés ${name}` })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: `Interés ${name}` })).toBeInTheDocument();
   }
   expect(screen.queryByRole('button', { name: 'Cargar más intereses' })).not.toBeInTheDocument();
   expect(onApply).not.toHaveBeenCalled();

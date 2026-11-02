@@ -29,7 +29,8 @@ export const calculateAffinityVariation = (current: number, previous?: number): 
 export const sortAreasByAffinityDesc = (areas: AffinityAreaScore[]): AffinityAreaScore[] => {
   // Usamos [...areas] para no mutar el array original (buena práctica en React)
   return [...areas].sort((a, b) => {
-    // Si la afinidad es igual, podríamos desempatar por nombre, pero el principal es el porcentaje
-    return b.affinity - a.affinity;
+    const diff = b.affinity - a.affinity;
+    if (diff !== 0) return diff;
+    return a.area.localeCompare(b.area);
   });
 };

@@ -699,12 +699,18 @@ model Vacante {
   id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nivel_experiencia   String?   @db.VarChar
   descripcion_tecnica String?   @db.Text
+  fecha_publicacion   DateTime? @db.Timestamptz(6)
+  fecha_cierre        DateTime? @db.Timestamptz(6)
+  fecha_actualizacion DateTime? @db.Timestamptz(6)
 
   empresa                                 Empresa?                      @relation("vacante_id_empresa_empresa", fields: [id_empresa], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "vacante_id_empresa_fkey")
   vacante_requerimiento_laboral_registros VacanteRequerimientoLaboral[] @relation("vacante_requerimiento_laboral_id_vacante_vacante")
   postulacion_registros                   Postulacion[]                 @relation("postulacion_id_vacante_vacante")
   notificacion_registros                  Notificacion[]                @relation("notificacion_id_vacante_vacante")
 
+  @@index([id_empresa, fecha_publicacion(sort: Desc)], map: "idx_e4_vacante_publicacion")
+  @@index([id_empresa, estado], map: "idx_e4_vacante_estado")
+  @@index([id_empresa, modalidad, nivel_experiencia], map: "idx_e4_vacante_filtros")
   @@map("vacante")
 }
 
@@ -730,6 +736,7 @@ model Postulacion {
   usuario Usuario? @relation("postulacion_id_usuario_usuario", fields: [id_usuario], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "postulacion_id_usuario_fkey")
   vacante Vacante? @relation("postulacion_id_vacante_vacante", fields: [id_vacante], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "postulacion_id_vacante_fkey")
 
+  @@index([id_vacante, estado], map: "idx_e4_postulacion_vacante_estado")
   @@map("postulacion")
 }
 
@@ -1361,6 +1368,7 @@ model EmpresaInvitacion {
   creado_en   DateTime  @default(now()) @db.Timestamptz(6)
   expira_en   DateTime  @db.Timestamptz(6)
   aceptado_en DateTime? @db.Timestamptz(6)
+  nombre      String?   @db.VarChar(120)
 
   empresa Empresa @relation(fields: [id_empresa], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "empresa_invitacion_id_empresa_fkey")
   creador Usuario @relation("empresa_invitacion_creado_por", fields: [creado_por], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "empresa_invitacion_creado_por_fkey")

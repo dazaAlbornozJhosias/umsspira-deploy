@@ -7,8 +7,13 @@ import type { MentorDetailProfile } from '../../model/mentor-detail';
 jest.mock('../../services/mentor-detail-api');
 const mockGetMentorDetail = jest.mocked(getMentorDetail);
 
+const router = { replace: jest.fn() };
+jest.mock('next/navigation', () => ({ useRouter: () => router }));
+
+const MENTOR_ID = '66000000-0000-4000-8000-000000000001';
+
 const sampleMentorAvailable: MentorDetailProfile = {
-  id: 'carlos-vargas',
+  id: MENTOR_ID,
   fullName: 'Carlos Vargas',
   photoUrl: null,
   jobTitle: 'Arquitecto de Software',
@@ -62,7 +67,7 @@ describe('MentorDetailPage', () => {
     const pending = deferred<MentorDetailProfile>();
     mockGetMentorDetail.mockReturnValue(pending.promise);
 
-    render(<MentorDetailPage mentorId="carlos-vargas" />);
+    render(<MentorDetailPage mentorId={MENTOR_ID} />);
 
     expect(screen.getByRole('status')).toHaveTextContent('Cargando perfil del mentor...');
     expect(
@@ -80,10 +85,16 @@ describe('MentorDetailPage', () => {
     expect(await screen.findByRole('heading', { level: 2, name: 'Carlos Vargas' })).toBeInTheDocument();
     expect(screen.getByText('Arquitecto de Software | Jalasoft')).toBeInTheDocument();
 
-    // Badge y botón
+    // Badge y acceso al flujo de solicitud (HU 6.10)
     expect(screen.getAllByText('Disponible')).toHaveLength(2);
-    const requestBtn = screen.getByRole('button', { name: /Solicitar mentoría/i });
-    expect(requestBtn).toBeEnabled();
+    expect(screen.getByRole('link', { name: /Solicitar mentoría/i })).toHaveAttribute(
+      'href',
+      `/mentorship/request/${MENTOR_ID}`,
+    );
+
+    // Navegación: la barra de Mentorías la aporta el layout; Inicio lleva al portal
+    expect(screen.queryByRole('navigation', { name: 'Navegación de mentorías' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Inicio' })).toHaveAttribute('href', '/portal');
 
     // Tarjetas izquierda
     expect(screen.getByText(sampleMentorAvailable.about!)).toBeInTheDocument();
@@ -107,15 +118,26 @@ describe('MentorDetailPage', () => {
     expect(document.title).toBe('Perfil del mentor: Carlos Vargas | UMSSPIRA');
   });
 
+  it('sin horarios libres informa la falta de horarios y no invita a elegir uno', async () => {
+    mockGetMentorDetail.mockResolvedValueOnce({ ...sampleMentorAvailable, slots: [] });
+
+    render(<MentorDetailPage mentorId={MENTOR_ID} />);
+
+    expect(
+      await screen.findByText('Este mentor no tiene horarios libres en los próximos 7 días.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Elegirás fecha y horario al solicitar la mentoría.')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Solicitar mentoría/i })).toBeInTheDocument();
+  });
+
   it('renderiza avatar con 2 iniciales limpias sin encimar texto (ej. "RS" para Rodrigo Salazar)', async () => {
     mockGetMentorDetail.mockResolvedValueOnce({
       ...sampleMentorAvailable,
-      id: 'rodrigo',
       fullName: 'Rodrigo Salazar Torrico',
       availability: 'PAUSED',
     });
 
-    render(<MentorDetailPage mentorId="rodrigo" />);
+    render(<MentorDetailPage mentorId={MENTOR_ID} />);
 
     const avatar = await screen.findByRole('img', { name: 'Foto de Rodrigo Salazar Torrico no disponible' });
     expect(avatar).toHaveTextContent('RS');
@@ -125,13 +147,12 @@ describe('MentorDetailPage', () => {
   it('gestiona perfil pausado y no disponible con botón deshabilitado y mensaje de bloqueo', async () => {
     mockGetMentorDetail.mockResolvedValueOnce({
       ...sampleMentorAvailable,
-      id: 'luis-fernandez',
       fullName: 'Luis Fernández Rojas',
       availability: 'UNAVAILABLE',
       slots: [],
     });
 
-    render(<MentorDetailPage mentorId="luis-fernandez" />);
+    render(<MentorDetailPage mentorId={MENTOR_ID} />);
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Luis Fernández Rojas' })).toBeInTheDocument();
     // En cabecera y en tarjeta de disponibilidad
@@ -167,7 +188,7 @@ describe('MentorDetailPage', () => {
       interests: [],
     });
 
-    render(<MentorDetailPage mentorId="gabriela-terrazas" />);
+    render(<MentorDetailPage mentorId={MENTOR_ID} />);
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Gabriela Terrazas' })).toBeInTheDocument();
 
@@ -181,7 +202,7 @@ describe('MentorDetailPage', () => {
   it('trata la disponibilidad sin configurar como no disponible para solicitar', async () => {
     mockGetMentorDetail.mockResolvedValueOnce({ ...sampleMentorAvailable, availability: null, slots: [] });
 
-    render(<MentorDetailPage mentorId="carlos-vargas" />);
+    render(<MentorDetailPage mentorId={MENTOR_ID} />);
 
     expect(await screen.findByRole('heading', { level: 2, name: 'Carlos Vargas' })).toBeInTheDocument();
     expect(screen.getAllByText('Disponibilidad sin configurar')).toHaveLength(2);
@@ -189,33 +210,42 @@ describe('MentorDetailPage', () => {
     expect(screen.queryByText('Horarios disponibles')).not.toBeInTheDocument();
   });
 
-  it('renderiza la pantalla de perfil no disponible/inexistente sin breadcrumb ni título (Mockup 5)', async () => {
+  it('renderiza la pantalla de perfil no encontrado sin breadcrumb ni título (Mockup 5)', async () => {
     mockGetMentorDetail.mockRejectedValueOnce(new MentorNotFoundError());
 
-    render(<MentorDetailPage mentorId="inexistente" />);
+    render(<MentorDetailPage mentorId={MENTOR_ID} />);
 
-    expect(await screen.findByText('Este perfil ya no está disponible')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'El mentor dejó de cumplir las condiciones para aparecer en el directorio o su perfil ya no existe.',
-      ),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Perfil no encontrado' })).toBeInTheDocument();
+    expect(screen.getByText('El perfil que buscas no existe o no está disponible.')).toBeInTheDocument();
 
-    // Según Mockup 5: sin breadcrumb ni título "Perfil del mentor", solo pestañas y tarjeta centrada
+    // Según Mockup 5: sin breadcrumb ni título "Perfil del mentor", solo la tarjeta centrada
     expect(screen.queryByLabelText('Ruta de navegación')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 1, name: 'Perfil del mentor' })).not.toBeInTheDocument();
-    expect(screen.getByRole('navigation', { name: 'Navegación de mentorías' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Volver al directorio/i })).toHaveAttribute(
       'href',
       '/mentorship/directory',
     );
-    expect(document.title).toBe('Perfil no disponible | UMSSPIRA');
+    expect(document.title).toBe('Perfil no encontrado | UMSSPIRA');
+  });
+
+  it('informa un enlace no válido sin consultar al API cuando el identificador no es un UUID', async () => {
+    render(<MentorDetailPage mentorId="abc" />);
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'El enlace del perfil no es válido' }),
+    ).toBeInTheDocument();
+    expect(mockGetMentorDetail).not.toHaveBeenCalled();
+    expect(screen.getByRole('link', { name: /Volver al directorio/i })).toHaveAttribute(
+      'href',
+      '/mentorship/directory',
+    );
+    expect(document.title).toBe('Enlace no válido | UMSSPIRA');
   });
 
   it('reintenta la consulta cuando ocurre un error 5xx sin recargar la página', async () => {
     mockGetMentorDetail.mockRejectedValueOnce(new Error('Fallo del servidor'));
 
-    render(<MentorDetailPage mentorId="carlos-vargas" />);
+    render(<MentorDetailPage mentorId={MENTOR_ID} />);
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar el perfil del mentor');
     expect(
@@ -232,17 +262,18 @@ describe('MentorDetailPage', () => {
     expect(mockGetMentorDetail).toHaveBeenCalledTimes(2);
   });
 
-  it('muestra estado de sesión vencida (401) con botón a /login', async () => {
+  it('sin sesión (401) redirige al inicio de sesión sin mostrar el perfil ni un error', async () => {
     mockGetMentorDetail.mockRejectedValueOnce(
       new SessionError(401, 'Inicia sesión nuevamente para consultar el perfil del mentor.'),
     );
 
-    render(<MentorDetailPage mentorId="carlos-vargas" />);
+    render(<MentorDetailPage mentorId={MENTOR_ID} />);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Inicia sesión nuevamente para consultar el perfil del mentor.',
-    );
-    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login');
+    expect(await screen.findByText('Redirigiendo al inicio de sesión...')).toBeInTheDocument();
+    expect(router.replace).toHaveBeenCalledWith('/login');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: 'Perfil del mentor' })).not.toBeInTheDocument();
   });
 
   it('NO renderiza datos privados ni controles de edición', async () => {
@@ -254,7 +285,7 @@ describe('MentorDetailPage', () => {
       ci: '1234567',
     });
 
-    render(<MentorDetailPage mentorId="carlos-vargas" />);
+    render(<MentorDetailPage mentorId={MENTOR_ID} />);
 
     await screen.findByRole('heading', { level: 2, name: 'Carlos Vargas' });
 

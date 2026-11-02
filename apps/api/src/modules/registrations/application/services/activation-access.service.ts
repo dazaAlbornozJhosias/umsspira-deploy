@@ -3,6 +3,7 @@ import { PrismaService } from '../../../../shared/infrastructure/database/prisma
 import { BusinessRuleError } from '../../../../shared/errors/business-rule-error';
 import { NodeRegistrationSecurity } from '../../infrastructure/security/registration-security';
 import { reserveActivationResend, resendWait } from '../../infrastructure/repositories/activation-resend';
+import { queueTrackedMail } from '../../infrastructure/notifications/queue-mail';
 import { buildResolutionMail } from '../notifications/resolution-mail';
 import { ACTIVATION_CODE_SECONDS } from '../../domain/policies/activation.policy';
 
@@ -45,14 +46,19 @@ export class ActivationAccessService {
         activacion_hash: this.security.hash('activation', id + ':' + code),
         activacion_expira_en: expiresAt, activacion_intentos: 0,
       } });
-      await tx.correoPendiente.create({ data: {
-        contenido: this.security.seal({ to: row.detalle_solicitud.email, subject: mail.subject, text: mail.text }),
-        expira_en: expiresAt,
-      } });
-      await tx.correoTramite.create({ select: { id: true }, data: {
-        id_solicitud: id, tipo: 'otp', email_destino: row.detalle_solicitud.email,
-        asunto: mail.subject, estado: 'pendiente',
-      } });
+      await queueTrackedMail(tx, {
+        encrypted: this.security.seal({
+          to: row.detalle_solicitud.email,
+          subject: mail.subject,
+          text: mail.text,
+          html: mail.html,
+        }),
+        expiresAt,
+        applicationId: id,
+        type: 'otp',
+        to: row.detalle_solicitud.email,
+        subject: mail.subject,
+      });
       return { ...limit, expiresAt: expiresAt.toISOString(), notificationStatus: 'EN_COLA' };
     }, { timeout: 15000 });
   }

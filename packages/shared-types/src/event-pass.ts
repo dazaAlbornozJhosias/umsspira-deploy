@@ -1,8 +1,16 @@
+
 export type EventPassStatus = 'ACTIVO' | 'INVALIDADO' | 'VENCIDO';
 
 export interface EventPassQrPayload {
   v: 1;
   token: string;
+}
+
+export interface EventPassEventDetails {
+  name: string;
+  userName: string;
+  dateTime: string;
+  location: string;
 }
 
 export interface EventPassDto {
@@ -15,4 +23,5 @@ export interface EventPassDto {
   isValidForAccess: boolean;
   issuedAt: string;
   expiresAt: string | null;
+  eventDetails?: EventPassEventDetails;
 }

@@ -1,0 +1,22 @@
+meta {
+  name: Reintentar un correo fallido
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{baseUrl}}/api/v1/mail-events/{{mailEventId}}/retry
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Reintenta un solo correo fallido. mailEventId es el id de la fila de correo_tramite.
+  Responde 404 MAIL_EVENT_NOT_FOUND si no está fallido o no es de tus carreras.
+
+  Permiso: solicitudes:review.
+}

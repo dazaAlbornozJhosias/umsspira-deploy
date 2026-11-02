@@ -11,6 +11,11 @@ import { RATE_LIMITER } from '../src/modules/auth/application/ports/rate-limiter
 import { USER_READER } from '../src/modules/user/application/ports/user-reader.port';
 import { COMPANY_PROFILE_REPOSITORY } from '../src/modules/companies/application/ports/company-profile-repository.port';
 import { JOB_POSTING_REPOSITORY } from '../src/modules/job-postings/application/ports/job-posting-repository.port';
+import {
+  COMPANY_MEMBER_INVITATION_REPOSITORY,
+  type MemberInvitationResult,
+  type NewCompanyMemberInvitation,
+} from '../src/modules/companies/application/ports/company-member-invitation-repository.port';
 import { PrismaService } from '../src/shared/infrastructure/database/prisma.service';
 import { RedisService } from '../src/shared/infrastructure/redis/redis.service';
 import { configureHttp } from '../src/shared/http/configuration/configure-http';
@@ -33,6 +38,12 @@ describe('Empresas y vacantes con autenticación y permisos compartidos', () => 
   let auth: InMemoryAuthStore;
   const companies = new InMemoryCompanyProfileRepository();
   const jobs = new InMemoryJobPostingRepository(companies);
+  const invitations = {
+    findCompanyName: jest.fn().mockResolvedValue('Empresa de demostración'),
+    create: jest
+      .fn<Promise<MemberInvitationResult>, [NewCompanyMemberInvitation]>()
+      .mockResolvedValue({ status: 'created', invitationId: 'invitation-id' }),
+  };
 
   beforeAll(async () => {
     const passwords = new Argon2PasswordHasher();
@@ -63,6 +74,8 @@ describe('Empresas y vacantes con autenticación y permisos compartidos', () => 
       .useValue(companies)
       .overrideProvider(JOB_POSTING_REPOSITORY)
       .useValue(jobs)
+      .overrideProvider(COMPANY_MEMBER_INVITATION_REPOSITORY)
+      .useValue(invitations)
       .compile();
     app = module.createNestApplication();
     app.useLogger(false);
@@ -74,6 +87,9 @@ describe('Empresas y vacantes con autenticación y permisos compartidos', () => 
     auth.reset();
     companies.reset();
     jobs.postings.clear();
+    invitations.create
+      .mockClear()
+      .mockResolvedValue({ status: 'created', invitationId: 'invitation-id' });
   });
   afterAll(async () => app?.close());
 
@@ -90,6 +106,60 @@ describe('Empresas y vacantes con autenticación y permisos compartidos', () => 
     );
     return { token: response.body.data.accessToken as string, cookies, csrf };
   }
+
+  it('HU-03 exige sesión y respeta el contrato existente al invitar', async () => {
+    const route = companyRoot + '/users/invitations';
+    const data = { nombre: 'Persona Invitada', correo: 'persona@example.test', rol: 'Reclutador' };
+    await request(app.getHttpServer()).post(route).send(data).expect(401);
+    const session = await login();
+    const response = await request(app.getHttpServer())
+      .post(route)
+      .auth(session.token, { type: 'bearer' })
+      .send(data)
+      .expect(201);
+    expect(response.body.data).toMatchObject({
+      ...data,
+      id: 'invitation-id',
+      id_usuario: null,
+      estado: 'Pendiente',
+      esTitular: false,
+    });
+    expect(invitations.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('HU-03 rechaza nombres fuera de la columna real sin crear invitación', async () => {
+    const session = await login();
+    await request(app.getHttpServer())
+      .post(companyRoot + '/users/invitations')
+      .auth(session.token, { type: 'bearer' })
+      .send({ nombre: 'A'.repeat(121), correo: 'persona@example.test', rol: 'Reclutador' })
+      .expect(400);
+    expect(invitations.create).not.toHaveBeenCalled();
+  });
+
+  it('HU-03 no permite invitar para una empresa ajena', async () => {
+    const session = await login();
+    await request(app.getHttpServer())
+      .post(`/api/v1/companies/${foreignCompanyId}/users/invitations`)
+      .auth(session.token, { type: 'bearer' })
+      .send({ nombre: 'Persona', correo: 'persona@example.test', rol: 'Administrador' })
+      .expect(403);
+    expect(invitations.create).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['forbidden', 403],
+    ['pending', 409],
+    ['email_in_use', 409],
+  ] as const)('HU-03 responde %s sin convertirlo en 500', async (status, httpStatus) => {
+    invitations.create.mockResolvedValue({ status });
+    const session = await login();
+    await request(app.getHttpServer())
+      .post(companyRoot + '/users/invitations')
+      .auth(session.token, { type: 'bearer' })
+      .send({ nombre: 'Persona', correo: 'persona@example.test', rol: 'Administrador' })
+      .expect(httpStatus);
+  });
 
   it('protege las cuatro operaciones por defecto', async () => {
     await request(app.getHttpServer())

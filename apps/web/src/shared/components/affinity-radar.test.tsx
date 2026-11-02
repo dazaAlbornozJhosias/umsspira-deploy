@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AffinityRadar from './affinity-radar';
+import type { AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
 
 // Mock de las funciones reales de porcentaje
 jest.mock('../utils/percentage', () => ({
@@ -24,11 +25,11 @@ describe('AffinityRadar Component', () => {
     render(<AffinityRadar affinityData={mockData as any} hasData={true} />);
 
     expect(screen.getByText(/Desarrollo de Software/i)).toBeInTheDocument();
-    expect(screen.getByText(/Cloud\/DevOps/i)).toBeInTheDocument();
-    expect(screen.getByText(/Ciencia de Datos\/IA/i)).toBeInTheDocument();
-    expect(screen.getByText(/QA/)).toBeInTheDocument();
-    expect(screen.getByText(/Ciberseguridad/i)).toBeInTheDocument();
-    expect(screen.getByText(/Gestión TI/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cloud, DevOps & Infraestructura/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ciencia de Datos & IA/i)).toBeInTheDocument();
+    expect(screen.getByText(/Aseguramiento de Calidad \(QA\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ciberseguridad & Redes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Gestión de TI & Gobernanza/i)).toBeInTheDocument();
   });
 
   it('muestra los detalles correctos al hacer clic en un área y reemplaza la selección', () => {
@@ -46,7 +47,7 @@ describe('AffinityRadar Component', () => {
     expect(screen.getByText('86%')).toBeInTheDocument();
 
     // Clic en la segunda área (Cloud/DevOps)
-    const cloudDevopsLabel = screen.getByText(/Cloud\/DevOps/i);
+    const cloudDevopsLabel = screen.getByText(/Cloud, DevOps & Infraestructura/i);
     fireEvent.click(cloudDevopsLabel);
 
     // Debe reemplazar el 86% anterior por el 70% de Cloud
@@ -96,7 +97,7 @@ describe('AffinityRadar Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByText(/Cloud\/DevOps/i));
+    fireEvent.click(screen.getByText(/Cloud, DevOps & Infraestructura/i));
     
     expect(onSelectArea).toHaveBeenCalledWith('cloud-devops');
     expect(
@@ -139,6 +140,64 @@ describe('AffinityRadar Component', () => {
 
     expect(screen.queryByText(/ÁREA SELECCIONADA/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Vector Calculado/i)).not.toBeInTheDocument();
+  });
+
+  it('muestra la variación en la etiqueta del eje cuando existe afinidad previa', () => {
+    const data: AffinityAreaScore[] = [
+      { area: 'software-development', affinity: 82.5, previousAffinity: 75 },
+      { area: 'cloud-devops', affinity: 61, previousAffinity: 64 },
+      { area: 'data-ai', affinity: 40.4, previousAffinity: 40.1 },
+      { area: 'quality-assurance', affinity: 63, previousAffinity: 63 },
+      { area: 'cybersecurity-networks', affinity: 18, previousAffinity: null },
+      { area: 'it-management', affinity: 30, previousAffinity: 30 },
+    ];
+
+    render(<AffinityRadar affinityData={data} hasData={true} />);
+
+    expect(screen.getByText('+8 %')).toBeInTheDocument();
+    expect(screen.getByText('\u22123 %')).toBeInTheDocument();
+    expect(screen.getAllByRole('img')).toHaveLength(2);
+  });
+
+  it('no muestra indicador en el primer cálculo ni cuando el entero no cambia', () => {
+    const data: AffinityAreaScore[] = [
+      { area: 'software-development', affinity: 82.5, previousAffinity: null },
+      { area: 'cloud-devops', affinity: 40.2, previousAffinity: 40.4 },
+      { area: 'data-ai', affinity: 50, previousAffinity: 50 },
+      { area: 'quality-assurance', affinity: 49.6, previousAffinity: 50.4 },
+      { area: 'cybersecurity-networks', affinity: 18 },
+      { area: 'it-management', affinity: 30, previousAffinity: 30 },
+    ];
+
+    render(<AffinityRadar affinityData={data} hasData={true} />);
+
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('no muestra variación cuando la afinidad actual no es un número finito', () => {
+    const data: AffinityAreaScore[] = [
+      { area: 'software-development', affinity: Number.NaN, previousAffinity: 75 },
+      { area: 'cloud-devops', affinity: Number.POSITIVE_INFINITY, previousAffinity: 64 },
+    ];
+
+    render(<AffinityRadar affinityData={data} hasData={true} />);
+
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('resalta solo los ejes indicados como cambiados y conserva la transición del polígono', () => {
+    const { container } = render(
+      <AffinityRadar
+        affinityData={mockData as any}
+        hasData={true}
+        changedAreaIds={['cloud-devops']}
+      />
+    );
+
+    expect(container.querySelectorAll('circle.stroke-amber-600')).toHaveLength(1);
+    expect(container.querySelector('polygon.stroke-red-800\\/60')?.getAttribute('class')).toContain(
+      'transition-all',
+    );
   });
 });
 

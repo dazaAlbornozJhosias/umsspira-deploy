@@ -1,0 +1,45 @@
+meta {
+  name: GET radar - 200 radar vacío (sin keywords)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/radar
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessTokenRadarVacio}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Status empty y los 6 ejes en orden fijo con afinidad 0, previousAffinity null y sin topKeywords", function() {
+    const d = res.body.data;
+    expect(d.status).to.equal("empty");
+    expect(d.hasPendingChanges).to.be.a("boolean");
+    expect(d.areas).to.be.an("array").with.lengthOf(6);
+
+    const ordenEsperado = [
+      "software-development",
+      "cloud-devops",
+      "data-ai",
+      "quality-assurance",
+      "cybersecurity-networks",
+      "it-management"
+    ];
+    expect(d.areas.map(function(a) { return a.area; })).to.deep.equal(ordenEsperado);
+
+    d.areas.forEach(function(a) {
+      expect(a.affinity).to.equal(0);
+      expect(a.previousAffinity).to.equal(null);
+      expect(a.weighting).to.be.oneOf([null, 0]);
+      expect(a.topKeywords).to.deep.equal([]);
+    });
+  });
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import RadarInspection from './radar-inspection';
+import RadarInspection, { type AreaData } from './radar-inspection';
 
 // Mock del JSON para controlar los escenarios de prueba
 jest.mock('../mocks/affinity-vector-mock.json', () => ({
@@ -94,5 +94,110 @@ describe('RadarInspection Component', () => {
     // Si no tiene evidencia: [], debe mostrar los mensajes de ausencia de respaldos
     expect(screen.getAllByText(/No hay certificaciones registradas para esta área/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Esta área no tiene respaldos asociados/i)).toBeInTheDocument();
+  });
+});
+
+describe('RadarInspection - indicador de variación en las barras del resumen', () => {
+  const mockOnSelectArea = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const renderSummary = (areas: AreaData[], selectedAreaId: string | null = null) =>
+    render(
+      <RadarInspection
+        selectedAreaId={selectedAreaId}
+        onSelectArea={mockOnSelectArea}
+        areas={areas}
+      />
+    );
+
+  test('CA-HU8-07: muestra +8 % y −3 % junto al porcentaje de cada fila', () => {
+    renderSummary([
+      { area: 'software-development', affinity: 83, previousAffinity: 75 },
+      { area: 'cloud-devops', affinity: 61, previousAffinity: 64 },
+      { area: 'data-ai', affinity: 50, previousAffinity: 50 },
+    ]);
+
+    expect(screen.getByText('83%')).toBeInTheDocument();
+    expect(screen.getByText('+8 %')).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', {
+        name: 'Desarrollo de Software: subió 8 puntos porcentuales respecto al cálculo anterior',
+      }),
+    ).toBeInTheDocument();
+
+    expect(screen.getByText('61%')).toBeInTheDocument();
+    expect(screen.getByText('\u22123 %')).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', {
+        name: 'Cloud, DevOps & Infraestructura: bajó 3 puntos porcentuales respecto al cálculo anterior',
+      }),
+    ).toBeInTheDocument();
+
+    // La fila sin cambio no recibe ninguna variación (CA-HU8-09)
+    expect(screen.getAllByRole('img')).toHaveLength(2);
+  });
+
+  test('CA-HU8-08: no muestra indicador en el primer cálculo, con previousAffinity null o ausente', () => {
+    renderSummary([
+      { area: 'software-development', affinity: 83, previousAffinity: null },
+      { area: 'cloud-devops', affinity: 61 },
+      { area: 'data-ai', affinity: 50, previousAffinity: 50 },
+    ]);
+
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(screen.getByText('83%')).toBeInTheDocument();
+    expect(screen.getByText('61%')).toBeInTheDocument();
+  });
+
+  test('CA-HU8-09: no muestra indicador cuando la variación redondeada es cero', () => {
+    renderSummary([
+      { area: 'software-development', affinity: 49.6, previousAffinity: 50.4 },
+      { area: 'cloud-devops', affinity: 50, previousAffinity: 50 },
+    ]);
+
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(screen.getAllByText('50%')).toHaveLength(2);
+  });
+
+  test('T4.5: calcula la variación con los enteros mostrados, no con los decimales', () => {
+    renderSummary([
+      // 49,6 se muestra como 50% y 49,4 como 49%: la variación es +1 %
+      { area: 'software-development', affinity: 49.6, previousAffinity: 49.4 },
+      // 49,6 y 50,4 se muestran ambos como 50%: sin indicador
+      { area: 'cloud-devops', affinity: 49.6, previousAffinity: 50.4 },
+    ]);
+
+    expect(screen.getByText('+1 %')).toBeInTheDocument();
+    expect(screen.getAllByRole('img')).toHaveLength(1);
+  });
+
+  test('CA-HU8-04 y CA-HU8-05: ordena de mayor a menor y conserva el área seleccionada', () => {
+    renderSummary(
+      [
+        { area: 'software-development', affinity: 60 },
+        { area: 'data-ai', affinity: 75 },
+        { area: 'cloud-devops', affinity: 90 },
+      ],
+      'cloud-devops',
+    );
+
+    const highest = screen.getByText('90%');
+    const middle = screen.getByText('75%');
+    const lowest = screen.getByText('60%');
+
+    expect(
+      highest.compareDocumentPosition(middle) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      middle.compareDocumentPosition(lowest) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    // El reordenamiento no pierde el área seleccionada en el panel de respaldos
+    expect(
+      screen.getByText('Área: Cloud, DevOps & Infraestructura'),
+    ).toBeInTheDocument();
   });
 });

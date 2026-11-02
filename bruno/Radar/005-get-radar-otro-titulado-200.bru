@@ -1,0 +1,36 @@
+meta {
+  name: GET radar - 200 un titulado solo ve su radar
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/radar
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessTokenOtroTitulado}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("graduateId distinto al del titulado del caso 001", function() {
+    const primero = bru.getVar("radarGraduateId");
+    expect(primero, "Ejecuta antes el caso 001").to.be.a("string").that.is.not.empty;
+    expect(res.body.data.graduateId).to.be.a("string").that.is.not.empty;
+    expect(res.body.data.graduateId).to.not.equal(primero);
+  });
+}
+
+docs {
+  Requiere {{accessTokenOtroTitulado}} con el token de un titulado DISTINTO al de accessToken. Ejecuta antes el caso 001, que guarda su graduateId.
+  El id sale del JWT, no de la URL: no existe forma de pedir el radar de otro titulado. El graduateId devuelto debe ser el del dueno del token y distinto al del caso 001.
+
+  Permiso: radar:self:read.
+  CA-HU7-24: un titulado solo ve su radar.
+}

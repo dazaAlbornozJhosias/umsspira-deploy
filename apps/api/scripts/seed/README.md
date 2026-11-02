@@ -39,6 +39,8 @@ El radar usa `version_algoritmo=demo-seed-v1`: es un ejemplo persistido, no el r
 
 Las fechas de los eventos se calculan para 30 y 45 días después de la primera carga. Las filas existentes mantienen sus fechas cuando se repite el comando.
 
+La seed de la épica 9 agrega 39 perfiles de titulado ficticios sin cuentas de acceso y 40 respuestas asociadas a ellos y al titulado compartido. Así se respeta la restricción de una respuesta por titulado y encuesta; repetir la carga conserva los registros existentes.
+
 | Correo                 | Contraseña     | Rol           |
 | ---------------------- | -------------- | ------------- |
 | `titulado@umss.edu.bo` | `titulado1234` | titulado      |
@@ -64,7 +66,7 @@ El mentor utiliza la cuenta de titulado; no es un rol de acceso independiente. L
 | `epic-6.ts`        | Mentores, especialidades y disponibilidad                                             |
 | `epic-7.ts`        | Eventos e inscripciones                                                               |
 | `epic-8.ts`        | Registro opcional de dispositivos para un flujo real de pruebas                       |
-| `epic-9.ts`        | Reportes y encuestas                                                                  |
+| `epic-9.ts`        | Reportes, encuestas y respuestas laborales con titulados ficticios para pruebas       |
 
 Cada equipo puede ampliar los arreglos tipados de su archivo. Los catálogos que consumen varios módulos se mantienen en `catalogs.ts`, para no duplicarlos en cada épica. Se conservan los UUID de las tres cuentas y las cinco áreas que ya existían.
 

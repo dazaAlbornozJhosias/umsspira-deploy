@@ -5,6 +5,7 @@ import { calculateAffinity } from '../../domain/affinity-calculator';
 import { RADAR_AREAS } from '../../domain/affinity-config';
 import type { AffinityCalculation } from '../../domain/entities/affinity-calculation';
 import { RADAR_AREA_IDS } from '../../domain/entities/radar-area';
+import type { AreaScoreRecord } from '../../application/ports/radar-repository.port';
 
 describe('PrismaRadarRepository', () => {
   it('guarda el cálculo, los seis ejes y los términos no mapeados en una transacción', async () => {
@@ -99,5 +100,128 @@ describe('PrismaRadarRepository', () => {
       where: { id_titulado: 'graduate-id' },
     });
     expect(transaction.palabraClaveNoMapeada.upsert).not.toHaveBeenCalled();
+  });
+
+  it('lee los pesos usando el termino canonico y no el UUID de la keyword', async () => {
+    const prisma = {
+      palabraClaveArea: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id_area: 'area-software',
+            peso: 5,
+            palabra_clave: { termino_normalizado: 'javascript' },
+          },
+          {
+            id_area: 'area-data',
+            peso: 4,
+            palabra_clave: { termino_normalizado: 'python' },
+          },
+        ]),
+      },
+    };
+    const repository = new PrismaRadarRepository(prisma as unknown as PrismaService);
+
+    await expect(repository.getAreaWeights()).resolves.toEqual({
+      'area-software': [{ term: 'javascript', peso: 5 }],
+      'area-data': [{ term: 'python', peso: 4 }],
+    });
+  });
+
+  it('convierte palabras_clave_top nulo en arreglo vacio al leer una fila antigua', async () => {
+    const prisma = {
+      calculoRadar: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'calculation-id',
+          id_titulado: 'graduate-id',
+          hash_entrada: 'hash',
+          estado: 'COMPLETADO',
+          version_algoritmo: '1.0.0',
+          fecha_calculo: new Date('2026-10-22T12:00:00.000Z'),
+        }),
+      },
+      afinidadRadar: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id_area: RADAR_AREA_IDS['software-development'],
+            puntaje: 10,
+            porcentaje: 25,
+            palabras_clave_top: null,
+          },
+        ]),
+      },
+    };
+    const repository = new PrismaRadarRepository(prisma as unknown as PrismaService);
+
+    const snapshot = await repository.getLatestCalculation('graduate-id');
+
+    expect(snapshot?.afinidad[0]).toEqual({
+      areaId: RADAR_AREA_IDS['software-development'],
+      puntaje: 10,
+      porcentaje: 25,
+      ponderacion: null,
+      palabrasClaveTop: [],
+    });
+  });
+
+  it('persiste dentro de la misma transaccion del bloqueo asesor sin anidar otra', async () => {
+    const transaction = {
+      $executeRaw: jest.fn().mockResolvedValue(1),
+      calculoRadar: {
+        create: jest.fn().mockResolvedValue({
+          id: 'calculation-id',
+          id_titulado: 'graduate-id',
+          hash_entrada: 'hash',
+          estado: 'COMPLETADO',
+          version_algoritmo: '1.0.0',
+          fecha_calculo: new Date('2026-10-22T12:00:00.000Z'),
+        }),
+      },
+      afinidadRadar: { createMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      palabraClaveNoMapeada: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        upsert: jest.fn().mockResolvedValue({}),
+      },
+    };
+    const prisma = {
+      $transaction: jest.fn(
+        (callback: (client: typeof transaction) => Promise<unknown>) => callback(transaction),
+      ),
+    };
+    const repository = new PrismaRadarRepository(prisma as unknown as PrismaService);
+    const areas: AreaScoreRecord[] = [
+      {
+        areaSlug: 'software-development',
+        areaId: RADAR_AREA_IDS['software-development'],
+        puntaje: 15,
+        porcentaje: 37.5,
+        ponderacion: 5,
+        palabrasClaveTop: [
+          { keyword: 'javascript', weight: 5, frequency: 3, points: 15, percentage: 37.5 },
+        ],
+      },
+    ];
+
+    await repository.executeWithAdvisoryLock('graduate-id', (transactionalRepository) =>
+      transactionalRepository.saveCalculation({
+        tituladoId: 'graduate-id',
+        hashEntrada: 'hash',
+        estado: 'COMPLETADO',
+        versionAlgoritmo: '1.0.0',
+        areas,
+        unmapped: [],
+      }),
+    );
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(transaction.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(transaction.calculoRadar.create).toHaveBeenCalledTimes(1);
+    expect(transaction.afinidadRadar.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          id_area: RADAR_AREA_IDS['software-development'],
+          palabras_clave_top: areas[0].palabrasClaveTop,
+        }),
+      ],
+    });
   });
 });

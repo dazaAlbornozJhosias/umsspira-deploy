@@ -60,6 +60,9 @@ export interface EventFormProps {
   isSubmitting?: boolean;
   initialEvent?: EventItem;
   allowPublication?: boolean;
+  showDraftSaveButton?: boolean;
+  submitLabel?: string;
+  capacityMinimum?: number;
 }
 
 const initialState: EventFormState = {
@@ -94,6 +97,9 @@ export default function EventForm({
   isSubmitting = false,
   initialEvent,
   allowPublication = true,
+  showDraftSaveButton = true,
+  submitLabel = 'Publicar evento',
+  capacityMinimum = 0,
 }: EventFormProps) {
   const [form, setForm] = useState<EventFormState>(() =>
     createInitialState(initialEvent),
@@ -106,7 +112,14 @@ export default function EventForm({
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const validationErrors = useMemo(() => validateEventForm(form), [form]);
+  const validationErrors = useMemo(() => {
+    const result = validateEventForm(form);
+    const capacity = Number(form.maxCapacity);
+    if (capacityMinimum > 0 && Number.isFinite(capacity) && capacity < capacityMinimum) {
+      result.maxCapacity = `El cupo no puede ser menor a ${capacityMinimum} inscripciones confirmadas.`;
+    }
+    return result;
+  }, [capacityMinimum, form]);
   const errors = useMemo(
     () => getVisibleErrors(validationErrors, touchedFields, showAllErrors),
     [showAllErrors, touchedFields, validationErrors],
@@ -184,6 +197,11 @@ export default function EventForm({
   const requestPublication = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validateForm()) return;
+
+    if (!allowPublication) {
+      void onSubmit(buildEventDto(EVENT_STATUS.BORRADOR), form.image);
+      return;
+    }
 
     setPendingPublication({
       dto: buildEventDto(EVENT_STATUS.PUBLICADO),
@@ -319,11 +337,13 @@ export default function EventForm({
 
         <div className="event-form-actions event-form-actions-desktop">
           <button type="button" className="event-button event-button-secondary" onClick={onCancel} disabled={isBusy}>Cancelar</button>
-          <button type="button" className="event-button event-button-secondary" onClick={() => void saveDraft()} disabled={isBusy}>
+          {showDraftSaveButton ? <button type="button" className="event-button event-button-secondary" onClick={() => void saveDraft()} disabled={isBusy}>
             {isSavingDraft ? 'Guardando…' : 'Guardar borrador'}
-          </button>
+          </button> : null}
           {allowPublication ? (
-            <button type="submit" className="event-button event-button-primary" disabled={isBusy}>Publicar evento</button>
+            <button type="submit" className="event-button event-button-primary" disabled={isBusy}>{submitLabel}</button>
+          ) : !showDraftSaveButton ? (
+            <button type="submit" className="event-button event-button-primary" disabled={isBusy}>{isSubmitting ? 'Guardando…' : submitLabel}</button>
           ) : null}
         </div>
       </form>
@@ -337,11 +357,13 @@ export default function EventForm({
 
       <div className="event-form-actions event-form-actions-mobile">
         <button type="button" className="event-button event-button-secondary" onClick={onCancel} disabled={isBusy}>Cancelar</button>
-        <button type="button" className="event-button event-button-secondary" onClick={() => void saveDraft()} disabled={isBusy}>
+        {showDraftSaveButton ? <button type="button" className="event-button event-button-secondary" onClick={() => void saveDraft()} disabled={isBusy}>
           {isSavingDraft ? 'Guardando…' : 'Guardar borrador'}
-        </button>
+        </button> : null}
         {allowPublication ? (
-          <button type="submit" form="event-create-form" className="event-button event-button-primary" disabled={isBusy}>Publicar</button>
+          <button type="submit" form="event-create-form" className="event-button event-button-primary" disabled={isBusy}>{isSubmitting ? 'Guardando…' : 'Publicar'}</button>
+        ) : !showDraftSaveButton ? (
+          <button type="submit" form="event-create-form" className="event-button event-button-primary" disabled={isBusy}>{isSubmitting ? 'Guardando…' : submitLabel}</button>
         ) : null}
       </div>
 

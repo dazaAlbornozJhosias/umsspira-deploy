@@ -144,4 +144,18 @@ describe("HU-004: mensaje de acceso a reportes", () => {
       "Debe iniciar sesión para acceder a este módulo",
     );
   });
+
+  it("CA-06: avisa que la sesión expiró al volver desde reportería", async () => {
+    window.history.pushState({}, "", "/login?reportes=sesion-expirada");
+    render(<LoginForm />);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Su sesión ha expirado. Inicie sesión nuevamente",
+    );
+  });
+
+  it("no muestra avisos con un motivo desconocido", () => {
+    window.history.pushState({}, "", "/login?reportes=otro");
+    render(<LoginForm />);
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
 });

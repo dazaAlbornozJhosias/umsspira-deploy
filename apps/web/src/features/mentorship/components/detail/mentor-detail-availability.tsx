@@ -46,15 +46,18 @@ export function MentorDetailAvailability({ mentor }: { mentor: MentorDetailProfi
             </div>
           ) : (
             <p className="mentor-detail-card-text mentor-detail-empty-text">
-              No hay horarios libres en los próximos 7 días.
+              Este mentor no tiene horarios libres en los próximos 7 días.
             </p>
           )}
 
-          <footer className="mentor-detail-avail-footer">
-            <p className="mentor-detail-avail-hint">
-              Elegirás fecha y horario al solicitar la mentoría.
-            </p>
-          </footer>
+          {/* Solo se invita a elegir horario cuando hay horas libres (CA-FE-05) */}
+          {hasSlots && (
+            <footer className="mentor-detail-avail-footer">
+              <p className="mentor-detail-avail-hint">
+                Elegirás fecha y horario al solicitar la mentoría.
+              </p>
+            </footer>
+          )}
         </div>
       ) : (
         <div className="mentor-detail-avail-blocked">

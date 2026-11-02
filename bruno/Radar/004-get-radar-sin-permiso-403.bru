@@ -1,0 +1,39 @@
+meta {
+  name: GET radar - 403 sin permiso
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/radar
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessTokenSinPermiso}}
+}
+
+tests {
+  test("Status 403", function() {
+    expect(res.status).to.equal(403);
+  });
+
+  test("Esquema de error { error: { code, message } }", function() {
+    expect(res.body).to.have.property("error").that.is.an("object");
+    expect(res.body.error.code).to.be.a("string").that.is.not.empty;
+    expect(res.body.error.message).to.be.a("string").that.is.not.empty;
+  });
+
+  test("Codigo FORBIDDEN", function() {
+    expect(res.body.error.code).to.equal("FORBIDDEN");
+  });
+}
+
+docs {
+  Requiere configurar manualmente {{accessTokenSinPermiso}} con el token de un usuario SIN radar:self:read (ej. empresa@umss.edu.bo).
+  Si la variable esta vacia o el token tiene permiso, el test falla (no es un bug de la API).
+
+  Permiso exigido: radar:self:read.
+  CA-HU7-24: acceso sin permiso.
+}

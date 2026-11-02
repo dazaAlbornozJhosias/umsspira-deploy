@@ -7,6 +7,8 @@ import { Button } from '@/shared/components/button';
 import { ApplicationDrawer } from '@/modules/applications/frontend/components/application-drawer';
 import {
   fetchApplicationsBoard,
+  fetchApplicationsMetrics,
+  type BoardMetrics,
   type BoardPage,
 } from '@/modules/applications/frontend/services/applications-board.service';
 import {
@@ -19,6 +21,8 @@ import {
   type ApplicationsUrlState,
 } from '@/modules/applications/frontend/services/application-query';
 import { EMPTY_FILTERS, RequestsFilters, type BoardFilters } from './_components/requests-filters';
+import { PeriodFiltersForm } from './_components/period-filters';
+import { RequestsMetrics } from './_components/requests-metrics';
 import { RequestsTable } from './_components/requests-table';
 
 const CAREERS_URL = '/api/v1/registrations/careers';
@@ -39,6 +43,9 @@ function ApplicationsBoardView() {
 
   const [searchInput, setSearchInput] = useState(query.search);
   const [board, setBoard] = useState<BoardPage | null>(null);
+  const [metrics, setMetrics] = useState<BoardMetrics | null>(null);
+  const [isMetricsLoading, setIsMetricsLoading] = useState(true);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
   const [careers, setCareers] = useState<{ id: string; nombre: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [needsLogin, setNeedsLogin] = useState(false);
@@ -52,6 +59,19 @@ function ApplicationsBoardView() {
     router.replace(params ? `${pathname}?${params}` : pathname, { scroll: false });
   }, [pathname, router]);
 
+  const loadMetrics = useCallback(async () => {
+    setIsMetricsLoading(true);
+    const result = await fetchApplicationsMetrics();
+    if (result.ok) {
+      setMetrics(result.data);
+      setMetricsError(null);
+    } else {
+      setMetrics(null);
+      setMetricsError(result.message);
+    }
+    setIsMetricsLoading(false);
+  }, []);
+
   const loadBoard = useCallback(async (activeQuery: ApplicationsUrlState) => {
     const currentRequestId = ++requestId.current;
     setIsLoading(true);
@@ -62,6 +82,10 @@ function ApplicationsBoardView() {
       career: activeQuery.career || undefined,
       status: activeQuery.status || undefined,
       search: activeQuery.search || undefined,
+      period: activeQuery.period || undefined,
+      year: activeQuery.year,
+      from: activeQuery.from || undefined,
+      to: activeQuery.to || undefined,
     });
     if (currentRequestId !== requestId.current) return;
 
@@ -95,6 +119,10 @@ function ApplicationsBoardView() {
   useEffect(() => {
     void loadBoard(query);
   }, [query, loadBoard]);
+
+  useEffect(() => {
+    void loadMetrics();
+  }, [loadMetrics]);
 
   useEffect(() => {
     fetch(CAREERS_URL, { cache: 'no-store' })
@@ -133,28 +161,58 @@ function ApplicationsBoardView() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+    <main className="mx-auto max-w-6xl space-y-3 px-4 py-6">
       <header>
-        <h1 className="text-[28px] font-bold text-abyssal-blue sm:text-4xl">
+        <h1 className="text-2xl font-bold tracking-tight text-abyssal-blue">
           Bandeja de Solicitudes{' '}
-          <span className="ml-2 inline-block rounded-full bg-oatmeal/60 px-3 py-1 align-middle text-xs font-semibold text-abyssal-blue">
+          <span className="ml-1 inline-block rounded-full bg-oatmeal/60 px-2 py-1 align-middle text-[10px] font-semibold text-abyssal-blue">
             {board ? `${board.total} en total` : '…'}
           </span>
         </h1>
-        <p className="mt-1 text-sm text-abyssal-blue/70">
-          Gestión y auditoría de expedientes de titulados de Ingeniería de Sistemas e Ingeniería Informática 
+        <p className="mt-0.5 text-xs text-abyssal-blue/70">
+          Gestión y auditoría de expedientes de egresados de Ingeniería de Sistemas
         </p>
       </header>
 
-      <RequestsFilters
-        filters={{ ...query, search: searchInput }}
-        careers={careers}
-        onChange={handleFiltersChange}
-        onClear={() => {
-          setSearchInput('');
-          updateQuery(changeFilters(queryRef.current, EMPTY_FILTERS));
-        }}
-      />
+      <section
+        aria-label="Filtros de solicitudes"
+        className="grid grid-cols-1 gap-2 rounded-xl border border-oatmeal bg-white p-2.5 shadow-sm sm:grid-cols-2 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.65fr)_auto] lg:items-center sm:p-3"
+      >
+        <RequestsFilters
+          filters={{ ...query, search: searchInput }}
+          careers={careers}
+          onChange={handleFiltersChange}
+          onClear={() => {
+            setSearchInput('');
+            updateQuery(changeFilters(queryRef.current, {
+              ...EMPTY_FILTERS,
+              period: '',
+              year: undefined,
+              from: '',
+              to: '',
+            }));
+          }}
+        />
+        <PeriodFiltersForm
+          key={JSON.stringify([query.period, query.year, query.from, query.to])}
+          filters={query}
+          onApply={(periodFilters) =>
+            updateQuery(
+              changeFilters(queryRef.current, {
+                ...periodFilters,
+                search: searchInput.trim(),
+              }),
+            )
+          }
+        />
+      </section>
+
+      <RequestsMetrics metrics={metrics} isLoading={isMetricsLoading} />
+      {metricsError && (
+        <p role="alert" className="text-sm text-truffle-trouble">
+          No se pudieron cargar los indicadores: {metricsError}
+        </p>
+      )}
 
       {error && (
         <div role="alert" className="rounded-lg border border-truffle-trouble/40 bg-truffle-trouble/10 p-3 text-sm font-medium text-truffle-trouble">
@@ -189,6 +247,7 @@ function ApplicationsBoardView() {
         onReviewed={() => {
           setSelectedId(null);
           void loadBoard(queryRef.current);
+          void loadMetrics();
         }}
       />
     </main>

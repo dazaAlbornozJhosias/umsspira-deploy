@@ -29,6 +29,7 @@ export interface ResolutionMailRecord {
 }
 
 export interface ApplicationsRepository {
+  countRejections(id: string): Promise<number>;
   renewActivation(
     actor: ActorContext,
     id: string,

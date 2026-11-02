@@ -7,7 +7,19 @@ vars:pre-request {
   validCorrectionToken: token-valido-ejemplo
   invalidCorrectionToken: token-invalido-ejemplo
   expiredCorrectionToken: token-expirado-ejemplo
-  correctionCi: 12432055
+  correctionCi: 9000013
   correctionComplemento: 
   correctionExpedidoEn: CB
+}
+
+docs {
+  Colección para pruebas de subsanación de solicitudes observadas (HU-10).
+  
+  Variables de entorno de la carpeta:
+  - correctionCi: C.I. de la solicitud observada del seed (9000013).
+  - correctionComplemento: Complemento (vacío en el seed).
+  - correctionExpedidoEn: Departamento de expedición (CB).
+  - validCorrectionToken: Token de subsanación activo (emitido automáticamente al marcar la solicitud como observada o al invocar POST /registrations/observed/request-link con los datos del seed). Debe asignarse con el token real para las pruebas que consultan o modifican el expediente.
+  - invalidCorrectionToken: Token con formato o valor no reconocido para verificar rechazo 404.
+  - expiredCorrectionToken: Token revocado o expirado para verificar 404/410.
 }

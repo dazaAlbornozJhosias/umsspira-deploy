@@ -27,18 +27,6 @@
   line-height: 1.25;
 }
 
-.mentor-detail-tabs .mentor-detail-tab-disabled {
-  display: inline-flex;
-  align-items: center;
-  gap: .5rem;
-  padding: .75rem 0;
-  border-bottom: 2px solid transparent;
-  color: var(--ink-70);
-  opacity: .55;
-  cursor: not-allowed;
-  font-size: .875rem;
-}
-
 /* 2. Tarjeta de Cabecera (Header) */
 .mentor-detail-header-card {
   background: white;
@@ -323,6 +311,7 @@
 
 .mentor-detail-avail-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: .75rem;

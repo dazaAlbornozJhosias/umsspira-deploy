@@ -12,6 +12,7 @@ export interface ActorRecord {
   estado: string;
   cuenta_acceso: { version: number } | null;
   empresa_registros: { id: string }[];
+  empresa_usuario_registros: { id_empresa: string }[];
   titulado: { id: string } | null;
   administrador_de_carrera_registros: { id_carrera: string | null; estado: string | null }[];
 }
@@ -33,7 +34,12 @@ export function toActor(record: ActorRecord, permissions: string[]): ActorContex
     permissions,
     credentialVersion: record.cuenta_acceso.version,
     scopes: {
-      companyIds: record.empresa_registros.map((company) => company.id),
+      companyIds: [
+        ...new Set([
+          ...record.empresa_registros.map((company) => company.id),
+          ...record.empresa_usuario_registros.map((membership) => membership.id_empresa),
+        ]),
+      ],
       graduateId: record.titulado?.id ?? null,
       careerIds: [
         ...new Set(

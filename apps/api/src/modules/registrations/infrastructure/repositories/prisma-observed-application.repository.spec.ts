@@ -1,3 +1,4 @@
+import type { UploadedDocument } from '../../application/contracts/registration-inputs';
 import { PrismaObservedApplicationRepository } from './prisma-observed-application.repository';
 import type { PrismaService } from '../../../../shared/infrastructure/database/prisma.service';
 
@@ -66,7 +67,18 @@ describe('PrismaObservedApplicationRepository', () => {
       },
       borradorRegistro: {
         findUnique: jest.fn().mockResolvedValue(overrides.draft ?? { id: 'draft-1', correo_verificado: true }),
+        create: jest.fn().mockResolvedValue({ id: 'draft-holder-1' }),
         update: jest.fn().mockResolvedValue({ id: 'draft-1' }),
+      },
+      archivoRegistro: {
+        create: jest.fn().mockResolvedValue({ id: 'arch-1' }),
+      },
+      documentoRespaldo: {
+        update: jest.fn().mockResolvedValue({ id: 'doc-1' }),
+        create: jest.fn().mockResolvedValue({ id: 'new-doc-1' }),
+      },
+      tokenSubsanacion: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
     };
 
@@ -282,6 +294,172 @@ describe('PrismaObservedApplicationRepository', () => {
           correo_verificado: false,
           codigo_hash: null,
         }),
+      });
+    });
+  });
+  describe('replaceDocument', () => {
+    const validPdfBuffer = Buffer.from('%PDF-1.4 test document content');
+    const mockFile: UploadedDocument = {
+      originalname: 'titulo_actualizado.pdf',
+      buffer: validPdfBuffer,
+      size: validPdfBuffer.length,
+    };
+
+    it('reemplaza el documento marcando el anterior como no valido y conservandolo en historial', async () => {
+      const { repository, tx } = createRepo({
+        application: {
+          id: applicationId,
+          estado: 'OBSERVED',
+          id_documento_respaldo: 'old-doc-1',
+        },
+      });
+
+      const response = await repository.replaceDocument(applicationId, mockFile, 'diploma_academico');
+
+      expect(tx.documentoRespaldo.update).toHaveBeenCalledWith({
+        where: { id: 'old-doc-1' },
+        data: { es_valido: false },
+      });
+      expect(tx.archivoRegistro.create).toHaveBeenCalled();
+      expect(tx.documentoRespaldo.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ es_valido: true }),
+      }));
+      expect(tx.solicitud.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: applicationId },
+      }));
+      expect(response.documentoId).toBe('new-doc-1');
+      expect(response.nombre).toBe('titulo_actualizado.pdf');
+    });
+
+    it('permite reemplazar documento tanto en estado OBSERVED como OBSERVADA', async () => {
+      for (const estado of ['OBSERVED', 'OBSERVADA']) {
+        const { repository } = createRepo({
+          application: {
+            id: applicationId,
+            estado,
+            id_documento_respaldo: 'old-doc-1',
+          },
+        });
+        const response = await repository.replaceDocument(applicationId, mockFile);
+        expect(response.documentoId).toBe('new-doc-1');
+      }
+    });
+
+    it('lanza error si el archivo no esta presente', async () => {
+      const { repository } = createRepo({
+        application: { id: applicationId, estado: 'OBSERVED' },
+      });
+
+      await expect(repository.replaceDocument(applicationId, null as unknown as UploadedDocument)).rejects.toMatchObject({
+        code: 'DOCUMENT_REQUIRED',
+      });
+    });
+
+    it('lanza 404 generico si la solicitud no esta en estado observada', async () => {
+      const { repository } = createRepo({
+        application: { id: applicationId, estado: 'APPROVED' },
+      });
+
+      await expect(repository.replaceDocument(applicationId, mockFile)).rejects.toMatchObject({
+        code: 'APPLICATION_NOT_FOUND',
+      });
+    });
+  });
+
+  describe('submitCorrection', () => {
+    it('entrega la correccion, crea snapshot en version, cambia a PENDIENTE e invalida el token', async () => {
+      const { repository, tx } = createRepo({
+        application: {
+          id: applicationId,
+          estado: 'OBSERVED',
+          detalle_solicitud: mockDetail,
+          id_documento_respaldo: 'doc-1',
+          version_registros: [{ id: 'v1' }],
+        },
+        draft: { id: 'draft-1', correo_verificado: true },
+      });
+
+      const response = await repository.submitCorrection(applicationId, { expectedVersion: 2 });
+
+      expect(response.estado).toBe('PENDIENTE');
+      expect(response.version).toBe(3);
+      expect(tx.solicitudVersion.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          id_solicitud: applicationId,
+          numero_version: 2,
+        }),
+      }));
+      expect(tx.solicitud.update).toHaveBeenCalledWith({
+        where: { id: applicationId },
+        data: expect.objectContaining({ estado: 'PENDIENTE' }),
+      });
+      expect(tx.tokenSubsanacion.updateMany).toHaveBeenCalledWith({
+        where: { id_solicitud: applicationId, usado: false },
+        data: { usado: true },
+      });
+    });
+
+    it('es idempotente si la solicitud ya fue entregada a PENDING o PENDIENTE', async () => {
+      for (const estado of ['PENDING', 'PENDIENTE']) {
+        const { repository, tx } = createRepo({
+          application: {
+            id: applicationId,
+            estado,
+            detalle_solicitud: mockDetail,
+            version_registros: [{ id: 'v1', numero_version: 1 }],
+          },
+        });
+
+        const response = await repository.submitCorrection(applicationId, { expectedVersion: 2 });
+        expect(response.estado).toBe(estado);
+        expect(tx.solicitud.update).not.toHaveBeenCalled();
+      }
+    });
+
+    it('lanza 409 VERSION_CONFLICT cuando expectedVersion no coincide', async () => {
+      const { repository } = createRepo({
+        application: {
+          id: applicationId,
+          estado: 'OBSERVED',
+          detalle_solicitud: mockDetail,
+          version_registros: [{ id: 'v1' }],
+        },
+      });
+
+      await expect(
+        repository.submitCorrection(applicationId, { expectedVersion: 1 }),
+      ).rejects.toMatchObject({
+        code: 'VERSION_CONFLICT',
+      });
+    });
+
+    it('lanza 409 EMAIL_NOT_VERIFIED si el correo fue modificado y no se ha verificado', async () => {
+      const { repository } = createRepo({
+        application: {
+          id: applicationId,
+          estado: 'OBSERVED',
+          detalle_solicitud: mockDetail,
+          version_registros: [],
+        },
+        draft: { id: 'draft-1', correo_verificado: false },
+      });
+
+      await expect(
+        repository.submitCorrection(applicationId, { expectedVersion: 1 }),
+      ).rejects.toMatchObject({
+        code: 'EMAIL_NOT_VERIFIED',
+      });
+    });
+
+    it('lanza 404 generico si la solicitud esta en estado no editable', async () => {
+      const { repository } = createRepo({
+        application: { id: applicationId, estado: 'APPROVED', version_registros: [] },
+      });
+
+      await expect(
+        repository.submitCorrection(applicationId, { expectedVersion: 1 }),
+      ).rejects.toMatchObject({
+        code: 'APPLICATION_NOT_FOUND',
       });
     });
   });

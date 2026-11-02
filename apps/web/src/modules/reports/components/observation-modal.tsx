@@ -34,21 +34,21 @@ export function ObservationModal({ graduate, onClose }: ObservationModalProps) {
         className="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-sm bg-white shadow-2xl"
         role="dialog"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 bg-[#25384a] px-4 py-4 text-white sm:gap-4 sm:px-8 sm:py-5">
-          <div className="flex gap-3">
+        <div className="flex shrink-0 items-center justify-between gap-2 bg-[#25384a] px-3 py-2 text-white sm:items-start sm:gap-4 sm:px-8 sm:py-5">
+          <div className="flex min-w-0 items-center gap-2 sm:items-start sm:gap-3">
             <div
               aria-hidden="true"
-              className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border border-[#c7783e] text-xs text-[#c7783e] sm:h-6 sm:w-6"
+              className="flex h-4 w-4 shrink-0 items-center justify-center text-[#d8783c] sm:mt-0.5 sm:h-6 sm:w-6 sm:rounded-sm sm:border"
             >
-              !
+              <AlertTriangle aria-hidden="true" size={11} />
             </div>
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wide text-[#d8783c] sm:text-[10px]">
+            <div className="min-w-0">
+              <p className="truncate text-[7px] font-bold uppercase leading-none tracking-[0.08em] text-[#d8783c] sm:text-[10px] sm:leading-normal sm:tracking-wide">
                 Resolución de dictamen administrativo
               </p>
               <h2
                 id="observation-modal-title"
-                className="mt-1 text-lg font-bold leading-tight sm:text-2xl"
+                className="mt-1 max-w-[18rem] text-base font-bold leading-tight sm:max-w-none sm:text-2xl"
               >
                 Expediente de Observación y Motivos de Rechazo
               </h2>
@@ -56,7 +56,7 @@ export function ObservationModal({ graduate, onClose }: ObservationModalProps) {
           </div>
           <button
             aria-label="Cerrar modal"
-            className="rounded-md p-1 text-slate-300 transition hover:bg-white/10 hover:text-white"
+            className="shrink-0 rounded-md p-1 text-slate-300 transition hover:bg-white/10 hover:text-white"
             onClick={onClose}
             type="button"
           >
@@ -65,8 +65,38 @@ export function ObservationModal({ graduate, onClose }: ObservationModalProps) {
         </div>
 
         <div className="min-h-0 overflow-y-auto">
-          <div className="space-y-3 px-3 py-3 sm:px-5 sm:py-4">
-            <div className="grid grid-cols-2 divide-x divide-[#ddd8ca] bg-[#f1eee6] sm:grid-cols-3">
+          <div className="space-y-3 bg-[#fffaf0] px-3 py-3 sm:bg-white sm:px-5 sm:py-4">
+            <div className="rounded-lg bg-white p-3 shadow-sm sm:hidden">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">
+                  Cédula de expediente notarial
+                </p>
+                <span className="inline-flex items-center gap-1 rounded bg-[#fff1ed] px-2 py-1 text-[9px] font-bold text-[#b42318]">
+                  <AlertTriangle aria-hidden="true" size={10} />
+                  Observación
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">Número de registro</p>
+                  <p className="mt-0.5 text-xs font-bold text-slate-800">{graduate.registrationNumber}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">Código SIS</p>
+                  <p className="mt-0.5 text-xs font-bold text-slate-800">{graduate.sisCode}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">Postulante titulado</p>
+                  <p className="mt-0.5 text-xs font-bold text-slate-800">{graduate.fullName}</p>
+                </div>
+                <div className="col-span-2 flex items-center justify-between rounded bg-[#faf7f0] px-2 py-2">
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">Teléfono de contacto</p>
+                  <p className="text-xs font-bold text-slate-800">{graduate.phone}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="hidden grid-cols-2 divide-x divide-[#ddd8ca] bg-[#f1eee6] sm:grid sm:grid-cols-3">
             <div className="px-3 py-2">
               <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
                 Número de registro
@@ -97,7 +127,7 @@ export function ObservationModal({ graduate, onClose }: ObservationModalProps) {
               </div>
           </div>
 
-            <div className="border border-red-200 bg-red-50 px-3 py-3 sm:px-4">
+            <div className="rounded-lg border border-red-100 bg-[#fff0ed] px-3 py-3 sm:rounded-none sm:border-red-200 sm:bg-red-50 sm:px-4">
               <div className="flex gap-2">
                 <AlertTriangle
                   aria-hidden="true"
@@ -105,10 +135,10 @@ export function ObservationModal({ graduate, onClose }: ObservationModalProps) {
                   size={16}
                 />
                 <div>
-                  <p className="text-sm font-bold leading-tight text-red-700">
+                  <p className="text-xs font-bold leading-tight text-red-700 sm:text-sm">
                     Causales Determinantes de Inadmisibilidad
                   </p>
-                  <p className="mt-1 text-xs leading-relaxed text-red-700">
+                  <p className="mt-1 max-w-[16rem] text-[11px] leading-relaxed text-red-700 sm:max-w-none sm:text-xs">
                     El grado no ha sido incorporado al padrón general debido al incumplimiento de
                     las siguientes disposiciones del Código Universitario:
                   </p>

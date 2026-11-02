@@ -1,11 +1,18 @@
-import { Controller, Post, Request, Inject } from '@nestjs/common';
-import { createHash } from 'crypto';
-import { RecalculateRadarUseCase } from '../../application/use-cases/recalculate-radar.use-case';
-import { PROFILE_TEXT_READER_PORT, ProfileTextReaderPort } from '../../application/ports/profile-text-reader.port';
-import { ALGORITHM_VERSION } from '../../domain/policies/affinity-config';
+import { Controller, HttpCode, Inject, Post, UseFilters } from '@nestjs/common';
+import type { ActorContext } from '../../../../shared/security/contexts/actor-context';
+import { CurrentActor } from '../../../../shared/http/auth/decorators/current-actor.decorator';
 import { RequirePermissions } from '../../../../shared/http/auth/decorators/require-permissions.decorator';
+import {
+  PROFILE_TEXT_READER_PORT,
+  type ProfileTextReaderPort,
+} from '../../application/ports/profile-text-reader.port';
+import { requireGraduateScope } from '../../application/services/graduate-scope';
+import { RecalculateRadarUseCase } from '../../application/use-cases/recalculate-radar.use-case';
+import { KeywordDictionaryUnavailableFilter } from '../filters/keyword-dictionary-unavailable.filter';
+import { presentAffinityVector } from '../presenters/affinity-vector.presenter';
 
 @Controller('radar')
+@UseFilters(KeywordDictionaryUnavailableFilter)
 export class RecalculateRadarController {
   constructor(
     private readonly recalculateRadarUseCase: RecalculateRadarUseCase,
@@ -14,27 +21,17 @@ export class RecalculateRadarController {
   ) {}
 
   @Post('recalculate')
-  @RequirePermissions('radar:self:write') // Permiso exigido por el doc (Sección 12.5)
-  async recalculate(@Request() req: { user: { id: string } }) {
-    const tituladoId = req.user.id;
-
-    // 1. Leer los textos actuales directamente en el backend
+  @HttpCode(200)
+  @RequirePermissions('radar:self:write')
+  async recalculate(@CurrentActor() actor: ActorContext) {
+    const tituladoId = requireGraduateScope(actor);
     const profileTexts = await this.profileTextReader.getProfileTexts(tituladoId);
+    const vector = await this.recalculateRadarUseCase.execute(
+      tituladoId,
+      profileTexts.texts,
+      profileTexts.hasLaborHistory,
+    );
 
-    // 2. Normalizar y ordenar para el cálculo del hash
-    const textToHash = profileTexts.texts
-      .map((t) => t.trim().toLowerCase())
-      .filter((t) => t.length > 0)
-      .sort()
-      .join('|');
-
-    // 3. Generar el nuevo hash con la versión del algoritmo
-    const currentHash = createHash('sha256')
-      .update(`${ALGORITHM_VERSION}|${textToHash}`)
-      .digest('hex');
-
-    // 4. Mandar a ejecutar el caso de uso que armaste. 
-    // Éste se encargará del bloqueo (advisory lock), comprobar idempotencia y guardar.
-    return await this.recalculateRadarUseCase.execute(tituladoId, currentHash, profileTexts.texts);
+    return { data: presentAffinityVector(vector, { includeRecalculated: true }) };
   }
 }

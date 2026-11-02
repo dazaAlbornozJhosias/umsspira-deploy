@@ -37,20 +37,23 @@ describe('FormacionAcademicaForm', () => {
     expect(screen.getByLabelText('Año de egreso')).toHaveValue('2022');
   });
 
+  // 👇 Corregido: async y waitFor
   it('envia el registro y limpia el formulario', async () => {
-    const onAgregar = jest.fn();
+    const onAgregar = jest.fn().mockResolvedValue(undefined);
     render(<FormacionAcademicaForm formaciones={[]} onAgregar={onAgregar} />);
     llenarFormulario();
 
     fireEvent.click(screen.getByRole('button', { name: /agregar formación/i }));
 
-    expect(onAgregar).toHaveBeenCalledWith({
-      institucion: 'UMSS',
-      titulo: 'Ingeniería de Sistemas',
-      anioEgreso: '2022',
-      grado: 'Licenciatura',
+    await waitFor(() => {
+      expect(onAgregar).toHaveBeenCalledWith({
+        institucion: 'UMSS',
+        titulo: 'Ingeniería de Sistemas',
+        anioEgreso: '2022',
+        grado: 'Licenciatura',
+      });
+      expect(screen.getByLabelText('Institución')).toHaveValue('');
     });
-    await waitFor(() => expect(screen.getByLabelText('Institución')).toHaveValue(''));
   });
 
   it('lista las formaciones registradas', () => {
@@ -93,8 +96,9 @@ describe('FormacionAcademicaForm · formación duplicada (BUG-HU2-002)', () => {
     expect(onAgregar).not.toHaveBeenCalled();
   });
 
-  it('quita el mensaje al cambiar un campo y deja agregar si ya no es duplicada', () => {
-    const onAgregar = jest.fn();
+  // 👇 Corregido: async y waitFor
+  it('quita el mensaje al cambiar un campo y deja agregar si ya no es duplicada', async () => {
+    const onAgregar = jest.fn().mockResolvedValue(undefined);
     render(<FormacionAcademicaForm formaciones={[registrada]} onAgregar={onAgregar} />);
     llenarDuplicada();
     fireEvent.click(screen.getByRole('button', { name: /agregar formación/i }));
@@ -103,7 +107,10 @@ describe('FormacionAcademicaForm · formación duplicada (BUG-HU2-002)', () => {
     expect(screen.queryByText('La formación académica ya se encuentra registrada')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /agregar formación/i }));
-    expect(onAgregar).toHaveBeenCalledTimes(1);
+    
+    await waitFor(() => {
+      expect(onAgregar).toHaveBeenCalledTimes(1);
+    });
   });
 });
 
@@ -123,15 +130,18 @@ describe('FormacionAcademicaForm · año de egreso (BUG-HU2-001)', () => {
     expect(onAgregar).not.toHaveBeenCalled();
   });
 
-  it('acepta el año actual', () => {
-    const onAgregar = jest.fn();
+  // 👇 Corregido: async y waitFor
+  it('acepta el año actual', async () => {
+    const onAgregar = jest.fn().mockResolvedValue(undefined);
     render(<FormacionAcademicaForm formaciones={[]} onAgregar={onAgregar} />);
     llenarFormulario();
     fireEvent.change(screen.getByLabelText('Año de egreso'), { target: { value: String(anioActual) } });
 
     fireEvent.click(screen.getByRole('button', { name: /agregar formación/i }));
 
-    expect(onAgregar).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(onAgregar).toHaveBeenCalledTimes(1);
+    });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

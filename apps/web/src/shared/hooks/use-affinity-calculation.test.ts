@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+﻿import { renderHook, act } from '@testing-library/react';
 import { useAffinityCalculation } from './use-affinity-calculation';
 import * as affinityService from '../services/affinity-service';
 
@@ -76,5 +76,60 @@ describe('useAffinityCalculation Hook', () => {
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
     expect(result.current.data).toEqual(successData);
+  });
+
+  it('descarta respuestas tardías cuando se inicia un nuevo cálculo antes de que termine el anterior', async () => {
+    let resolveFirst!: (value: unknown) => void;
+    let resolveSecond!: (value: unknown) => void;
+
+    mockCalculateAffinityVector
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecond = resolve;
+          }),
+      );
+
+    const staleData = {
+      graduateId: 'id-1',
+      calculatedAt: '2026-09-28T12:00:00.000Z',
+      areas: [{ area: 'software-development', affinity: 40 }],
+    };
+    const freshData = {
+      graduateId: 'id-1',
+      calculatedAt: '2026-09-30T12:00:00.000Z',
+      areas: [{ area: 'software-development', affinity: 95 }],
+    };
+
+    const { result } = renderHook(() => useAffinityCalculation());
+
+    let p1!: Promise<void>;
+    let p2!: Promise<void>;
+    act(() => {
+      p1 = result.current.calculate();
+      p2 = result.current.calculate();
+    });
+
+    await act(async () => {
+      resolveSecond(freshData);
+      await p2;
+    });
+
+    expect(result.current.data).toEqual(freshData);
+    expect(result.current.isLoading).toBe(false);
+
+    await act(async () => {
+      resolveFirst(staleData);
+      await p1;
+    });
+
+    expect(result.current.data).toEqual(freshData);
+    expect(result.current.isLoading).toBe(false);
   });
 });

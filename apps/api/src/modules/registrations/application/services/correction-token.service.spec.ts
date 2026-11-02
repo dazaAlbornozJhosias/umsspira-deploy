@@ -53,7 +53,7 @@ describe('CorrectionTokenService', () => {
   it('emite un enlace completo y guarda el hash del token', async () => {
     const link = await service.issueLink('app-123');
 
-    expect(link).toMatch(/^http:\/\/localhost:3001\/applications\/correct\/[A-Za-z0-9_-]+$/);
+    expect(link).toMatch(/^http:\/\/localhost:3001\/register\/correction\/[A-Za-z0-9_-]+$/);
     expect(mockPort.saveToken).toHaveBeenCalledWith(
       'app-123',
       expect.any(String),

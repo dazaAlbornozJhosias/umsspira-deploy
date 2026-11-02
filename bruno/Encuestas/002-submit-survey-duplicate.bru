@@ -1,0 +1,44 @@
+meta {
+  name: Reintento duplicado
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/surveys
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "id_encuesta": "{{surveyId}}",
+    "condicion_laboral": true,
+    "cargo": "Analista",
+    "empresa": "Empresa de ejemplo",
+    "area": "Sistemas",
+    "modalidad": "Remoto",
+    "salario_mensual": "3500",
+    "tiempo_insercion": "3"
+  }
+}
+
+tests {
+  test("status 409", function () {
+    expect(res.getStatus()).to.equal(409);
+  });
+
+  test("error de conflicto", function () {
+    const body = res.getBody();
+    expect(body?.error?.code).to.equal("CONFLICT");
+    expect(body?.error?.message).to.equal("La encuesta ya fue enviada");
+  });
+}

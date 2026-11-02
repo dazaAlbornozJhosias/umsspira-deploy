@@ -3,41 +3,39 @@
 import Link from 'next/link';
 import { ArrowLeftIcon } from 'lucide-react';
 import { useMentorDetail } from '../../hooks/use-mentor-detail';
-import { MentorDetailTabs } from './mentor-detail-tabs';
 import { MentorDetailHeader } from './mentor-detail-header';
 import { MentorDetailInfo } from './mentor-detail-info';
 import { MentorDetailAvailability } from './mentor-detail-availability';
 import {
   MentorDetailError,
   MentorDetailNotFound,
+  MentorDetailSessionRedirect,
   MentorDetailSkeleton,
 } from './mentor-detail-states';
 
 export function MentorDetailPage({ mentorId }: { mentorId: string }) {
-  const { mentor, loading, error, notFound, sessionRequired, retry } =
+  const { mentor, loading, error, notFound, invalidId, sessionRequired, retry } =
     useMentorDetail(mentorId);
 
+  // La barra de Mentorías la aporta el layout del módulo; esta vista no agrega otra.
   return (
     <main className="mentorship-shell mentor-detail-shell">
-      {/* 1. Pestañas del módulo (presentes en todas las pantallas) */}
-      <MentorDetailTabs />
-
-      {/* 2. Estado de Perfil no disponible / inexistente (Mockup 5: sin breadcrumbs ni título) */}
-      {notFound ? (
+      {/* Perfil no encontrado o enlace no válido (Mockup 5: sin breadcrumbs ni título) */}
+      {sessionRequired ? (
+        <MentorDetailSessionRedirect />
+      ) : invalidId ? (
+        <MentorDetailNotFound reason="invalid" />
+      ) : notFound ? (
         <MentorDetailNotFound />
       ) : error ? (
-        <MentorDetailError
-          message={error}
-          onRetry={retry}
-          loginRequired={sessionRequired}
-        />
+        <MentorDetailError onRetry={retry} />
       ) : (
         <>
           {/* Breadcrumbs de navegación */}
           <nav className="mentorship-breadcrumb" aria-label="Ruta de navegación">
             <ol className="breadcrumb-list">
               <li>
-                <Link href="/" className="breadcrumb-link">
+                <Link href="/portal" className="breadcrumb-link">
                   Inicio
                 </Link>
               </li>

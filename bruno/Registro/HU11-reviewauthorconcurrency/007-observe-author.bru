@@ -1,0 +1,52 @@
+meta {
+  name: HU-11 T-11.2 - Observación y autoría
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/applications/{{hu112ObservedId}}/review
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "decision": "OBSERVADA",
+    "category": "Datos inconsistentes",
+    "note": "Se solicita corregir los datos inconsistentes de la documentacion."
+  }
+}
+
+tests {
+  const body = res.getBody();
+  test("T-11.2: responde HTTP 201", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+  test("T-11.2: registra ID y correo del administrador", function () {
+    expect(body?.data?.reviewedBy).to.be.a("string");
+    expect(body?.data?.reviewedByEmail).to.be.a("string");
+    expect(body.data.reviewedBy).to.equal(bru.getVar("hu112ExpectedAdminId"));
+    expect(body.data.reviewedByEmail.toLowerCase()).to.equal(
+      String(bru.getVar("hu112ExpectedAdminEmail")).toLowerCase()
+    );
+  });
+  test("T-11.2: registra fecha, nombre disponible y estado", function () {
+    expect(body?.data?.reviewedAt).to.be.a("string");
+    expect(Number.isNaN(Date.parse(body.data.reviewedAt))).to.equal(false);
+    expect(body?.data).to.have.property("reviewedByName");
+    expect(body?.data?.status).to.equal("OBSERVADA");
+  });
+}
+
+docs {
+  Usar una TERCERA solicitud PENDIENTE. Esta prueba es de autoría, NO comprueba el máximo de dos observaciones, que corresponde a T-11.3.
+}

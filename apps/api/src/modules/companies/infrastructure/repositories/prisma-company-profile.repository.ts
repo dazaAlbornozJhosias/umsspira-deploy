@@ -16,18 +16,18 @@ import {
 @Injectable()
 export class PrismaCompanyProfileRepository implements CompanyProfileRepository {
   constructor(private readonly prisma: PrismaService) {}
-
-  async findHeader(companyId: string, ownerId: string) {
-    const record = await this.prisma.empresa.findFirst({
-      where: { id: companyId, id_usuario: ownerId },
+  
+  async findHeader(companyId: string, _ownerId: string) {
+    const record = await this.prisma.empresa.findUnique({
+      where: { id: companyId },
       select: companyHeaderSelect,
     });
     return record ? toCompanyHeader(record) : null;
   }
 
-  async findContact(companyId: string, ownerId: string) {
-    const record = await this.prisma.empresa.findFirst({
-      where: { id: companyId, id_usuario: ownerId },
+  async findContact(companyId: string, _ownerId: string) {
+    const record = await this.prisma.empresa.findUnique({
+      where: { id: companyId },
       select: companyContactSelect,
     });
     return record ? toCompanyContact(record) : null;

@@ -31,6 +31,7 @@ const mockGetAdminEvent = jest.fn();
 const mockGetAdminDraft = jest.fn();
 const mockUpdateDraftEvent = jest.fn();
 const mockPublishDraftEvent = jest.fn();
+const mockCancelPublishedEvent = jest.fn();
 const mockGetInactiveEvents = jest.fn();
 const mockRetireEvent = jest.fn();
 
@@ -46,6 +47,7 @@ jest.mock('@/shared/services/events-service', () => ({
   getAdminDraft: (...args: unknown[]) => mockGetAdminDraft(...args),
   updateDraftEvent: (...args: unknown[]) => mockUpdateDraftEvent(...args),
   publishDraftEvent: (...args: unknown[]) => mockPublishDraftEvent(...args),
+  cancelPublishedEvent: (...args: unknown[]) => mockCancelPublishedEvent(...args),
   getInactiveEvents: (...args: unknown[]) => mockGetInactiveEvents(...args),
   retireEvent: (...args: unknown[]) => mockRetireEvent(...args),
 }));
@@ -91,6 +93,7 @@ describe('Gestión administrativa de eventos HU1', () => {
     mockGetAdminDraft.mockReset();
     mockUpdateDraftEvent.mockReset();
     mockPublishDraftEvent.mockReset();
+    mockCancelPublishedEvent.mockReset();
     mockGetAdminEvent.mockReset();
   });
 
@@ -141,13 +144,105 @@ describe('Gestión administrativa de eventos HU1', () => {
     expect(mockPush).toHaveBeenCalledWith('/events/published-1');
   });
 
-  it('no muestra un affordance de menú sin acciones autorizadas', async () => {
+  it('cancela un evento publicado tras confirmar y actualiza su estado', async () => {
+    mockGetAdminEvents.mockResolvedValueOnce([publishedEvent]);
+    mockCancelPublishedEvent.mockResolvedValueOnce({
+      event: {
+        ...publishedEvent,
+        status: EVENT_STATUS.CANCELADO,
+      },
+      registrationsCount: 1,
+      invalidatedPassesCount: 1,
+    });
+
+    render(<EventManagementContent userId="user-1" />);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: `Acciones para ${publishedEvent.title}`,
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Cancelar evento' }),
+    );
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Cancelar evento publicado',
+    });
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Confirmar cancelación' }),
+    );
+
+    await waitFor(() => {
+      expect(mockCancelPublishedEvent).toHaveBeenCalledWith(
+        'published-1',
+        'user-1',
+      );
+    });
+
+    expect(
+      await screen.findByText('Cancelado', {
+        selector: '.event-status.is-cancelled',
+      }),
+    ).toBeInTheDocument();
+  });
+
+
+  it('muestra un error cuando falla la cancelación del evento', async () => {
+    mockGetAdminEvents.mockResolvedValueOnce([publishedEvent]);
+    mockCancelPublishedEvent.mockRejectedValueOnce(
+      new Error('No se pudo cancelar el evento.'),
+    );
+
+    render(<EventManagementContent userId="user-1" />);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: `Acciones para ${publishedEvent.title}`,
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: /^cancelar evento$/i }),
+    );
+
+    const dialog = screen.getByRole('dialog', {
+      name: 'Cancelar evento publicado',
+    });
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Confirmar cancelación' }),
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No se pudo cancelar el evento.',
+    );
+    expect(screen.getByRole('dialog', {
+      name: 'Cancelar evento publicado',
+    })).toBeInTheDocument();
+    expect(mockCancelPublishedEvent).toHaveBeenCalledWith(
+      'published-1',
+      'user-1',
+    );
+  });
+
+  it('muestra las acciones y participantes de un publicado dentro del menú', async () => {
     mockGetAdminEvents.mockResolvedValueOnce([publishedEvent]);
 
     render(<EventManagementContent userId="user-1" />);
 
-    const viewButton = await screen.findByRole('button', { name: /ver/i });
-    expect(viewButton.parentElement?.querySelectorAll('svg')).toHaveLength(1);
+    expect(
+      await screen.findByRole('button', {
+        name: `Acciones para ${publishedEvent.title}`,
+      }),
+    ).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('link', { name: 'Ver participantes' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', {
+      name: `Acciones para ${publishedEvent.title}`,
+    }));
+    expect(screen.getByRole('link', { name: 'Ver participantes' })).toHaveAttribute(
+      'href',
+      '/events/published-1/participants',
+    );
   });
 
   it('filtra los eventos por estado y mes elegidos', async () => {

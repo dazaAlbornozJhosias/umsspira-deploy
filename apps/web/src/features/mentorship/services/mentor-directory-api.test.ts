@@ -1,14 +1,18 @@
 import { getMentorDirectory } from './mentor-directory-api';
 import { filterDirectory } from '../model/mentor-directory';
 import { setAccessToken, clearAccessToken } from '@/shared/services/auth-session';
+import { RADAR_AREA_IDS, type MentorDirectoryResponse } from '@umsspira/shared-types';
 
-const row = { id: 'mentor-1', nombre: 'Ana Pérez', descripcion: 'Presentación pública', foto_perfil: null,
-  esta_activo: true, availabilityStatus: 'AVAILABLE', areas: [{ id: 'software', nombre: 'Desarrollo de Software' }],
+const softwareArea = RADAR_AREA_IDS['software-development'];
+const dataArea = RADAR_AREA_IDS['data-ai'];
+
+const row: MentorDirectoryResponse['data'][number] = { id: 'mentor-1', nombre: 'Ana Pérez', descripcion: 'Presentación pública', foto_perfil: null,
+  esta_activo: true, availabilityStatus: 'AVAILABLE', areas: [{ id: softwareArea, nombre: 'Desarrollo de software' }],
   cargo: null, empresa: null, intereses: [],
 };
 const catalog = [
-  { area: { id: 'data', nombre: 'Bases de Datos' }, intereses: [{ id: 'sql', nombre: 'PostgreSQL' }] },
-  { area: { id: 'software', nombre: 'Desarrollo de Software' }, intereses: [{ id: 'api', nombre: 'APIs REST' }] },
+  { area: { id: dataArea, nombre: 'Ciencia de Datos/IA' }, intereses: [{ id: 'sql', nombre: 'PostgreSQL' }] },
+  { area: { id: softwareArea, nombre: 'Desarrollo de software' }, intereses: [{ id: 'api', nombre: 'APIs REST' }] },
 ];
 const payload = (data: unknown[], total = data.length) => ({ data, total, catalog });
 const query = { areaIds: [], topicIds: [], offset: 0, limit: 6 };
@@ -28,18 +32,18 @@ it('consume el contrato público, descarta campos privados, inactivos, no dispon
   expect(fetchMock).toHaveBeenCalledWith('/api/v1/mentorship/profiles?offset=0&limit=6', expect.objectContaining({ method: 'GET', credentials: 'omit', cache: 'no-store', headers: expect.objectContaining({ Authorization: 'Bearer directory-test-token' }) }));
   expect(result.total).toBe(1);
   expect(result.mentors[0]).toEqual({ id: row.id, name: row.nombre, description: row.descripcion, photoUrl: null,
-    availability: 'AVAILABLE', areas: [{ id: 'software', name: 'Desarrollo de Software' }], interests: [],
+    availability: 'AVAILABLE', areas: [{ id: softwareArea, name: 'Desarrollo de software' }], interests: [],
   });
   expect(result.interestsSupported).toBe(true);
 });
 
 it('filtra áreas, pagina y mantiene el catálogo general', async () => {
   const rows = Array.from({ length: 8 }, (_, i) => ({ ...row, id: `mentor-${i}` }));
-  rows.push({ ...row, id: 'data', areas: [{ id: 'data', nombre: 'Bases de Datos' }] });
+  rows.push({ ...row, id: 'data', areas: [{ id: dataArea, nombre: 'Ciencia de Datos/IA' }] });
   fetchMock.mockResolvedValue({ ok: true, json: async () => payload(rows) });
-  const result = await getMentorDirectory({ ...query, areaIds: ['software'], offset: 6 });
+  const result = await getMentorDirectory({ ...query, areaIds: [softwareArea], offset: 6 });
   expect(result.mentors).toHaveLength(2); expect(result.total).toBe(8);
-  expect(result.catalog.map(area => area.id)).toEqual(['data', 'software']);
+  expect(result.catalog.map(area => area.id)).toEqual([dataArea, softwareArea]);
   expect(fetchMock).toHaveBeenCalledWith('/api/v1/mentorship/profiles', expect.anything());
 });
 
@@ -59,22 +63,22 @@ it('descarta protocolos de foto no seguros sin inventar imágenes', async () => 
 it('muestra cargo, empresa e intereses del contrato integrado', async () => {
   fetchMock.mockResolvedValue({ ok: true, json: async () => payload([{ ...row,
     cargo: 'Arquitecta de Software', empresa: 'Empresa de prueba',
-    intereses: [{ id: 'api', nombre: 'APIs REST', area: { id: 'software', nombre: 'Desarrollo de Software' } }],
+    intereses: [{ id: 'api', nombre: 'APIs REST', area: { id: softwareArea, nombre: 'Desarrollo de software' } }],
   }]) });
   const result = await getMentorDirectory(query);
   expect(result.mentors[0]).toMatchObject({ profession: 'Arquitecta de Software | Empresa de prueba',
-    interests: [{ id: 'api', name: 'APIs REST', areaId: 'software' }],
+    interests: [{ id: 'api', name: 'APIs REST', areaId: softwareArea }],
   });
-  expect(result.catalog.find(area => area.id === 'software')?.topics).toEqual([{ id: 'api', name: 'APIs REST' }]);
+  expect(result.catalog.find(area => area.id === softwareArea)?.topics).toEqual([{ id: 'api', name: 'APIs REST' }]);
   expect(result.interestsSupported).toBe(true);
 });
 
 it('admite el catálogo independiente de los mentores sin cargar datos de perfiles privados', async () => {
   fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: [row], total: 1, catalog: [{
-    area: { id: 'data', nombre: 'Bases de Datos' }, intereses: [{ id: 'sql', nombre: 'PostgreSQL' }],
+    area: { id: dataArea, nombre: 'Ciencia de Datos/IA' }, intereses: [{ id: 'sql', nombre: 'PostgreSQL' }],
   }] }) });
   const result = await getMentorDirectory(query);
-  expect(result.catalog[0]).toMatchObject({ id: 'data', topics: [{ id: 'sql', name: 'PostgreSQL' }] });
+  expect(result.catalog[0]).toMatchObject({ id: dataArea, topics: [{ id: 'sql', name: 'PostgreSQL' }] });
   expect(fetchMock).toHaveBeenCalledTimes(1);
 });
 
@@ -103,10 +107,25 @@ it('propaga una sesión vencida sin presentar resultados vacíos', async () => {
 
 it('combina OR dentro de cada grupo y AND entre áreas e intereses', () => {
   const mentors = [{ id: 'a', name: 'Ana', description: null, photoUrl: null, availability: null,
-    areas: [{ id: 'software', name: 'Software' }], interests: [{ id: 'api', name: 'API', areaId: 'software' }],
+    areas: [{ id: softwareArea, name: 'Software' }], interests: [{ id: 'api', name: 'API', areaId: softwareArea }],
   }];
-  expect(filterDirectory(mentors, { areaIds: ['software', 'data'], topicIds: ['api', 'sql'] })).toHaveLength(1);
-  expect(filterDirectory(mentors, { areaIds: ['data'], topicIds: ['api'] })).toHaveLength(0);
+  expect(filterDirectory(mentors, { areaIds: [softwareArea, dataArea], topicIds: ['api', 'sql'] })).toHaveLength(1);
+  expect(filterDirectory(mentors, { areaIds: [dataArea], topicIds: ['api'] })).toHaveLength(0);
+});
+
+it('muestra todas las áreas e intereses activos recibidos desde el catálogo', async () => {
+  const officialCatalog = Object.values(RADAR_AREA_IDS).map((id, index) => ({
+    area: { id, nombre: `Área ${index + 1}` },
+    intereses: [],
+  }));
+  const extraRoots = [
+    { area: { id: 'technology-root', nombre: 'Tecnología' }, intereses: [] },
+    { area: { id: 'management-root', nombre: 'Gestión' }, intereses: [] },
+  ];
+  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ data: [row], total: 1, catalog: [...extraRoots, ...officialCatalog] }) });
+  const result = await getMentorDirectory(query);
+  expect(result.catalog.map(area => area.id)).toEqual(['technology-root', 'management-root', ...Object.values(RADAR_AREA_IDS)]);
+  expect(result.catalog.find(area => area.id === 'technology-root')).toMatchObject({ name: 'Tecnología', topics: [] });
 });
 
 it('usa el total del backend y no vuelve a recortar una página con offset', async () => {

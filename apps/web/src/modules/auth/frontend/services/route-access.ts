@@ -61,6 +61,10 @@ export function decideAccess(
   if (matchesRoute(pathname, "/reports") && role !== "administrador") {
     return { allowed: false, redirectTo: homeFor(role) };
   }
+    // US-1.4: el registro de empresas es exclusivo del administrador UMSS.
+  if (matchesRoute(pathname, "/company-registry") && role !== "administrador") {
+    return { allowed: false, redirectTo: homeFor(role) };
+  }
 
   // T4.1: la encuesta y todas sus subrutas pertenecen únicamente al titulado.
   if (matchesRoute(pathname, "/surveys") && role !== "titulado") {

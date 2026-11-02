@@ -108,7 +108,7 @@ describe('HU-7.6: cancelación de eventos con PostgreSQL real', () => {
 
       const result = await repository.cancelPublished(owner.usuario_id, published.id);
 
-      expect(result.status).toBe('CANCELADO');
+      expect(result.event.status).toBe('CANCELADO');
 
       const savedPublished = await prisma.evento.findUniqueOrThrow({
         where: { id: published.id },

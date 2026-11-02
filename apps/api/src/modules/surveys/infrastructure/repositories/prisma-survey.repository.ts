@@ -1,27 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../shared/infrastructure/database/prisma.service';
+import type { SubmitSurveyInput } from '../../application/contracts/submit-survey.input';
+import type { SurveyRepositoryPort } from '../../application/ports/survey-repository.port';
 
 @Injectable()
-export class PrismaSurveyRepository {
+export class PrismaSurveyRepository implements SurveyRepositoryPort {
   constructor(private readonly prisma: PrismaService) {}
 
-  async guardarRespuesta(data: {
-    idEncuesta: string;
-    idTitulado: string;
-    condicionLaboral: string;
-    cargo?: string;
-    empresa?: string;
-    area?: string;
-    modalidad?: string;
-    salarioMensual?: string;
-    tiempoInsercion?: string;
-  }) {
-    return await this.prisma.$transaction(async (tx) => {
-      return await tx.respuestaEncuesta.create({
+  async save(data: SubmitSurveyInput) {
+    return this.prisma.respuestaEncuesta.create({
         data: {
           idEncuesta: data.idEncuesta,
           idTitulado: data.idTitulado,
-          condicionLaboral: data.condicionLaboral,
+          condicionLaboral: String(data.condicionLaboral),
           cargo: data.cargo,
           empresa: data.empresa,
           area: data.area,
@@ -30,6 +21,5 @@ export class PrismaSurveyRepository {
           tiempoInsercion: data.tiempoInsercion,
         },
       });
-    });
   }
 }

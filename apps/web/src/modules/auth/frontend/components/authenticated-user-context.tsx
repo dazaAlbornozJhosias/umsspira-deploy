@@ -15,7 +15,7 @@ type SessionState =
   | { status: 'unauthenticated' }
   | { status: 'error' };
 
-const ADMIN_EVENT_PATH = /^\/events(?:\/create|\/drafts(?:\/[^/]+)?|\/[^/]+(?:\/participants)?)?\/?$/;
+const ADMIN_EVENT_PATH = /^\/events(?:\/create|\/drafts(?:\/[^/]+)?|\/[^/]+(?:\/(?:participants|edit))?)?\/?$/;
 
 function requiresAdminEventIdentity(pathname: string): boolean {
   return ADMIN_EVENT_PATH.test(pathname) && !pathname.startsWith('/events/catalog');

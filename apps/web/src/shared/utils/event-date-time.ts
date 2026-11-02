@@ -29,6 +29,11 @@ const eventDateTimeFormatter = new Intl.DateTimeFormat('es-BO', {
   timeZone: EVENT_TIME_ZONE,
 });
 
+const eventInputPartsFormatter = new Intl.DateTimeFormat('en-CA', {
+  year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  hourCycle: 'h23', timeZone: EVENT_TIME_ZONE,
+});
+
 const eventMonthFormatter = new Intl.DateTimeFormat('es-BO', {
   month: 'long',
   year: 'numeric',
@@ -36,13 +41,25 @@ const eventMonthFormatter = new Intl.DateTimeFormat('es-BO', {
 });
 
 export function toEventIsoDateTime(date: string, time: string): string {
-  const localDateTime = new Date(`${date}T${time}:00`);
-
-  if (Number.isNaN(localDateTime.getTime())) {
+  const [year, month, day] = date.split('-').map(Number);
+  const [hour, minute] = time.split(':').map(Number);
+  const wallClockUtc = Date.UTC(year, month - 1, day, hour, minute);
+  if (!Number.isFinite(wallClockUtc)) {
     return `${date}T${time}:00`;
   }
-
-  return localDateTime.toISOString();
+  let instant = wallClockUtc;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const parts = eventInputPartsFormatter.formatToParts(new Date(instant));
+    const zonedWallClockUtc = Date.UTC(
+      Number(getDatePart(parts, 'year')), Number(getDatePart(parts, 'month')) - 1,
+      Number(getDatePart(parts, 'day')), Number(getDatePart(parts, 'hour')),
+      Number(getDatePart(parts, 'minute')),
+    );
+    const adjustedInstant = wallClockUtc - (zonedWallClockUtc - instant);
+    if (adjustedInstant === instant) break;
+    instant = adjustedInstant;
+  }
+  return new Date(instant).toISOString();
 }
 
 export function isEventInputDateValid(value: string): boolean {
@@ -76,15 +93,9 @@ export function toDateTimeInputParts(value: string) {
     };
   }
 
-  const date = [
-    parsedDate.getFullYear(),
-    String(parsedDate.getMonth() + 1).padStart(2, '0'),
-    String(parsedDate.getDate()).padStart(2, '0'),
-  ].join('-');
-  const time = [
-    String(parsedDate.getHours()).padStart(2, '0'),
-    String(parsedDate.getMinutes()).padStart(2, '0'),
-  ].join(':');
+  const parts = eventInputPartsFormatter.formatToParts(parsedDate);
+  const date = [getDatePart(parts, 'year'), getDatePart(parts, 'month'), getDatePart(parts, 'day')].join('-');
+  const time = `${getDatePart(parts, 'hour')}:${getDatePart(parts, 'minute')}`;
 
   return { date, time };
 }

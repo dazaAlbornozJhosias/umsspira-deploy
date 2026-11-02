@@ -2,7 +2,12 @@
 
 import React from "react";
 import mockData from "../mocks/affinity-vector-mock.json";
+import { AFFINITY_AREA_LABELS } from "@umsspira/shared-types/src/affinity";
 import { formatPercentage } from "@/shared/utils/percentage";
+import { InfluentialKeywords } from './affinity-influential-keywords';
+import { calculateVariation } from "@/shared/utils/affinity-variation";
+import { VariationIndicator } from "./variation-indicator";
+import type { AffinityKeywordContribution } from "@umsspira/shared-types";
 
 // 1. Tipado estricto de la evidencia tal como viene en el JSON
 export interface EvidenceItem {
@@ -14,7 +19,10 @@ export interface EvidenceItem {
 export interface AreaData {
   area: string;
   affinity: number;
+  previousAffinity?: number | null;
   evidence?: EvidenceItem[];
+  topKeywords?: AffinityKeywordContribution[];
+
 }
 
 interface RadarInspectionProps {
@@ -23,15 +31,8 @@ interface RadarInspectionProps {
   areas?: AreaData[];
 }
 
-// 2. Diccionario estricto de ids a los nombres largos del mockup de HU-3
-export const AREA_NAMES_MAP: Record<string, string> = {
-  "software-development": "Desarrollo de Software",
-  "cloud-devops": "Cloud, DevOps & Infraestructura",
-  "data-ai": "Ciencia de Datos & IA",
-  "quality-assurance": "Aseguramiento de Calidad (QA)",
-  "cybersecurity-networks": "Ciberseguridad & Redes",
-  "it-management": "Gestión de TI & Gobernanza",
-};
+// 2. Diccionario de ids a los nombres oficiales de shared-types (CA-HU7-22)
+export const AREA_NAMES_MAP: Record<string, string> = AFFINITY_AREA_LABELS;
 
 // Colores del mockup por área, asociados al id técnico (no a la posición en la lista)
 const AREA_COLORS_MAP: Record<string, { bar: string; text: string }> = {
@@ -68,6 +69,12 @@ export default function RadarInspection({
   const certifications = selectedArea?.evidence?.filter((e) => e.type === 'certification') || [];
   const projects = selectedArea?.evidence?.filter((e) => e.type === 'project') || [];
 
+  // Si alguna fila tiene variación, se reserva la columna del chip para que
+  // todos los porcentajes queden alineados aunque el chip cambie de ancho.
+  const hasAnyVariation = areas.some(
+    (item) => calculateVariation(item.affinity, item.previousAffinity) !== null,
+  );
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6 p-6 bg-white rounded-xl shadow-md border border-gray-100">
       {/* Panel izquierdo: Resumen de las áreas */}
@@ -102,12 +109,26 @@ export default function RadarInspection({
                   isSelected ? "bg-blue-50 border-blue-200" : "border border-transparent hover:bg-gray-50"
                 }`}
               >
-                <div className="flex justify-between items-center mb-1">
-                  <span className="flex items-center gap-2 font-medium text-gray-700">
+                <div className="flex items-center justify-between gap-3 mb-1">
+                  <span className="flex min-w-0 items-center gap-2 font-medium text-gray-700">
                     <span className={`w-2 h-2 rounded-full shrink-0 ${colors.bar}`} />
-                    {displayName}
+                    <span className="min-w-0">{displayName}</span>
                   </span>
-                  <span className={`text-sm font-semibold ${percentageColor}`}>{formatPercentage(item.affinity)}</span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className={`w-12 text-right text-sm font-semibold tabular-nums ${percentageColor}`}>
+                      {formatPercentage(item.affinity)}
+                    </span>
+                    {hasAnyVariation && (
+                      <span className="flex w-[5.5rem] justify-end">
+                        {/* Misma pieza que el radar para conservar un solo estilo de variación */}
+                        <VariationIndicator
+                          current={item.affinity}
+                          previous={item.previousAffinity ?? null}
+                          areaLabel={displayName}
+                        />
+                      </span>
+                    )}
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                   <div
@@ -172,6 +193,7 @@ export default function RadarInspection({
                 <p className="text-sm text-gray-500 italic">Esta área no tiene respaldos asociados.</p>
               )}
             </div>
+            <InfluentialKeywords keywords={selectedArea?.topKeywords}/>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 py-12">

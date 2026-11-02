@@ -15,6 +15,10 @@ const TEST_USER_ID = '78869fe3-9744-41f6-a29e-fcf16e43c222';
 const mockPush = jest.fn();
 const mockCreateEvent = jest.fn();
 
+function toBoliviaIso(date: string, time: string) {
+  return new Date(`${date}T${time}:00-04:00`).toISOString();
+}
+
 beforeAll(() => {
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
@@ -307,8 +311,8 @@ describe('EventForm HU1', () => {
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({
-          startDate: new Date('2026-10-12T09:00:00').toISOString(),
-          endDate: new Date('2026-10-12T17:00:00').toISOString(),
+          startDate: toBoliviaIso('2026-10-12', '09:00'),
+          endDate: toBoliviaIso('2026-10-12', '17:00'),
           status: EVENT_STATUS.BORRADOR,
         }),
         image,
@@ -377,8 +381,8 @@ describe('EventForm HU1', () => {
       await waitFor(() => {
         expect(onSubmit).toHaveBeenCalledWith(
           expect.objectContaining({
-            startDate: new Date(`${startDate}T${startTime}:00`).toISOString(),
-            endDate: new Date(`${endDate}T${endTime}:00`).toISOString(),
+            startDate: toBoliviaIso(startDate, startTime),
+            endDate: toBoliviaIso(endDate, endTime),
           }),
           null,
         );
@@ -392,8 +396,8 @@ describe('EventForm HU1', () => {
       id: 'draft-validation',
       title: 'Evento editable',
       description: null,
-      startDate: new Date('2026-11-01T09:00:00').toISOString(),
-      endDate: new Date('2026-11-01T18:00:00').toISOString(),
+      startDate: toBoliviaIso('2026-11-01', '09:00'),
+      endDate: toBoliviaIso('2026-11-01', '18:00'),
       maxCapacity: 1,
       location: null,
       status: EVENT_STATUS.BORRADOR,
@@ -435,8 +439,8 @@ describe('EventForm HU1', () => {
   });
 
   it('editar y guardar dos veces no acumula desplazamiento horario', async () => {
-    const startDate = new Date('2026-11-01T09:00:00').toISOString();
-    const endDate = new Date('2026-11-03T18:00:00').toISOString();
+    const startDate = toBoliviaIso('2026-11-01', '09:00');
+    const endDate = toBoliviaIso('2026-11-03', '18:00');
     const initialEvent: EventItem = {
       id: 'draft-roundtrip',
       title: 'Evento multiday',

@@ -5,6 +5,10 @@ import {
   DashboardIndicators,
   getDashboardIndicators,
 } from "../services/reports.service";
+import {
+  isSessionExpiredError,
+  notifySessionExpired,
+} from "@/modules/auth/frontend/services/session-expired";
 
 export function useDashboardIndicators() {
   const [data, setData] = useState<DashboardIndicators | null>(null);
@@ -19,7 +23,11 @@ export function useDashboardIndicators() {
 
         const indicators = await getDashboardIndicators();
         setData(indicators);
-      } catch {
+      } catch (reason) {
+        if (isSessionExpiredError(reason)) {
+          notifySessionExpired();
+          return;
+        }
         setError("No se pudieron cargar los indicadores");
       } finally {
         setLoading(false);

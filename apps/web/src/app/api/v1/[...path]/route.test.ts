@@ -86,6 +86,29 @@ it("reenvía PATCH con su cuerpo y conserva la respuesta sin contenido", async (
   expect(fetchMock.mock.calls[0][1].method).toBe("PATCH");
 });
 
+it("reenvía el POST autenticado de encuestas y conserva HTTP 409 (T3.4 CA-04)", async () => {
+  fetchMock.mockResolvedValue(new Response(JSON.stringify({
+    error: { code: "SURVEY_DUPLICATE", message: "Ya registrada" },
+  }), { status: 409, headers: { "Content-Type": "application/json" } }));
+  const request = new NextRequest("http://frontend/api/v1/surveys", {
+    method: "POST",
+    body: JSON.stringify({ condicion_laboral: false }),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer token-titulado",
+    },
+  });
+  const result = await POST(request, { params: { path: ["surveys"] } });
+  expect(result.status).toBe(409);
+  expect(fetchMock.mock.calls[0][0]).toBe("http://backend:3000/api/v1/surveys");
+  expect(fetchMock.mock.calls[0][1].headers.get("authorization")).toBe(
+    "Bearer token-titulado",
+  );
+  expect(new TextDecoder().decode(fetchMock.mock.calls[0][1].body)).toBe(
+    JSON.stringify({ condicion_laboral: false }),
+  );
+});
+
 it("permite el módulo nlp sin devolver 404", async () => {
   fetchMock.mockResolvedValue(new Response(JSON.stringify({ data: { keywords: [] } }), { status: 200 }));
   const request = new NextRequest("http://frontend/api/v1/nlp/extract", {

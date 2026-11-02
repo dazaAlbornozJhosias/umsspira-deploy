@@ -8,6 +8,7 @@
 export interface ProfileTextSources {
   tituladoId: string;
   texts: string[]; // Segmentos de texto recopilados: formación, experiencia, certificación y descripción
+  hasLaborHistory: boolean; // true si el titulado registró al menos una experiencia laboral
 }
 
 // Token de inyección de dependencias para NestJS

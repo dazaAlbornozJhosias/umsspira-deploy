@@ -31,6 +31,19 @@ class EventRegistrationDatabase {
   }
 
   readonly prisma = {
+    inscripcionEvento: {
+      findFirst: jest.fn(async ({ where }: { where: { id: string; id_usuario: string } }) => {
+        const registration = this.registrations.find(
+          (row) => row.id === where.id && row.id_usuario === where.id_usuario,
+        );
+        return registration
+          ? {
+              estado: registration.estado,
+              evento: this.event ? { fecha_fin: this.event.fecha_fin } : null,
+            }
+          : null;
+      }),
+    },
     $transaction: async <Result>(
       callback: (transaction: Record<string, unknown>) => Promise<Result>,
     ): Promise<Result> => {
@@ -229,4 +242,109 @@ describe('PrismaEventsRepository.register', () => {
     await expect(repository(database).register(userId, eventId)).rejects.toThrow('PERSISTENCE_FAILED');
     expect(database.registrations).toHaveLength(0);
   });
+});
+
+describe('PrismaEventsRepository.assertCancellable', () => {
+  const userId = randomUUID();
+  const registrationId = randomUUID();
+  const now = new Date('2026-11-01T12:00:00Z');
+
+  function databaseWith(
+    status = 'CONFIRMADA',
+    event: EventRegistrationDatabase['event'] = availableEvent(),
+  ) {
+    const database = new EventRegistrationDatabase(event, [
+      {
+        id: registrationId,
+        id_evento: randomUUID(),
+        id_usuario: userId,
+        fecha_inscripcion: new Date('2026-10-01T12:00:00Z'),
+        estado: status,
+      },
+    ]);
+    jest.spyOn(database.prisma, '$transaction');
+    return database;
+  }
+
+  it('consulta por inscripción y usuario, selecciona estado y fecha y solo valida', async () => {
+    const database = databaseWith('CONFIRMADA', {
+      ...availableEvent(),
+      fecha_fin: new Date(now.getTime() + 1),
+    });
+    const before = structuredClone({
+      registrations: database.registrations,
+      event: database.event,
+    });
+    await expect(
+      repository(database).assertCancellable(userId, registrationId, now),
+    ).resolves.toBeUndefined();
+    expect(database.prisma.inscripcionEvento.findFirst).toHaveBeenCalledTimes(1);
+    expect(database.prisma.inscripcionEvento.findFirst).toHaveBeenCalledWith({
+      where: { id: registrationId, id_usuario: userId },
+      select: { estado: true, evento: { select: { fecha_fin: true } } },
+    });
+    expect(database.prisma.$transaction).not.toHaveBeenCalled();
+    expect({ registrations: database.registrations, event: database.event }).toEqual(before);
+  });
+
+  it.each(['inexistente', 'ajena'])(
+    'oculta si la inscripción es %s sin modificar registros',
+    async (kind) => {
+      const database = databaseWith();
+      const before = structuredClone({
+        registrations: database.registrations,
+        event: database.event,
+      });
+      await expect(
+        repository(database).assertCancellable(
+          kind === 'ajena' ? randomUUID() : userId,
+          kind === 'inexistente' ? randomUUID() : registrationId,
+          now,
+        ),
+      ).rejects.toMatchObject({
+        reason: 'missing',
+        code: 'EVENT_REGISTRATION_NOT_FOUND',
+        message: 'No se encontró la inscripción solicitada',
+      });
+      expect(database.prisma.$transaction).not.toHaveBeenCalled();
+      expect({ registrations: database.registrations, event: database.event }).toEqual(before);
+    },
+  );
+
+  it.each([
+    ['cancelada', 'CANCELADA', availableEvent(), 'EVENT_REGISTRATION_NOT_CONFIRMED'],
+    [
+      'finalizada',
+      'CONFIRMADA',
+      { ...availableEvent(), fecha_fin: new Date(now.getTime() - 1) },
+      'EVENT_REGISTRATION_NOT_CANCELLABLE',
+    ],
+    [
+      'fin exacto',
+      'CONFIRMADA',
+      { ...availableEvent(), fecha_fin: now },
+      'EVENT_REGISTRATION_NOT_CANCELLABLE',
+    ],
+    [
+      'sin fecha',
+      'CONFIRMADA',
+      { ...availableEvent(), fecha_fin: null },
+      'EVENT_REGISTRATION_NOT_CANCELLABLE',
+    ],
+    ['sin evento', 'CONFIRMADA', null, 'EVENT_REGISTRATION_NOT_CANCELLABLE'],
+  ] as const)(
+    'rechaza inscripción %s sin modificar registros',
+    async (_label, status, event, code) => {
+      const database = databaseWith(status, event);
+      const before = structuredClone({
+        registrations: database.registrations,
+        event: database.event,
+      });
+      await expect(
+        repository(database).assertCancellable(userId, registrationId, now),
+      ).rejects.toMatchObject({ reason: 'conflict', code });
+      expect(database.prisma.$transaction).not.toHaveBeenCalled();
+      expect({ registrations: database.registrations, event: database.event }).toEqual(before);
+    },
+  );
 });

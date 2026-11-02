@@ -5,8 +5,8 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { Compass, Inbox, LayoutGrid, Send, UserRoundCog } from 'lucide-react';
 
 const items = [
-  { href: '/', label: 'Inicio', icon: LayoutGrid },
-  { href: '/mentorship', label: 'Explorar mentores', icon: Compass },
+  { href: '/mentorship', label: 'Inicio', icon: LayoutGrid },
+  { href: '/mentorship/directory', label: 'Explorar mentores', icon: Compass },
   { href: '/mentorship/requests/received?view=sent', label: 'Mis solicitudes', icon: Send },
   { href: '/mentorship/profile', label: 'Mi perfil de mentor', icon: UserRoundCog },
   { href: '/mentorship/requests/received', label: 'Solicitudes recibidas', icon: Inbox },
@@ -27,9 +27,9 @@ export function MentorshipSubnav() {
           : item.label === 'Mi perfil de mentor'
             ? pathname.startsWith('/mentorship/profile')
           : item.label === 'Inicio'
-            ? pathname === '/'
+            ? pathname === '/mentorship'
             : item.label === 'Explorar mentores'
-              ? pathname === '/mentorship'
+              ? pathname === '/mentorship/directory' || pathname.startsWith('/mentorship/mentors/')
               : false;
 
       const Icon = item.icon;

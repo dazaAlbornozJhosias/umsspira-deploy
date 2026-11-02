@@ -1,0 +1,42 @@
+meta {
+  name: HU-11 T-11.2 - Doble dictamen de aprobada
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/applications/{{hu112ApprovedId}}/review
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "decision": "APROBADA"
+  }
+}
+
+tests {
+  const body = res.getBody();
+  test("T-11.2: no permite un segundo dictamen", function () {
+    expect(res.getStatus()).to.equal(409);
+  });
+  test("T-11.2: devuelve el código de conflicto", function () {
+    expect(body?.error?.code).to.equal("APPLICATION_ALREADY_REVIEWED");
+  });
+  test("T-11.2: no devuelve una nueva resolución", function () {
+    expect(body?.data?.id).to.be.undefined;
+  });
+}
+
+docs {
+  Ejecutar DESPUÉS del caso 001, reutilizando hu112ApprovedId. Esperado HTTP 409. Solo prueba reintento secuencial, no concurrencia.
+}

@@ -1,0 +1,22 @@
+meta {
+  name: Reprocesar correos fallidos (lote)
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{baseUrl}}/api/v1/mail-events/retry-failed
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  Devuelve a la cola los correos marcados como fallidos de las carreras a tu cargo (hasta 200 por llamada).
+  Respuesta: requeued (reprogramados) y expired (ya no tienen contenido: vencieron a las 24 horas).
+
+  Permiso: solicitudes:review.
+}

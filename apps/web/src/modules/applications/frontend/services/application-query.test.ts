@@ -24,6 +24,9 @@ describe('estado de paginación en la URL', () => {
       search: 'ana',
       career: 'Sistemas',
       status: 'PENDIENTE',
+      period: '',
+      from: '',
+      to: '',
     });
   });
 
@@ -75,5 +78,30 @@ describe('estado de paginación en la URL', () => {
     expect(totalPagesFor(142, 10)).toBe(15);
     expect(totalPagesFor(0, 15)).toBe(1);
     expect(clampPage({ ...state, page: 99 }, 142).page).toBe(15);
+  });
+
+  it('serializa filtros de periodo personalizado y semestre con año', () => {
+    const custom = {
+      ...EMPTY_URL_STATE,
+      period: 'custom' as const,
+      from: '2026-10-01',
+      to: '2026-10-24',
+    };
+    expect(parseApplicationsUrl(toApplicationsParams(custom))).toEqual(custom);
+
+    const semester = { ...EMPTY_URL_STATE, period: 'semester2' as const, year: 2026 };
+    expect(parseApplicationsUrl(toApplicationsParams(semester))).toEqual(semester);
+  });
+
+  it('descarta parámetros de periodo incompletos o inválidos', () => {
+    expect(parseApplicationsUrl(new URLSearchParams('period=custom'))).toEqual(EMPTY_URL_STATE);
+    expect(
+      parseApplicationsUrl(
+        new URLSearchParams('period=custom&from=2026-11-02&to=2026-10-01'),
+      ),
+    ).toEqual(EMPTY_URL_STATE);
+    expect(
+      parseApplicationsUrl(new URLSearchParams('period=last15&year=2026&from=2026-10-01')),
+    ).toEqual({ ...EMPTY_URL_STATE, period: 'last15' });
   });
 });

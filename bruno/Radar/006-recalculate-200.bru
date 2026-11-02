@@ -1,0 +1,105 @@
+meta {
+  name: POST recalculate - 200 recalcula vector de afinidad
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/radar/recalculate
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {}
+}
+
+script:post-response {
+  if (res.status === 200 && res.body && res.body.data) {
+    bru.setVar("radarCalculatedAt", res.body.data.calculatedAt);
+    bru.setVar(
+      "radarPreviousAffinityJson",
+      JSON.stringify(
+        res.body.data.areas.map(function(a) {
+          return [a.area, a.previousAffinity];
+        })
+      )
+    );
+    bru.setVar(
+      "radarTopKeywordsJson",
+      JSON.stringify(
+        res.body.data.areas.map(function(a) {
+          return [a.area, a.topKeywords];
+        })
+      )
+    );
+  }
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Recálculo exitoso limpia hasPendingChanges y expone recalculated booleano", function() {
+    const d = res.body.data;
+    expect(d.graduateId).to.be.a("string").that.is.not.empty;
+    expect(Number.isNaN(Date.parse(d.calculatedAt))).to.equal(false);
+    expect(d.status).to.be.oneOf(["ok", "empty"]);
+    expect(d.hasPendingChanges).to.equal(false);
+    expect(d.recalculated).to.be.a("boolean");
+    expect(d.areas).to.be.an("array").with.lengthOf(6);
+
+    const ordenEsperado = [
+      "software-development",
+      "cloud-devops",
+      "data-ai",
+      "quality-assurance",
+      "cybersecurity-networks",
+      "it-management"
+    ];
+    expect(d.areas.map(function(a) { return a.area; })).to.deep.equal(ordenEsperado);
+  });
+
+  test("Top keywords normalizados (máx. 5, aporte > 0, orden descendente) y previousAffinity válida", function() {
+    res.body.data.areas.forEach(function(a) {
+      expect(a.affinity).to.be.within(0, 100);
+      if (a.previousAffinity !== null) {
+        expect(a.previousAffinity).to.be.a("number");
+        expect(a.previousAffinity).to.be.within(0, 100);
+      }
+      if (a.weighting !== null) {
+        expect(a.weighting).to.be.a("number");
+        expect(a.weighting).to.be.within(1, 5);
+      }
+      expect(a.topKeywords).to.be.an("array");
+      expect(a.topKeywords.length).to.be.at.most(5);
+
+      const seenKeywords = [];
+      a.topKeywords.forEach(function(k, index) {
+        expect(k.keyword).to.be.a("string").that.is.not.empty;
+        expect(seenKeywords).to.not.include(k.keyword);
+        seenKeywords.push(k.keyword);
+
+        expect(k.weight).to.be.a("number").and.to.be.within(1, 5);
+        expect(k.frequency).to.be.a("number").and.to.be.at.least(1);
+        expect(k.points).to.be.a("number").and.to.be.above(0);
+        expect(k.points).to.equal(k.weight * Math.min(k.frequency, 3));
+        expect(k.percentage).to.be.a("number").and.to.be.above(0).and.to.be.at.most(100);
+
+        if (index > 0) {
+          const prev = a.topKeywords[index - 1];
+          expect(prev.points).to.be.at.least(k.points);
+          expect(prev.percentage).to.be.at.least(k.percentage);
+          if (prev.points === k.points) {
+            expect(prev.keyword <= k.keyword).to.equal(true);
+          }
+        }
+      });
+    });
+  });
+}

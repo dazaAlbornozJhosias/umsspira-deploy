@@ -26,6 +26,9 @@ describe('PrismaEventsRepository.cancelPublished', () => {
       findFirst: jest.fn(),
       update: jest.fn(),
     },
+    inscripcionEvento: {
+      count: jest.fn().mockResolvedValue(3),
+    },
     paseQr: {
       updateMany: jest.fn().mockResolvedValue({ count: 2 }),
     },
@@ -46,13 +49,19 @@ describe('PrismaEventsRepository.cancelPublished', () => {
       ...publishedRow,
       estado: 'CANCELADO',
     });
+    tx.inscripcionEvento.count.mockResolvedValue(3);
     tx.paseQr.updateMany.mockResolvedValue({ count: 2 });
   });
 
   it('cancela el evento e invalida los pases QR vigentes', async () => {
     const result = await repository.cancelPublished(ownerId, eventId);
 
-    expect(result.status).toBe('CANCELADO');
+    expect(result.event.status).toBe('CANCELADO');
+    expect(result.registrationsCount).toBe(3);
+    expect(result.invalidatedPassesCount).toBe(2);
+    expect(tx.inscripcionEvento.count).toHaveBeenCalledWith({
+      where: { id_evento: eventId },
+    });
 
     expect(tx.evento.update).toHaveBeenCalledWith(
       expect.objectContaining({

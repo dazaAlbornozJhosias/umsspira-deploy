@@ -1,0 +1,61 @@
+meta {
+  name: POST radar/recalculate - 200 segunda llamada sin cambios
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/radar/recalculate
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("Status 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("recalculated es false (mismo hash, sin calculo nuevo)", function() {
+    expect(res.body.data.recalculated).to.equal(false);
+  });
+
+  test("calculatedAt igual al del caso 006 (sin fila nueva)", function() {
+    const anterior = bru.getVar("radarCalculatedAt");
+    expect(anterior, "Ejecuta antes el caso 006").to.be.a("string").that.is.not.empty;
+    expect(res.body.data.calculatedAt).to.equal(anterior);
+  });
+
+  test("Conserva previousAffinity y topKeywords del calculo vigente (CA-HU8-11)", function() {
+    const previaAnterior = bru.getVar("radarPreviousAffinityJson");
+    const topAnterior = bru.getVar("radarTopKeywordsJson");
+    expect(previaAnterior, "Ejecuta antes el caso 006").to.be.a("string").that.is.not.empty;
+    expect(topAnterior, "Ejecuta antes el caso 006").to.be.a("string").that.is.not.empty;
+
+    const previaActual = res.body.data.areas.map(function(a) {
+      return [a.area, a.previousAffinity];
+    });
+    const topActual = res.body.data.areas.map(function(a) {
+      return [a.area, a.topKeywords];
+    });
+
+    expect(JSON.stringify(previaActual)).to.equal(previaAnterior);
+    expect(JSON.stringify(topActual)).to.equal(topAnterior);
+  });
+
+  test("Tiempo de respuesta menor o igual a 3 000 ms", function() {
+    expect(res.responseTime).to.be.at.most(3000);
+  });
+}
+
+docs {
+  Ejecuta antes el caso 006 con el mismo accessToken y sin editar el perfil entre ambos.
+  Mismo hash de entrada -> idempotente: recalculated = false y el mismo calculatedAt (no se crea fila nueva).
+  La API no expone el hash ni el conteo de filas; la verificacion directa en BD se hace en T3.9.
+
+  Permiso: radar:self:write.
+  CA-HU7-13: idempotencia del recalculo.
+}

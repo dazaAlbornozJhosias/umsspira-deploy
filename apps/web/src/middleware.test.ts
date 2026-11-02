@@ -99,12 +99,12 @@ describe("HU-EP09-04 / T4.1: middleware de reportería", () => {
     );
   });
 
-  it("CA-05: HTTP 401 invalida las cuatro cookies y envía al login", async () => {
+  it("CA-06: HTTP 401 invalida las cuatro cookies y envía al login avisando la expiración", async () => {
     respond(401);
     const result = observed(await middleware(request("/reports", "token-caducado")));
     expect(result.status).toBe(307);
     expect(result.destination).toBe(
-      "http://localhost:3001/login?reportes=requiere-sesion",
+      "http://localhost:3001/login?reportes=sesion-expirada",
     );
     for (const name of [
       "umsspira_token", "umsspira_refresh", "umsspira_csrf", "umsspira_role",

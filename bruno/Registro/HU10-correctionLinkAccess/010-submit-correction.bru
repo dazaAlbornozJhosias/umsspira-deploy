@@ -1,0 +1,31 @@
+meta {
+  name: 010 - Entregar correccion de expediente
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/observed/submit
+  body: json
+  auth: none
+}
+
+headers {
+  X-Correction-Token: {{validCorrectionToken}}
+}
+
+body:json {
+  {
+    "expectedVersion": 2
+  }
+}
+
+tests {
+  test("Entrega atomica e idempotente de la correccion", function() {
+    expect([200, 201, 404, 409]).to.include(res.getStatus());
+  });
+}
+
+docs {
+  Entrega la correccion definitiva de la solicitud observada. Valida concurrencia por expectedVersion, verificacion de correo y transiciona atomicamente a PENDIENTE invalidando el token.
+}

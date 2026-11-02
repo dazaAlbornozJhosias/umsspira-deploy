@@ -65,3 +65,23 @@ export interface UpdateObservedDataResponse {
   requiresEmailVerification: boolean;
   message: string;
 }
+
+export interface ReplaceObservedDocumentResponse {
+  id: string;
+  documentoId: string;
+  nombre: string;
+  tipoDocumento: string;
+  sizeBytes: number;
+  message: string;
+}
+
+export interface SubmitCorrectionDto {
+  expectedVersion: number;
+}
+
+export interface SubmitCorrectionResponse {
+  id: string;
+  estado: string;
+  version: number;
+  message: string;
+}

@@ -6,5 +6,5 @@ export interface RegistrationSecurity {
   token(): string;
   code(): string;
   hash(purpose: string, value: string): string;
-  seal(value: Notification): string;
+  seal(value: Notification & { html?: string }): string;
 }

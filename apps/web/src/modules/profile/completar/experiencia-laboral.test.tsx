@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ApiError } from '@/shared/services/api-client';
 
 import { FormularioExperiencia } from './experiencia-laboral';
@@ -42,19 +42,24 @@ describe('FormularioExperiencia · rango de fechas (BUG-HU2-003)', () => {
     }
   });
 
-  it('agrega si la fecha fin es igual o posterior a la fecha inicio', () => {
-    const onAgregar = jest.fn();
+  // 👇 Aquí lo hacemos async y usamos waitFor
+  it('agrega si la fecha fin es igual o posterior a la fecha inicio', async () => {
+    const onAgregar = jest.fn().mockResolvedValue(undefined);
     const { container } = render(<FormularioExperiencia experiencias={[]} onAgregar={onAgregar} />);
     llenarFormulario(container, '2023-08-01', '2023-08-01');
 
     agregar();
 
-    expect(onAgregar).toHaveBeenCalledWith({
-      empresa: 'Jalasoft',
-      cargo: 'Dev',
-      fechaInicio: '2023-08-01',
-      fechaFin: '2023-08-01',
+    // Esperamos a que la función asíncrona termine y cambie el estado
+    await waitFor(() => {
+      expect(onAgregar).toHaveBeenCalledWith({
+        empresa: 'Jalasoft',
+        cargo: 'Dev',
+        fechaInicio: '2023-08-01',
+        fechaFin: '2023-08-01',
+      });
     });
+    
     expect(screen.queryByText(MENSAJE)).not.toBeInTheDocument();
   });
 
@@ -69,17 +74,22 @@ describe('FormularioExperiencia · rango de fechas (BUG-HU2-003)', () => {
     expect(fin).toHaveAttribute('aria-invalid', 'false');
   });
 
-  it('no valida el rango al marcar "Actualmente trabajo aquí"', () => {
-    const onAgregar = jest.fn();
+  // 👇 Aquí también lo hacemos async y usamos waitFor
+  it('no valida el rango al marcar "Actualmente trabajo aquí"', async () => {
+    const onAgregar = jest.fn().mockResolvedValue(undefined);
     const { container } = render(<FormularioExperiencia experiencias={[]} onAgregar={onAgregar} />);
     llenarFormulario(container, '2023-08-01', '2022-03-01');
-    agregar();
+    agregar(); // Error síncrono, no hay problema
 
     fireEvent.click(screen.getByLabelText('Actualmente trabajo aquí'));
     expect(screen.queryByText(MENSAJE)).not.toBeInTheDocument();
 
     agregar();
-    expect(onAgregar).toHaveBeenCalledWith({ empresa: 'Jalasoft', cargo: 'Dev', fechaInicio: '2023-08-01', fechaFin: undefined });
+    
+    // Esperamos a que la acción de guardado termine correctamente
+    await waitFor(() => {
+      expect(onAgregar).toHaveBeenCalledWith({ empresa: 'Jalasoft', cargo: 'Dev', fechaInicio: '2023-08-01', fechaFin: undefined });
+    });
   });
 });
 

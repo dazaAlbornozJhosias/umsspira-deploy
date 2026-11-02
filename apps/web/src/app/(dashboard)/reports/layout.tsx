@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AdminReportsNavigation } from "@/modules/auth/frontend/components/admin-reports-navigation";
+import { SessionExpiredDialog } from "@/modules/auth/frontend/components/session-expired-dialog";
 
 /**
  * HU-004: capa de navegación institucional, independiente del contenido
@@ -18,6 +19,7 @@ export default function ReportsLayout({ children }: { children: ReactNode }) {
         <AdminReportsNavigation />
       </div>
       {children}
+      <SessionExpiredDialog />
     </div>
   );
 }

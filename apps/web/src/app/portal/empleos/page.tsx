@@ -1,6 +1,10 @@
-﻿export default function EmpleosPage() {
-  return <div className="p-6">Bolsa de trabajo (próximamente)</div>;
+﻿import { EmpleosView } from '../institucional/institucional-views';
+
+export default function EmpleosPage() {
+  return (
+    <div className="bg-[#EEE9DF]">
+      <EmpleosView />
+    </div>
+  );
 }
-
-
 

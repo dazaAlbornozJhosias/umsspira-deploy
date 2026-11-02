@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '../../../../generated/prisma/client';
 import { PrismaService } from '../../../../shared/infrastructure/database/prisma.service';
 import { BusinessRuleError } from '../../../../shared/errors/business-rule-error';
@@ -13,17 +13,19 @@ import {
   validateEventDates,
 } from '../../domain/policies/event.policy';
 import type { InactiveEvent, RetiredEvent } from '../../domain/entities/event';
-import { toEvent } from '../translators/event.translator';
+import { eventInclude, toEvent } from '../translators/event.translator';
+import { assertRegistrationCancellable } from '../../domain/policies/event-registration.policy';
 import type {
   EventParticipants,
   ParticipantPassStatus,
 } from '../../domain/entities/event-participants';
 import { buildOccupation } from '../../domain/policies/event-occupation.policy';
-
-const eventInclude = { usuario: { select: { nombre: true } } };
+import type { MyEventRegistration } from '../../domain/entities/my-event-registration';
 
 @Injectable()
 export class PrismaEventsRepository implements EventsRepository {
+  private readonly logger = new Logger(PrismaEventsRepository.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async catalog() {
@@ -116,6 +118,38 @@ export class PrismaEventsRepository implements EventsRepository {
     );
   }
 
+  async updatePublished(ownerId: string, id: string, input: EventInput) {
+    validateEventDates(new Date(input.startDate), new Date(input.endDate));
+    return this.prisma.$transaction(async (tx) => {
+      const current = await this.lockOwned(tx, ownerId, id);
+      if (current.estado !== 'PUBLICADO') {
+        throw new BusinessRuleError('conflict', 'EVENT_NOT_PUBLISHED', 'El evento ya no está publicado');
+      }
+      const confirmedCount = await tx.inscripcionEvento.count({
+        where: { id_evento: id, estado: 'CONFIRMADA' },
+      });
+      if (input.maxCapacity < confirmedCount) {
+        throw new BusinessRuleError(
+          'invalid',
+          'CAPACITY_BELOW_CONFIRMED_REGISTRATIONS',
+          `El cupo no puede ser menor a ${confirmedCount} inscripciones confirmadas`,
+        );
+      }
+      await this.checkCover(tx, ownerId, input.coverId, id);
+      const updated = await tx.evento.update({
+        where: { id, id_usuario: ownerId, estado: 'PUBLICADO', archivado: false },
+        data: this.eventData(input),
+        include: eventInclude,
+      });
+      if (input.coverId !== undefined && current.id_portada && current.id_portada !== input.coverId) {
+        await tx.portadaEvento.deleteMany({
+          where: { id: current.id_portada, id_usuario: ownerId, evento: { is: null } },
+        });
+      }
+      return toEvent(updated);
+    }, { timeout: 15000 });
+  }
+
   async publishDraft(ownerId: string, id: string) {
     return this.prisma.$transaction(
       async (tx) => {
@@ -141,6 +175,46 @@ export class PrismaEventsRepository implements EventsRepository {
       { timeout: 15000 },
     );
   }
+  async mine(userId: string): Promise<MyEventRegistration[]> {
+    const rows = await this.prisma.inscripcionEvento.findMany({
+      where: { id_usuario: userId },
+      include: { evento: true, pase_qr: { select: { id: true } } },
+      orderBy: [{ evento: { fecha_inicio: 'asc' } }, { id: 'asc' }],
+    });
+    return rows.flatMap((row) => {
+      const event = row.evento;
+      const eventStatus = event?.estado?.toUpperCase();
+      const status = row.estado?.toUpperCase();
+      if (
+        !event ||
+        !event.titulo ||
+        !event.fecha_inicio ||
+        !event.fecha_fin ||
+        !row.fecha_inscripcion ||
+        !['BORRADOR', 'PUBLICADO', 'CANCELADO'].includes(eventStatus ?? '') ||
+        !['CONFIRMADA', 'CANCELADA'].includes(status ?? '')
+      ) {
+        return [];
+      }
+      return [
+        {
+          id: row.id,
+          status: status as MyEventRegistration['status'],
+          registeredAt: row.fecha_inscripcion,
+          hasPass: row.pase_qr !== null,
+          event: {
+            id: event.id,
+            title: event.titulo,
+            startDate: event.fecha_inicio,
+            endDate: event.fecha_fin,
+            location: event.ubicacion,
+            status: eventStatus as MyEventRegistration['event']['status'],
+          },
+        },
+      ];
+    });
+  }
+
 
   async register(userId: string, eventId: string) {
     try {
@@ -223,6 +297,65 @@ export class PrismaEventsRepository implements EventsRepository {
       }
       throw error;
     }
+  }
+
+  async cancelRegistration(userId: string, registrationId: string, now: Date): Promise<void> {
+    await this.prisma.$transaction(
+      async (tx) => {
+        // El generador QR utiliza el mismo bloqueo antes de comprobar la inscripción.
+        await tx.$queryRaw`SELECT id FROM inscripcion_evento WHERE id = ${registrationId}::uuid FOR UPDATE`;
+        await this.assertCancellableWith(tx, userId, registrationId, now);
+        const result = await tx.inscripcionEvento.updateMany({
+          where: {
+            id: registrationId,
+            id_usuario: userId,
+            estado: 'CONFIRMADA',
+            evento: { is: { fecha_fin: { gt: now } } },
+          },
+          data: { estado: 'CANCELADA' },
+        });
+        // Revalidar al escribir impide dos cancelaciones aunque ambas lecturas sean válidas.
+        if (result.count !== 1) {
+          throw new BusinessRuleError(
+            'conflict',
+            'EVENT_REGISTRATION_NOT_CANCELLABLE',
+            'La inscripción ya no está disponible para cancelación',
+          );
+        }
+        await tx.paseQr.updateMany({
+          where: { id_inscripcion: registrationId },
+          data: { estado: 'INVALIDADO' },
+        });
+      },
+      { timeout: 15000 },
+    );
+  }
+
+  async assertCancellable(userId: string, registrationId: string, now: Date): Promise<void> {
+    await this.assertCancellableWith(this.prisma, userId, registrationId, now);
+  }
+
+  private async assertCancellableWith(
+    client: Prisma.TransactionClient | PrismaService,
+    userId: string,
+    registrationId: string,
+    now: Date,
+  ): Promise<void> {
+    const registration = await client.inscripcionEvento.findFirst({
+      where: { id: registrationId, id_usuario: userId },
+      select: { estado: true, evento: { select: { fecha_fin: true } } },
+    });
+    if (!registration) {
+      throw new BusinessRuleError(
+        'missing',
+        'EVENT_REGISTRATION_NOT_FOUND',
+        'No se encontró la inscripción solicitada',
+      );
+    }
+    assertRegistrationCancellable(
+      { status: registration.estado, endDate: registration.evento?.fecha_fin ?? null },
+      now,
+    );
   }
 
   async participants(ownerId: string, eventId: string): Promise<EventParticipants> {
@@ -328,6 +461,10 @@ export class PrismaEventsRepository implements EventsRepository {
           );
         }
 
+        const registrationsCount = await tx.inscripcionEvento.count({
+          where: { id_evento: id },
+        });
+
         const cancelled = await tx.evento.update({
           where: {
             id,
@@ -339,7 +476,7 @@ export class PrismaEventsRepository implements EventsRepository {
           include: eventInclude,
         });
 
-        await tx.paseQr.updateMany({
+        const invalidatedPasses = await tx.paseQr.updateMany({
           where: {
             estado: 'VIGENTE',
             inscripcion: { is: { id_evento: id } },
@@ -347,23 +484,32 @@ export class PrismaEventsRepository implements EventsRepository {
           data: { estado: 'INVALIDADO' },
         });
 
-        return toEvent(cancelled);
+        return {
+          event: toEvent(cancelled),
+          registrationsCount,
+          invalidatedPassesCount: invalidatedPasses.count,
+        };
       },
       { timeout: 15000 },
     );
   }
 
   async saveCover(ownerId: string, file: StoredFile): Promise<void> {
-    await this.prisma.portadaEvento.create({
-      data: {
-        id: file.id,
-        id_usuario: ownerId,
-        nombre: file.name,
-        mime: file.mime,
-        contenido: new Uint8Array(file.bytes),
-        size_bytes: file.size,
-      },
-    });
+    try {
+      await this.prisma.portadaEvento.create({
+        data: {
+          id: file.id,
+          id_usuario: ownerId,
+          nombre: file.name,
+          mime: file.mime,
+          contenido: new Uint8Array(file.bytes),
+          size_bytes: file.size,
+        },
+      });
+    } catch (error) {
+      this.logger.error(`No se pudo persistir la portada: ${safeCoverPersistenceError(error)}`);
+      throw error;
+    }
   }
 
   async removeCover(ownerId: string, id: string): Promise<void> {
@@ -493,4 +639,20 @@ export class PrismaEventsRepository implements EventsRepository {
       'No se encontró el evento solicitado',
     );
   }
+}
+function safeCoverPersistenceError(error: unknown): string {
+  let current = error;
+  const messages: string[] = [];
+  for (let depth = 0; depth < 4 && current instanceof Error; depth += 1) {
+    const code = (current as Error & { code?: unknown }).code;
+    const safeCode = typeof code === 'string' && /^[A-Z0-9]{5}$/.test(code) ? ` [${code}]` : '';
+    const safeMessage = current.message
+      .replace(/(?:params?|parameters?|values?)\s*:[\s\S]*$/i, '[detalles omitidos]')
+      .replace(/postgres(?:ql)?:\/\/\S+/gi, '[conexión omitida]')
+      .replace(/\b[0-9a-f]{8}-[0-9a-f-]{27,}\b/gi, '[id omitido]')
+      .slice(0, 180);
+    messages.push(`${current.name}${safeCode}${safeMessage ? `: ${safeMessage}` : ''}`);
+    current = (current as Error & { cause?: unknown }).cause;
+  }
+  return messages.join(' <- ') || (error instanceof Error ? error.name : 'Error desconocido');
 }

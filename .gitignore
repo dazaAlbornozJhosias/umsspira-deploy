@@ -23,6 +23,7 @@ AGENTS.md
 !apps/api-antigua/.env.localstack.example
 .context/
 .vscode/
+tmp/
 
 apps/api/.agents/
 apps/api/.claude/

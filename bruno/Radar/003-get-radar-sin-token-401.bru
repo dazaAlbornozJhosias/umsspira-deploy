@@ -1,0 +1,33 @@
+meta {
+  name: GET radar - 401 sin token
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/radar
+  body: none
+  auth: none
+}
+
+tests {
+  test("Status 401", function() {
+    expect(res.status).to.equal(401);
+  });
+
+  test("Esquema de error { error: { code, message } }", function() {
+    expect(res.body).to.have.property("error").that.is.an("object");
+    expect(res.body.error.code).to.be.a("string").that.is.not.empty;
+    expect(res.body.error.message).to.be.a("string").that.is.not.empty;
+  });
+
+  test("Codigo UNAUTHENTICATED", function() {
+    expect(res.body.error.code).to.equal("UNAUTHENTICATED");
+  });
+}
+
+docs {
+  Sin Authorization debe responder 401.
+
+  CA-HU7-24: acceso sin autenticar.
+}

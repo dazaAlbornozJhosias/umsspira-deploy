@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "UMSSPIRA - Encuestas",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "surveyId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Enviar encuesta válida",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status 201\", () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.test(\"respuesta con id\", () => {",
+              "  pm.expect(body.data).to.have.property(\"id\");",
+              "  pm.expect(body.data.id).to.be.a(\"string\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/surveys",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "surveys"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_encuesta\": \"{{surveyId}}\",\n  \"condicion_laboral\": true,\n  \"cargo\": \"Analista\",\n  \"empresa\": \"Empresa de ejemplo\",\n  \"area\": \"Sistemas\",\n  \"modalidad\": \"Remoto\",\n  \"salario_mensual\": \"3500\",\n  \"tiempo_insercion\": \"3\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Repetir encuesta duplicada",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status 409\", () => pm.response.to.have.status(409));",
+              "const body = pm.response.json();",
+              "pm.test(\"mensaje de conflicto\", () => {",
+              "  pm.expect(body.error.code).to.eql(\"CONFLICT\");",
+              "  pm.expect(body.error.message).to.eql(\"La encuesta ya fue enviada\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/surveys",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "surveys"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_encuesta\": \"{{surveyId}}\",\n  \"condicion_laboral\": true,\n  \"cargo\": \"Analista\",\n  \"empresa\": \"Empresa de ejemplo\",\n  \"area\": \"Sistemas\",\n  \"modalidad\": \"Remoto\",\n  \"salario_mensual\": \"3500\",\n  \"tiempo_insercion\": \"3\"\n}"
+        }
+      }
+    }
+  ]
+}

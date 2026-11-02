@@ -8,6 +8,7 @@
       {
         "area": "software-development",
         "affinity": 88,
+        "previousAffinity": 83,
         "keywords": ["React", "TypeScript", "Node.js", "JavaScript", "Backend"],
         "evidence": [
           {
@@ -25,6 +26,7 @@
       {
         "area": "cloud-devops",
         "affinity": 62,
+        "previousAffinity": 64,
         "keywords": ["AWS", "Docker", "CI/CD", "Git"],
         "evidence": [
           {
@@ -37,6 +39,7 @@
       {
         "area": "data-ai",
         "affinity": 74,
+        "previousAffinity": 71,
         "keywords": ["Python", "Pandas", "Machine Learning", "SQL", "Scikit-learn"],
         "evidence": [
           {
@@ -54,6 +57,7 @@
       {
         "area": "quality-assurance",
         "affinity": 45,
+        "previousAffinity": 38,
         "keywords": ["ISTQB", "Cypress", "Jest", "Pruebas E2E"],
         "evidence": [
           {
@@ -66,12 +70,14 @@
       {
         "area": "cybersecurity-networks",
         "affinity": 0,
+        "previousAffinity": 28,
         "keywords": [],
         "evidence": []
       },
       {
         "area": "it-management",
         "affinity": 53,
+        "previousAffinity": 45,
         "keywords": ["Scrum", "Agile", "PSM I", "Gestión de proyectos"],
         "evidence": [
           {
@@ -91,6 +97,7 @@
       {
         "area": "software-development",
         "affinity": 79,
+        "previousAffinity": 88,
         "keywords": ["React", "TypeScript", "Node.js", "JavaScript"],
         "evidence": [
           {
@@ -103,6 +110,7 @@
       {
         "area": "cloud-devops",
         "affinity": 71,
+        "previousAffinity": 62,
         "keywords": ["AWS", "Docker", "CI/CD", "Git"],
         "evidence": [
           {
@@ -120,6 +128,7 @@
       {
         "area": "data-ai",
         "affinity": 58,
+        "previousAffinity": 74,
         "keywords": ["Python", "Pandas", "Machine Learning", "SQL"],
         "evidence": [
           {
@@ -132,6 +141,7 @@
       {
         "area": "quality-assurance",
         "affinity": 52,
+        "previousAffinity": 45,
         "keywords": ["ISTQB", "Cypress", "Jest"],
         "evidence": [
           {
@@ -149,12 +159,14 @@
       {
         "area": "cybersecurity-networks",
         "affinity": 0,
+        "previousAffinity": 0,
         "keywords": [],
         "evidence": []
       },
       {
         "area": "it-management",
         "affinity": 44,
+        "previousAffinity": 53,
         "keywords": ["Scrum", "Agile", "PSM I"],
         "evidence": [
           {
@@ -174,6 +186,7 @@
       {
         "area": "software-development",
         "affinity": 65,
+        "previousAffinity": 79,
         "keywords": ["React", "TypeScript", "Node.js"],
         "evidence": [
           {
@@ -186,6 +199,7 @@
       {
         "area": "cloud-devops",
         "affinity": 57,
+        "previousAffinity": 71,
         "keywords": ["AWS", "Docker", "CI/CD"],
         "evidence": [
           {
@@ -198,6 +212,7 @@
       {
         "area": "data-ai",
         "affinity": 83,
+        "previousAffinity": 58,
         "keywords": ["Python", "Pandas", "Machine Learning", "SQL", "Scikit-learn"],
         "evidence": [
           {
@@ -215,6 +230,7 @@
       {
         "area": "quality-assurance",
         "affinity": 40,
+        "previousAffinity": 52,
         "keywords": ["ISTQB", "Cypress", "Jest"],
         "evidence": [
           {
@@ -227,12 +243,14 @@
       {
         "area": "cybersecurity-networks",
         "affinity": 0,
+        "previousAffinity": 0,
         "keywords": [],
         "evidence": []
       },
       {
         "area": "it-management",
         "affinity": 61,
+        "previousAffinity": 44,
         "keywords": ["Scrum", "Agile", "PSM I", "Gestión de proyectos"],
         "evidence": [
           {

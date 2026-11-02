@@ -1,0 +1,27 @@
+meta {
+  name: Reenviar código de activación
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/activate/resend
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "applicationId": "{{applicationId}}"
+  }
+}
+
+docs {
+  Genera un código nuevo y anula el anterior. Esperas: 30 segundos entre reenvíos, 15 minutos tras el 5.º y 2 horas tras el 10.º.
+  Si está bloqueado responde 429 ACTIVATION_RESEND_BLOCKED; consulta el tiempo restante en Estado de activación.
+  Si el código anterior no llegó, el correo nuevo aparece en Mailpit (:8025).
+}

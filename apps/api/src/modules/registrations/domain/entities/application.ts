@@ -1,6 +1,11 @@
 import type { ApplicationStatus } from './registration';
 
 export interface ApplicationDetail {
+  reviewSummary?: {
+    observations: number; maxObservations: number; rejections: number; maxRejections: number;
+    latestObservation: string | null; canObserve: boolean;
+  };
+  currentReviewer?: { name: string | null; email: string };
   id: string;
   code: string;
   fullName: string;
@@ -19,6 +24,12 @@ export interface ApplicationDetail {
   documentName: string;
   documentPath: string | null;
   documentFormat: string;
+  reviewAuthor?: {
+  id: string;
+  name: string | null;
+  email: string;
+  reviewedAt: string;
+  } | null;
 }
 
 export interface ApplicationPage {
@@ -46,6 +57,8 @@ export interface ReviewResult {
   category: string | null;
   note: string | null;
   reviewedBy: string;
+  reviewedByName: string | null;
+  reviewedByEmail: string;
   reviewedAt: string;
   notificationStatus: 'EN_COLA';
 }

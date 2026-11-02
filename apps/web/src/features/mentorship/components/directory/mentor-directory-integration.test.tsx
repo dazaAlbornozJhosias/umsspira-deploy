@@ -1,11 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { MentorDirectoryResponse } from '@umsspira/shared-types';
+import { RADAR_AREA_IDS, type MentorDirectoryResponse } from '@umsspira/shared-types';
 import { setAccessToken, clearAccessToken } from '@/shared/services/auth-session';
 import { MentorDirectoryPage } from './mentor-directory-page';
 
 const catalog: MentorDirectoryResponse['catalog'] = [
-  { area: { id: 'software', nombre: 'Software' }, intereses: [{ id: 'api', nombre: 'APIs REST' }] },
-  { area: { id: 'data', nombre: 'Datos' }, intereses: [{ id: 'sql', nombre: 'PostgreSQL' }] },
+  { area: { id: RADAR_AREA_IDS['software-development'], nombre: 'Desarrollo de software' }, intereses: [{ id: 'api', nombre: 'APIs REST' }] },
+  { area: { id: RADAR_AREA_IDS['data-ai'], nombre: 'Ciencia de Datos/IA' }, intereses: [{ id: 'sql', nombre: 'PostgreSQL' }] },
 ];
 const rows: MentorDirectoryResponse['data'] = Array.from({ length: 8 }, (_, index) => {
   const group = catalog[index < 6 ? 0 : 1];
@@ -44,8 +44,8 @@ it('conecta la pantalla con el cliente HTTP: páginas del servidor, filtros glob
   expect(screen.getAllByRole('article')).toHaveLength(8);
   expect(fetchMock).toHaveBeenLastCalledWith('/api/v1/mentorship/profiles?offset=6&limit=6', expect.anything());
 
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Datos' }));
-  fireEvent.click(screen.getByRole('checkbox', { name: 'PostgreSQL' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Ciencia de Datos/IA' }));
+  fireEvent.click(screen.getByRole('button', { name: 'PostgreSQL' }));
   fireEvent.click(screen.getByRole('button', { name: 'Aplicar filtros' }));
   await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('2 mentores encontrados'));
   expect(screen.getAllByRole('article')).toHaveLength(2);

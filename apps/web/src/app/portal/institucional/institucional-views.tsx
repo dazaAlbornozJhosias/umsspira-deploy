@@ -19,8 +19,6 @@ type IconType = React.ComponentType<{ className?: string }>;
 
 /* ---------- Piezas reutilizables ---------- */
 
-// Imagen desde /public/images/institucional/. Si el archivo aún no existe,
-// muestra un panel ilustrado para que la página no se vea rota.
 function TabImage({
   src, alt, Icon, className = '',
 }: { src: string; alt: string; Icon: IconType; className?: string }) {
@@ -77,7 +75,6 @@ function LoginCta({ title, text }: { title: string; text: string }) {
   );
 }
 
-// Encabezado de sección
 function SectionHead({
   eyebrow, title, text, center = false,
 }: { eyebrow: string; title: string; text?: string; center?: boolean }) {
@@ -90,7 +87,6 @@ function SectionHead({
   );
 }
 
-// Pasos numerados
 function Steps({ items, cols = 'md:grid-cols-3' }: { items: { t: string; d: string }[]; cols?: string }) {
   return (
     <div className={`grid grid-cols-1 ${cols} gap-6`}>
@@ -107,7 +103,6 @@ function Steps({ items, cols = 'md:grid-cols-3' }: { items: { t: string; d: stri
   );
 }
 
-// Tarjetas con ícono
 function IconCards({
   items, cols = 'md:grid-cols-3',
 }: { items: { Icon: IconType; t: string; d: string }[]; cols?: string }) {
@@ -126,7 +121,6 @@ function IconCards({
   );
 }
 
-// Preguntas frecuentes (desplegables)
 function Faq({ items }: { items: { q: string; a: string }[] }) {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
   return (
@@ -152,7 +146,6 @@ function Faq({ items }: { items: { q: string; a: string }[] }) {
   );
 }
 
-// Contenedor estándar de sección
 function Block({ children, bg = '' }: { children: React.ReactNode; bg?: string }) {
   return (
     <section className={`py-14 px-4 sm:px-6 lg:px-8 ${bg || 'bg-[#EEE9DF]'}`}>
@@ -161,7 +154,6 @@ function Block({ children, bg = '' }: { children: React.ReactNode; bg?: string }
   );
 }
 
-// Tarjetas con foto arriba
 function PhotoCards({
   items, cols = 'md:grid-cols-3',
 }: { items: { Icon: IconType; t: string; d: string; img: string }[]; cols?: string }) {
@@ -180,7 +172,6 @@ function PhotoCards({
   );
 }
 
-// Sección con imagen a un lado y contenido al otro
 function SplitBlock({
   img, alt, Icon, reverse = false, bg = '', children,
 }: { img: string; alt: string; Icon: IconType; reverse?: boolean; bg?: string; children: React.ReactNode }) {
@@ -287,7 +278,6 @@ function HomeView() {
         </div>
       </section>
 
-      {/* Por qué unirte + Cómo empezar */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12">
         <div className="space-y-6">
           <div>
@@ -348,7 +338,6 @@ function HomeView() {
         </div>
       </section>
 
-      {/* NUEVO: lo que ofrece la red (con fotos) */}
       <Block bg="bg-[#E7E1D4]">
         <SectionHead
           center
@@ -367,7 +356,6 @@ function HomeView() {
         />
       </Block>
 
-      {/* NUEVO: testimonios de ejemplo */}
       <Block>
         <SectionHead
           center
@@ -396,7 +384,6 @@ function HomeView() {
         </div>
       </Block>
 
-      {/* NUEVO: preguntas frecuentes (con foto al lado) */}
       <SplitBlock bg="bg-[#E7E1D4]" img="/images/institucional/inicio-egresados.jpg" alt="Titulados UMSS" Icon={GraduationCap}>
         <SectionHead eyebrow="PREGUNTAS FRECUENTES" title="Antes de empezar" />
         <Faq
@@ -438,7 +425,7 @@ function HomeView() {
 
 /* ---------- COMUNIDAD ---------- */
 
-function ComunidadView() {
+export function ComunidadView() {
   return (
     <>
       <TabHero
@@ -476,7 +463,6 @@ function ComunidadView() {
         </div>
       </section>
 
-      {/* NUEVO: temas (con fotos) */}
       <Block bg="bg-[#E7E1D4]">
         <SectionHead
           eyebrow="DE QUÉ SE CONVERSA"
@@ -494,7 +480,6 @@ function ComunidadView() {
         />
       </Block>
 
-      {/* NUEVO: mentoría paso a paso (con foto al lado) */}
       <SplitBlock img="/images/institucional/mentoria.jpg" alt="Mentoría entre titulados" Icon={Users} reverse>
         <SectionHead
           eyebrow="MENTORÍA"
@@ -511,7 +496,6 @@ function ComunidadView() {
         />
       </SplitBlock>
 
-      {/* NUEVO: normas (con fotos) */}
       <Block bg="bg-[#E7E1D4]">
         <SectionHead
           eyebrow="CONVIVENCIA"
@@ -527,7 +511,6 @@ function ComunidadView() {
         />
       </Block>
 
-      {/* NUEVO: FAQ (con foto al lado) */}
       <SplitBlock img="/images/institucional/comunidad-faq.jpg" alt="Preguntas sobre la comunidad" Icon={MessageSquare}>
         <SectionHead eyebrow="PREGUNTAS FRECUENTES" title="Sobre la comunidad" />
         <Faq
@@ -605,7 +588,6 @@ function DirectorioView() {
         </div>
       </section>
 
-      {/* NUEVO: cómo funciona (con foto al lado) */}
       <SplitBlock bg="bg-[#E7E1D4]" img="/images/institucional/directorio-busqueda.jpg" alt="Búsqueda en el directorio" Icon={Search}>
         <SectionHead eyebrow="CÓMO FUNCIONA" title="Encuentra a la persona indicada en 3 pasos" />
         <Steps
@@ -618,7 +600,6 @@ function DirectorioView() {
         />
       </SplitBlock>
 
-      {/* NUEVO: lo que muestra un perfil (con fotos) */}
       <Block>
         <SectionHead
           eyebrow="PERFIL PROFESIONAL"
@@ -636,7 +617,6 @@ function DirectorioView() {
         />
       </Block>
 
-      {/* NUEVO: privacidad (con foto al lado) */}
       <SplitBlock bg="bg-[#E7E1D4]" img="/images/institucional/directorio-privacidad.jpg" alt="Privacidad de los perfiles" Icon={ShieldCheck} reverse>
         <SectionHead
           eyebrow="TU PRIVACIDAD"
@@ -653,7 +633,6 @@ function DirectorioView() {
         />
       </SplitBlock>
 
-      {/* NUEVO: FAQ (con foto al lado) */}
       <SplitBlock img="/images/institucional/directorio-faq.jpg" alt="Preguntas sobre el directorio" Icon={Network}>
         <SectionHead eyebrow="PREGUNTAS FRECUENTES" title="Sobre el directorio" />
         <Faq
@@ -728,7 +707,6 @@ function CarrerasView() {
         ))}
       </section>
 
-      {/* NUEVO: comparación (con foto arriba) */}
       <Block bg="bg-[#E7E1D4]">
         <SectionHead
           eyebrow="COMPARA"
@@ -763,7 +741,6 @@ function CarrerasView() {
         </div>
       </Block>
 
-      {/* NUEVO: habilidades (con fotos) */}
       <Block>
         <SectionHead eyebrow="HABILIDADES" title="Lo que desarrollarás en ambas carreras" />
         <PhotoCards
@@ -777,7 +754,6 @@ function CarrerasView() {
         />
       </Block>
 
-      {/* NUEVO: ruta profesional (banner ancho arriba) */}
       <Block bg="bg-[#E7E1D4]">
         <SectionHead eyebrow="TU CAMINO" title="De estudiante a profesional" text="Así te acompaña la red en cada etapa." />
         <TabImage src="/images/institucional/carreras-camino.jpg" alt="De estudiante a profesional" Icon={Rocket} className="w-full h-56 rounded-2xl shadow-md mb-8" />
@@ -831,7 +807,6 @@ function EventosView() {
         </div>
       </section>
 
-      {/* NUEVO: tipos de eventos (con fotos) */}
       <Block bg="bg-[#E7E1D4]">
         <SectionHead eyebrow="TIPOS DE EVENTOS" title="Hay un espacio para cada interés" />
         <PhotoCards
@@ -845,7 +820,6 @@ function EventosView() {
         />
       </Block>
 
-      {/* NUEVO: cómo inscribirte (con foto al lado) */}
       <SplitBlock img="/images/institucional/eventos-inscripcion.jpg" alt="Inscripción a eventos" Icon={Calendar} reverse>
         <SectionHead eyebrow="INSCRIPCIÓN" title="Cómo inscribirte a un evento" />
         <Steps
@@ -858,7 +832,6 @@ function EventosView() {
         />
       </SplitBlock>
 
-      {/* NUEVO: FAQ (con foto al lado) */}
       <SplitBlock bg="bg-[#E7E1D4]" img="/images/institucional/eventos-faq.jpg" alt="Preguntas sobre los eventos" Icon={Mic}>
         <SectionHead eyebrow="PREGUNTAS FRECUENTES" title="Sobre los eventos" />
         <Faq
@@ -937,7 +910,6 @@ function NosotrosView() {
         </div>
       </section>
 
-      {/* NUEVO: lema (con fotos) */}
       <Block>
         <SectionHead
           center
@@ -954,7 +926,6 @@ function NosotrosView() {
         />
       </Block>
 
-      {/* NUEVO: cómo ser parte (con foto al lado) */}
       <SplitBlock img="/images/institucional/nosotros-unirse.jpg" alt="Únete a la red de titulados" Icon={UserCheck}>
         <SectionHead
           eyebrow="SÉ PARTE"
@@ -971,7 +942,6 @@ function NosotrosView() {
         />
       </SplitBlock>
 
-      {/* NUEVO: FAQ (con foto al lado) */}
       <SplitBlock bg="bg-[#E7E1D4]" img="/images/institucional/nosotros-faq.jpg" alt="Preguntas sobre UMSSPIRA" Icon={Building2} reverse>
         <SectionHead eyebrow="PREGUNTAS FRECUENTES" title="Sobre UMSSPIRA" />
         <Faq
@@ -993,7 +963,7 @@ function NosotrosView() {
 
 /* ---------- BOLSA DE TRABAJO ---------- */
 
-function EmpleosView() {
+export function EmpleosView() {
   return (
     <>
       <TabHero
@@ -1098,7 +1068,7 @@ function EmpleosView() {
 
 /* ---------- MENTORÍAS ---------- */
 
-function MentoriasView() {
+export function MentoriasView() {
   return (
     <>
       <TabHero
@@ -1225,3 +1195,7 @@ export default function InstitucionalViews() {
     </Suspense>
   );
 }
+
+
+
+

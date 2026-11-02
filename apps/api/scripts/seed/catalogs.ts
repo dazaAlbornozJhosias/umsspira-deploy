@@ -55,7 +55,7 @@ export async function seedAreas(prisma: PrismaClient): Promise<void> {
         update: {},
       });
     }
-  });
+  }, { maxWait: 10000, timeout: 120000 });
 }
 
 export async function seedCatalogs(prisma: PrismaClient): Promise<void> {

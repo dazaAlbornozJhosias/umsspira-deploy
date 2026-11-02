@@ -2,7 +2,7 @@ import type {
   Graduate,
   GraduateStatus,
 } from '../data/graduates.mock';
-import { authenticatedFetch } from '@/shared/services/auth-session';
+import { authenticatedFetch, SessionError } from '@/shared/services/auth-session';
 
 export interface DashboardIndicators {
   totalGraduates: number;
@@ -43,11 +43,17 @@ interface GraduatesResponse {
 
 const API_BASE_URL = '/api/v1';
 
+// HU-004 CA-06: un 401 indica sesión caducada, no un fallo de conexión.
+function assertSession(response: Response): void {
+  if (response.status === 401) throw new SessionError(401, 'Su sesión ha expirado');
+}
+
 export async function getDashboardIndicators(): Promise<DashboardIndicators> {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/reports/metrics`,
   );
 
+  assertSession(response);
   if (!response.ok) {
     throw new Error('No se pudieron cargar los indicadores del dashboard');
   }
@@ -60,6 +66,7 @@ export async function getGraduates(): Promise<Graduate[]> {
     `${API_BASE_URL}/reports/graduates?page=1&limit=1000`,
   );
 
+  assertSession(response);
   if (!response.ok) {
     throw new Error('No se pudo cargar el padrón de titulados');
   }
@@ -69,6 +76,7 @@ export async function getGraduates(): Promise<Graduate[]> {
   const records = [...payload.data.items];
   for (let page = 2; page <= payload.data.totalPages; page++) {
     const next = await authenticatedFetch(`${API_BASE_URL}/reports/graduates?page=${page}&limit=1000`);
+    assertSession(next);
     if (!next.ok) throw new Error('No se pudo cargar el padrón de titulados');
     const nextPage = await next.json() as GraduatesResponse;
     records.push(...nextPage.data.items);

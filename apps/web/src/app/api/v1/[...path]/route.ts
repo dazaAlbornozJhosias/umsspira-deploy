@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 export const dynamic = 'force-dynamic';
 const MODULES = new Set([
   'auth', 'user', 'companies', 'job-postings', 'registrations', 'applications',
-  'email-verification', 'documents', 'perfil', 'events', 'mentorship', 'reports',
+  'email-verification', 'documents', 'perfil', 'events', 'mentorship', 'reports', 'surveys',
   'nlp', 'radar', 'chat',
 ]);
 
@@ -17,7 +17,7 @@ async function proxy(request: NextRequest, context: { params: { path: string[] }
   }
   const base = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
   const headers = new Headers();
-  for (const name of ['authorization', 'cookie', 'content-type', 'x-csrf-token', 'user-agent', 'origin']) {
+  for (const name of ['authorization', 'cookie', 'content-type', 'x-csrf-token', 'x-correction-token', 'user-agent', 'origin']) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Code, Database, Cloud, ShieldAlert, Lock, Target } from 'lucide-react';
-import { AFFINITY_AREAS, type AffinityArea } from '@umsspira/shared-types';
+import { AFFINITY_AREAS, AFFINITY_AREA_LABELS, type AffinityArea } from '@umsspira/shared-types/src/affinity';
 import { getAffinityConfig, type AffinityAxisConfig } from '../services/affinity-service';
 
 export const PROFILE_EDIT_ROUTE = '/ruta-epic2';
@@ -15,15 +15,6 @@ const AREA_ICONS: Record<AffinityArea, React.ElementType> = {
   'quality-assurance': Target,
   'cybersecurity-networks': Lock,
   'it-management': ShieldAlert,
-};
-
-const AREA_LABELS: Record<AffinityArea, string> = {
-  'software-development': 'Desarrollo de Software',
-  'cloud-devops': 'Cloud/DevOps e Infraestructura',
-  'data-ai': 'Ciencia de Datos/IA',
-  'quality-assurance': 'Aseguramiento de Calidad (QA)',
-  'cybersecurity-networks': 'Ciberseguridad y Redes',
-  'it-management': 'Gestión de TI',
 };
 
 /**
@@ -73,14 +64,15 @@ export const AffinityCustomizer: React.FC = () => {
                 <div className="p-2 rounded-lg bg-white border border-oatmeal text-blue-fantastic">
                   <Icon className="w-4 h-4" />
                 </div>
-                <span className="text-sm font-semibold text-abyssal-blue">{AREA_LABELS[area]}</span>
+                <span className="text-sm font-semibold text-abyssal-blue">{AFFINITY_AREA_LABELS[area]}</span>
               </div>
 
-              {weight !== undefined && (
-                <span className="text-[13px] font-medium text-blue-fantastic">
-                  Ponderación: {weight}
-                </span>
-              )}
+              <span
+                data-testid={`ponderacion-${area}`}
+                className="text-[13px] font-medium text-blue-fantastic"
+              >
+                Ponderación: {weight ?? '—'}
+              </span>
             </div>
           );
         })}

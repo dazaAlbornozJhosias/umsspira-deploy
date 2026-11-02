@@ -39,11 +39,18 @@ export class ListUserPassesService {
         registrationId: pase.id_inscripcion,
         eventId: pase.inscripcion?.id_evento ?? '',
         userId: usuarioTitularId,
-        qrToken: pase.token_hash, // El frontend usará este token para dibujar la imagen QR
+        qrToken: pase.token_hash,
         status: effectiveStatus.status,
         isValidForAccess: effectiveStatus.isValid,
         issuedAt: pase.fecha_generacion.toISOString(),
         expiresAt: pase.fecha_expiracion ? pase.fecha_expiracion.toISOString() : null,
+        // Agregamos esto para que el frontend dibuje la tarjeta completa:
+        eventDetails: {
+          name: pase.inscripcion?.evento?.titulo ?? 'Evento UMSSPIRA',
+          userName: 'Titulado', 
+          dateTime: pase.inscripcion?.evento?.fecha_inicio?.toISOString() ?? '',
+          location: pase.inscripcion?.evento?.ubicacion ?? 'Ubicación por definir'
+        }
       };
     });
   }

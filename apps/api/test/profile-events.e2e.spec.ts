@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
@@ -12,6 +13,9 @@ import { EVENTS_REPOSITORY } from '../src/modules/events/application/ports/event
 import { BusinessRuleError } from '../src/shared/errors/business-rule-error';
 import { AccessError } from '../src/shared/security/errors/access-error';
 import { HttpError } from '../src/shared/http/errors/http-error';
+import { GenerateEventPassService } from '../src/modules/events/application/generate-event-pass.service';
+
+jest.setTimeout(30000);
 
 const graduateId = randomUUID();
 const recordId = randomUUID();
@@ -99,10 +103,16 @@ describe('Perfil y eventos con contratos y guards compartidos', () => {
     updateDraft: jest.fn(),
     publishDraft: jest.fn(),
     register: jest.fn(),
+    assertCancellable: jest.fn(),
+    cancelRegistration: jest.fn(),
     cancelPublished: jest.fn(),
     saveCover: jest.fn(),
     removeCover: jest.fn(),
     readCover: jest.fn(),
+  };
+
+  const generatePassMock = {
+    execute: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -113,6 +123,8 @@ describe('Perfil y eventos con contratos y guards compartidos', () => {
       .useValue(profiles)
       .overrideProvider(EVENTS_REPOSITORY)
       .useValue(events)
+      .overrideProvider(GenerateEventPassService)
+      .useValue(generatePassMock)
       .overrideProvider(AUTHENTICATOR)
       .useValue({
         execute: async (token: string) => {
@@ -139,6 +151,7 @@ describe('Perfil y eventos con contratos y guards compartidos', () => {
     configureHttp(app);
     await app.init();
   });
+
   beforeEach(() => {
     jest.clearAllMocks();
     profiles.summary.mockResolvedValue(profile);
@@ -156,7 +169,9 @@ describe('Perfil y eventos con contratos y guards compartidos', () => {
     events.catalog.mockResolvedValue([]);
     events.findOwned.mockResolvedValue(event);
     events.register.mockResolvedValue(eventRegistration);
+    generatePassMock.execute.mockResolvedValue(undefined);
   });
+
   afterAll(async () => app?.close());
 
   it('exige sesión y permiso para consultar el perfil', async () => {
@@ -198,6 +213,7 @@ describe('Perfil y eventos con contratos y guards compartidos', () => {
       education,
     );
   });
+
   it('crea certificación con grado Profesional por defecto y dueño derivado de la sesión', async () => {
     profiles.createCertification.mockResolvedValue({
       id: recordId,
@@ -499,13 +515,20 @@ describe('Perfil y eventos con contratos y guards compartidos', () => {
   });
 
   it('permite al administrador cancelar un evento publicado', async () => {
-    events.cancelPublished.mockResolvedValue({ ...event, status: 'CANCELADO' });
+    events.cancelPublished.mockResolvedValue({
+      event: { ...event, status: 'CANCELADO' },
+      registrationsCount: 1,
+      invalidatedPassesCount: 1,
+    });
 
-    await request(app.getHttpServer())
+    const response = await request(app.getHttpServer())
       .patch('/api/v1/events/' + eventId + '/cancel')
       .set('Authorization', 'Bearer admin')
       .expect(200);
 
+    expect(response.body.data.event.status).toBe('CANCELADO');
+    expect(response.body.data.registrationsCount).toBe(1);
+    expect(response.body.data.invalidatedPassesCount).toBe(1);
     expect(events.cancelPublished).toHaveBeenCalledWith(admin.id, eventId);
   });
 

@@ -24,6 +24,8 @@
 - `POST /api/v1/registrations/observed/request-link` — solicitar nuevo enlace de corrección por C.I.
 - `GET /api/v1/registrations/observed` — obtener datos del expediente observado · header: `X-Correction-Token`.
 - `PATCH /api/v1/registrations/observed` — actualizar datos con control de versión optimista · header: `X-Correction-Token`.
+- `POST /api/v1/registrations/observed/document` — reemplazar documento de respaldo · header: `X-Correction-Token`.
+- `POST /api/v1/registrations/observed/submit` — entregar corrección de la solicitud observada · header: `X-Correction-Token`.
 
 ## Autenticación
 
@@ -358,6 +360,63 @@ Contraseña de 15–128 caracteres; nunca se utiliza el código como contraseña
   }
 }
 ```
+
+---
+
+## 19. Reemplazar documento de respaldo observado — `POST /api/v1/registrations/observed/document`
+
+**Header requerido:** `X-Correction-Token: <token>`
+
+**Content-Type:** `multipart/form-data`
+
+**Campos:**
+- `file` / `archivo`: Archivo binario (PDF, PNG, JPG de máximo 5 MB).
+- `tipoDocumento`: (Opcional) Tipo de documento (ej. `diploma_academico`).
+
+**Respuesta 200:**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "documentoId": "uuid",
+    "nombre": "titulo_actualizado.pdf",
+    "tipoDocumento": "diploma_academico",
+    "sizeBytes": 1048576,
+    "message": "Documento de respaldo reemplazado correctamente"
+  }
+}
+```
+
+El documento anterior se desvincula de la solicitud actual y se marca `es_valido: false`, conservándose en base de datos para la auditoría y versiones históricas.
+
+## 20. Entregar corrección de solicitud observada — `POST /api/v1/registrations/observed/submit`
+
+**Header requerido:** `X-Correction-Token: <token>`
+
+**Body:**
+```json
+{
+  "expectedVersion": 2
+}
+```
+
+**Respuesta 200:**
+```json
+{
+  "data": {
+    "id": "uuid",
+    "estado": "PENDIENTE",
+    "version": 3,
+    "message": "Corrección entregada exitosamente"
+  }
+}
+```
+
+**Comportamiento:**
+- Atómico e idempotente: Si la solicitud ya fue entregada y se encuentra en `PENDING` / `PENDIENTE`, responde con éxito indicando el estado actual.
+- Control de concurrencia optimista: Si `expectedVersion` no coincide con la versión actual, responde `409 VERSION_CONFLICT`.
+- Verificación de correo: Requiere que `correo_verificado === true` en el borrador de la solicitud; de lo contrario, responde `409 EMAIL_NOT_VERIFIED`.
+- Invalidación de enlace: Invalida el token en `token_subsanacion` marcándolo como `usado: true`.
 
 ---
 

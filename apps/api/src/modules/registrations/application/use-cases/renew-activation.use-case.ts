@@ -1,6 +1,7 @@
 import type { ActorContext } from '../../../../shared/security/contexts/actor-context';
 import type { ApplicationsRepository } from '../ports/applications-repository.port';
 import type { RegistrationSecurity } from '../ports/registration-security.port';
+export const RENEWAL_MAIL_SUBJECT = 'Nuevo código de activación UMSSPIRA';
 
 export class RenewActivationUseCase {
   constructor(
@@ -17,7 +18,7 @@ export class RenewActivationUseCase {
       this.security.hash('activation', id + ':' + code),
       this.security.seal({
         to: detail.email,
-        subject: 'Nuevo código de activación UMSSPIRA',
+        subject: RENEWAL_MAIL_SUBJECT,
         text:
           'Activa tu cuenta con la solicitud ' +
           id +

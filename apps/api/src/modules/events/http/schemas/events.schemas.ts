@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { CreateEventInput, EventInput } from '../../application/contracts/event-inputs';
 
 export const eventIdSchema = z.uuid();
+export const registrationIdSchema = z.uuid();
 export const COVER_PATH = '/api/v1/events/covers/';
 const coverReferenceSchema = z
   .string()

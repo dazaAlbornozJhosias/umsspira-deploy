@@ -1,0 +1,52 @@
+meta {
+  name: HU-11 T-11.2 - Rechazo y autoría
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/applications/{{hu112RejectedId}}/review
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "decision": "RECHAZADA",
+    "category": "Documento invalido",
+    "note": "El documento presentado no cumple con los requisitos establecidos."
+  }
+}
+
+tests {
+  const body = res.getBody();
+  test("T-11.2: responde HTTP 201", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+  test("T-11.2: registra ID y correo del administrador", function () {
+    expect(body?.data?.reviewedBy).to.be.a("string");
+    expect(body?.data?.reviewedByEmail).to.be.a("string");
+    expect(body.data.reviewedBy).to.equal(bru.getVar("hu112ExpectedAdminId"));
+    expect(body.data.reviewedByEmail.toLowerCase()).to.equal(
+      String(bru.getVar("hu112ExpectedAdminEmail")).toLowerCase()
+    );
+  });
+  test("T-11.2: registra fecha, nombre disponible y estado", function () {
+    expect(body?.data?.reviewedAt).to.be.a("string");
+    expect(Number.isNaN(Date.parse(body.data.reviewedAt))).to.equal(false);
+    expect(body?.data).to.have.property("reviewedByName");
+    expect(body?.data?.status).to.equal("RECHAZADA");
+  });
+}
+
+docs {
+  Usar OTRA solicitud PENDIENTE hu112RejectedId; no reutilizar la aprobada en el caso 001.
+}

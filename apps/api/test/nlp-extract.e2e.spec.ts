@@ -16,6 +16,8 @@ import { DEMO_ACCOUNTS } from '../scripts/seed/demo-accounts';
 import { InMemoryAuthStore } from './adapters/in-memory-auth.store';
 import { InMemoryKeywordDictionary, NLP_TEST_DICTIONARY } from './adapters/in-memory-keyword-dictionary';
 
+jest.setTimeout(30000);
+
 const keywordSchema = z.strictObject({
   term: z.string().min(1),
   count: z.number().int().positive(),

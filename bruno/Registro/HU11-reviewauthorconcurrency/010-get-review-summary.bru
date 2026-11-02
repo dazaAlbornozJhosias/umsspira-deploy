@@ -1,0 +1,43 @@
+meta {
+  name: HU-11 T-11.3 - Consultar contadores y permiso de observar
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/v1/applications/{{hu113ObservationLimitId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  const body = res.getBody();
+  test("T-11.3: consulta el expediente pendiente", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(body?.data?.status).to.equal("PENDIENTE");
+  });
+  test("T-11.3: mantiene dos observaciones y bloquea otra", function () {
+    const summary = body?.data?.reviewSummary;
+    expect(summary).to.be.an("object");
+    expect(summary.observations).to.equal(2);
+    expect(summary.maxObservations).to.equal(2);
+    expect(summary.canObserve).to.equal(false);
+    expect(summary.latestObservation).to.equal(bru.getVar("hu113LatestObservation"));
+    expect(summary.rejections).to.equal(Number(bru.getVar("hu113ExpectedRejections")));
+    expect(summary.maxRejections).to.equal(5);
+  });
+  test("T-11.3: identifica al autor desde la sesión", function () {
+    expect(body?.data?.currentReviewer?.email).to.equal(bru.getVar("hu112ExpectedAdminEmail"));
+  });
+}
+
+docs {
+  Usar el expediente y sesión de 009. Configurar hu113LatestObservation con la nota completa
+  del segundo dictamen y hu113ExpectedRejections con los rechazos conocidos de esa identidad
+  (C.I., complemento y expedido en). Configurar hu112ExpectedAdminEmail con el correo de sesión.
+  Ejecutar antes y después de 009: debe seguir PENDIENTE y mantener dos observaciones.
+}

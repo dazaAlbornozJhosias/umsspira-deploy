@@ -1,0 +1,50 @@
+meta {
+  name: HU-11 T-11.2 - Aprobación y autoría
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/applications/{{hu112ApprovedId}}/review
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "decision": "APROBADA"
+  }
+}
+
+tests {
+  const body = res.getBody();
+  test("T-11.2: responde HTTP 201", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+  test("T-11.2: registra ID y correo del administrador", function () {
+    expect(body?.data?.reviewedBy).to.be.a("string");
+    expect(body?.data?.reviewedByEmail).to.be.a("string");
+    expect(body.data.reviewedBy).to.equal(bru.getVar("hu112ExpectedAdminId"));
+    expect(body.data.reviewedByEmail.toLowerCase()).to.equal(
+      String(bru.getVar("hu112ExpectedAdminEmail")).toLowerCase()
+    );
+  });
+  test("T-11.2: registra fecha, nombre disponible y estado", function () {
+    expect(body?.data?.reviewedAt).to.be.a("string");
+    expect(Number.isNaN(Date.parse(body.data.reviewedAt))).to.equal(false);
+    expect(body?.data).to.have.property("reviewedByName");
+    expect(body?.data?.status).to.equal("APROBADA");
+  });
+}
+
+docs {
+  Ejecutar una sola vez sobre una solicitud PENDIENTE. Definir hu112ApprovedId y los datos esperados del administrador autenticado. Esperado: POST 201 por defecto en NestJS, revisión con identidad de la sesión.
+}

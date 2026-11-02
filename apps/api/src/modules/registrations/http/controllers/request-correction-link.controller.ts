@@ -1,6 +1,7 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { ZodValidationPipe } from '../../../../shared/http/pipes/zod-validation.pipe';
 import { PublicRegistration } from '../decorators/public-registration.decorator';
+import { RegistrationTrafficGuard } from '../guards/registration-traffic.guard';
 import {
   requestCorrectionLinkSchema,
   type RequestCorrectionLinkInput,
@@ -13,6 +14,7 @@ export class RequestCorrectionLinkController {
 
   @Post('observed/request-link')
   @PublicRegistration()
+  @UseGuards(RegistrationTrafficGuard)
   @HttpCode(HttpStatus.OK)
   async handle(
     @Body(new ZodValidationPipe(requestCorrectionLinkSchema)) body: RequestCorrectionLinkInput,

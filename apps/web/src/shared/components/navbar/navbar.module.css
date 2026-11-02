@@ -126,7 +126,7 @@
 @media(prefers-reduced-motion:reduce) { .root * { transition:none!important; } }
 
 /* Barra pública en azul (mismo azul del portal). Bloque aislado: se puede quitar sin afectar el resto. */
-.public { --navbar-bg:#0F172A; --navbar-ink:#f1f5f9; --navbar-muted:#cbd5e1; border-bottom-color:#1e293b; }
+.public { --navbar-bg:#1b2632; --navbar-ink:#eee9df; --navbar-muted:#c9c1b1; border-bottom-color:#2c3b4d; }
 .public .active, .public .topLink:hover, .public .trigger:hover { color:#ffb162; }
-.root.public .login { color:#f1f5f9; border-color:#475569; }
-.root.public .login:hover { background:#1e293b; }
+.root.public .login { color:#eee9df; border-color:#4b5b6e; }
+.root.public .login:hover { background:#2c3b4d; }

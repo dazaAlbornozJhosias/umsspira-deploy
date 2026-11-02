@@ -10,7 +10,7 @@ import {
 import {
   btnAccent,
   btnSecondary,
-  CheckboxRow,
+  
   FieldError,
   FieldHint,
   FieldLabel,
@@ -38,7 +38,7 @@ export function ObserveDialog({
 }: Props) {
   const [category, setCategory] = useState("");
   const [note, setNote] = useState("");
-  const [notifyDean, setNotifyDean] = useState(false);
+  
   const [attempted, setAttempted] = useState(false);
 
   const { submitReview, isLoading, error } = useReview({
@@ -58,7 +58,7 @@ export function ObserveDialog({
   function handleClose() {
     setCategory("");
     setNote("");
-    setNotifyDean(false);
+    
     setAttempted(false);
     onClose();
   }
@@ -72,7 +72,7 @@ export function ObserveDialog({
       decision: "OBSERVADA",
       category,
       note: note.trim(),
-      notifyDean,
+      
     });
     if (ok) handleClose();
   }
@@ -148,16 +148,10 @@ export function ObserveDialog({
       </div>
 
       {/* Notificación */}
-      <CheckboxRow
-        id="observe-notify"
-        checked={notifyDean}
-        onChange={setNotifyDean}
-        disabled={isLoading}
-      >
-        Notificar inmediatamente al correo institucional del titulado con copia
-        al decanato de facultad.
-      </CheckboxRow>
-
+            {/* Aviso de notificación automática (CA-09.1 / CA-10.1) */}
+      <p className="rounded-md bg-[#F0F4F8] p-3 text-[12px] leading-relaxed text-[#2C3B4D]">
+        ℹ Al confirmar la observación, el sistema notificará automáticamente al titulado por correo electrónico con las observaciones detalladas y su enlace seguro de subsanación.
+      </p>
       {error && <FieldError>{error}</FieldError>}
 
       <div className="flex justify-end gap-3 pt-2">

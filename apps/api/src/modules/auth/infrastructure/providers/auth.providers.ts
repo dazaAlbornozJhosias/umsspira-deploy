@@ -32,6 +32,18 @@ import { LogoutAllUseCase } from '../../application/use-cases/logout-all.use-cas
 import { ListSessionsUseCase } from '../../application/use-cases/list-sessions.use-case';
 import { RevokeSessionUseCase } from '../../application/use-cases/revoke-session.use-case';
 import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
+import {
+  PASSWORD_RECOVERY_OPTIONS,
+  type PasswordRecoveryOptions,
+} from '../../application/contracts/password-recovery-options';
+import {
+  PASSWORD_RECOVERY_REPOSITORY,
+  type PasswordRecoveryRepository,
+} from '../../application/ports/password-recovery-repository.port';
+import { RequestPasswordRecoveryUseCase } from '../../application/use-cases/request-password-recovery.use-case';
+import { ValidatePasswordRecoveryLinkUseCase } from '../../application/use-cases/validate-password-recovery-link.use-case';
+import { ResetPasswordUseCase } from '../../application/use-cases/reset-password.use-case';
+import { PrismaPasswordRecoveryRepository } from '../repositories/prisma-password-recovery.repository';
 
 export const authProviders: Provider[] = [
   PrismaCredentialRepository,
@@ -158,5 +170,48 @@ export const authProviders: Provider[] = [
       passwords: PasswordHasher,
       limiter: AccessLimiter,
     ) => new ChangePasswordUseCase(credentials, passwords, limiter),
+  },
+  
+    PrismaPasswordRecoveryRepository,
+  { provide: PASSWORD_RECOVERY_REPOSITORY, useExisting: PrismaPasswordRecoveryRepository },
+  {
+    provide: PASSWORD_RECOVERY_OPTIONS,
+    inject: [ConfigService],
+    useFactory: (config: ConfigService<Environment, true>): PasswordRecoveryOptions => ({
+      // Sin barra final, para que el enlace quede {WEB_BASE_URL}/reset-password.
+      webBaseUrl: config.get('WEB_BASE_URL', { infer: true }).replace(/\/+$/, ''),
+    }),
+  },
+  {
+    provide: RequestPasswordRecoveryUseCase,
+    inject: [
+      CREDENTIAL_REPOSITORY,
+      USER_READER,
+      PASSWORD_RECOVERY_REPOSITORY,
+      TOKEN_SERVICE,
+      PASSWORD_RECOVERY_OPTIONS,
+    ],
+    useFactory: (
+      credentials: CredentialRepository,
+      users: UserReader,
+      repository: PasswordRecoveryRepository,
+      tokens: TokenService,
+      options: PasswordRecoveryOptions,
+    ) => new RequestPasswordRecoveryUseCase(credentials, users, repository, tokens, options),
+  },
+  {
+    provide: ValidatePasswordRecoveryLinkUseCase,
+    inject: [PASSWORD_RECOVERY_REPOSITORY, TOKEN_SERVICE],
+    useFactory: (repository: PasswordRecoveryRepository, tokens: TokenService) =>
+      new ValidatePasswordRecoveryLinkUseCase(repository, tokens),
+  },
+  {
+    provide: ResetPasswordUseCase,
+    inject: [PASSWORD_RECOVERY_REPOSITORY, PASSWORD_HASHER, TOKEN_SERVICE],
+    useFactory: (
+      repository: PasswordRecoveryRepository,
+      passwords: PasswordHasher,
+      tokens: TokenService,
+    ) => new ResetPasswordUseCase(repository, passwords, tokens),
   },
 ];

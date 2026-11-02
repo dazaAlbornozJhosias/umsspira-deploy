@@ -19,6 +19,7 @@ export class PrismaUserRepository implements UserReader {
         estado: true,
         cuenta_acceso: { select: { version: true } },
         empresa_registros: { select: { id: true } },
+        empresa_usuario_registros: { where: { estado: 'activo' }, select: { id_empresa: true } },
         titulado: { select: { id: true } },
         administrador_de_carrera_registros: { select: { id_carrera: true, estado: true } },
       },

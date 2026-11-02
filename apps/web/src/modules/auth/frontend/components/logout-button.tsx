@@ -5,6 +5,7 @@ import { clearSession } from "../services";
 import { hardRedirect } from "../services/navigation";
 import { useState } from 'react';
 import { revokeCurrentSession } from '@/shared/services/auth-session';
+import { clearAllSurveyDrafts } from '@/modules/surveys/frontend/hooks/use-survey-draft';
 
 export function LogoutButton() {
   const [pending, setPending] = useState(false);
@@ -15,6 +16,7 @@ export function LogoutButton() {
     setError(null);
     try {
       await revokeCurrentSession();
+      clearAllSurveyDrafts();
       clearSession();
       authStore.reset();
       hardRedirect("/login");

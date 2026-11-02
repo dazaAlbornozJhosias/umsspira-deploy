@@ -104,6 +104,20 @@ export class KeywordDictionaryLoader {
 
     const report = this.extractor.loadDictionary(entries);
 
+    // MUEVE EL LOGGING AQUÍ: Registramos las advertencias antes de validar si hubo palabras exitosas.
+    if (report.ignored.length > 0) {
+      const detail = report.ignored
+        .slice(0, MAX_LOGGED_IGNORED_KEYS)
+        .map(({ key, reason }) => `${key || '<vacío>'}:${reason}`)
+        .join(', ');
+      const suffix = report.ignored.length > MAX_LOGGED_IGNORED_KEYS ? ', ...' : '';
+
+      this.logger.warn(
+        `Diccionario NLP: ${report.ignored.length} claves ignoradas (${detail}${suffix})`,
+      );
+    }
+
+    // AHORA SÍ validamos y lanzamos el error si no cargó ninguna palabra válida
     if (report.loaded === 0) {
       throw this.unavailable();
     }
@@ -122,18 +136,6 @@ export class KeywordDictionaryLoader {
 
     this.areasByKeyword = newAreasByKeyword;
     this.loaded = true;
-
-    if (report.ignored.length > 0) {
-      const detail = report.ignored
-        .slice(0, MAX_LOGGED_IGNORED_KEYS)
-        .map(({ key, reason }) => `${key || '<vacío>'}:${reason}`)
-        .join(', ');
-      const suffix = report.ignored.length > MAX_LOGGED_IGNORED_KEYS ? ', ...' : '';
-
-      this.logger.warn(
-        `Diccionario NLP: ${report.ignored.length} claves ignoradas (${detail}${suffix})`,
-      );
-    }
   }
 
   private unavailable(): NlpDictionaryUnavailableError {

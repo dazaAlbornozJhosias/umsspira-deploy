@@ -79,9 +79,16 @@ export function MentorDirectoryFilters({ catalog, applied, interestsSupported, d
                   <span>{area.name}</span>
                   {selectedCount > 0 && <span className="directory-topic-badge" aria-label={`${selectedCount} seleccionados`}>({selectedCount})</span>}
                 </h3>
-                <div className="directory-topic-options">{area.topics.map(topic => <label key={topic.id} className={`directory-topic ${draft.topicIds.includes(topic.id) ? 'is-selected' : ''}`}>
-                  <input type="checkbox" checked={draft.topicIds.includes(topic.id)} onChange={() => toggleTopic(topic.id)} />{topic.name}
-                </label>)}</div>
+                <div className="directory-topic-options">{area.topics.map(topic => {
+                  const selected = draft.topicIds.includes(topic.id);
+                  return <button
+                    key={topic.id}
+                    type="button"
+                    className={`directory-topic ${selected ? 'is-selected' : ''}`}
+                    aria-pressed={selected}
+                    onClick={() => toggleTopic(topic.id)}
+                  >{topic.name}</button>;
+                })}</div>
               </div>;
             })}</div>
             {!expandedInterests && !draft.areaIds.length && groups.length > 3 && <button type="button" className="mentor-button mentor-button-secondary directory-expand-interests" aria-controls="directory-interest-groups" onClick={() => setExpandedInterests(true)}>Cargar más intereses</button>}

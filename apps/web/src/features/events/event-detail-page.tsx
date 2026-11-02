@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { EVENT_STATUS, type EventItem, type EventRegistrationItem } from '@umsspira/shared-types';
 
 import { ApiClientError } from '@/shared/services/api-client';
-import { getPublishedEvent, registerForEvent } from '@/shared/services/events-service';
+import { cancelEventRegistration, getPublishedEvent, registerForEvent } from '@/shared/services/events-service';
+import { CancelRegistrationAction } from './cancel-registration-action';
 import { getCurrentUser } from '@/modules/auth/frontend/services/auth.service';
 import { formatPeopleCount } from '@/shared/utils/event-copy';
 import { formatEventDateTime } from '@/shared/utils/event-date-time';
@@ -31,6 +32,7 @@ export default function EventDetailPage({
   );
   const [isTitulado, setIsTitulado] = useState(false);
   const [registration, setRegistration] = useState<EventRegistrationItem | null>(null);
+  const [isRegistrationCancelled, setIsRegistrationCancelled] = useState(false);
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [registrationErrorKind, setRegistrationErrorKind] = useState<'duplicate' | 'capacity' | 'unavailable' | 'generic' | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -78,6 +80,7 @@ export default function EventDetailPage({
     try {
       const result = await registerForEvent(event.id);
       setRegistration(result);
+      setIsRegistrationCancelled(false);
       setEvent((current) => current ? { ...current, currentCapacity: result.currentCapacity } : current);
       setIsConfirmOpen(false);
     } catch (error) {
@@ -154,26 +157,38 @@ export default function EventDetailPage({
       <main className="hu2-detail-page hu3-success-page">
         <div className="hu2-detail-shell">
           <header className="hu3-success-heading">
-            <h1>Inscripción confirmada</h1>
-            <p>Tu lugar está reservado. El sistema ya generó tu pase digital.</p>
+            <h1>{isRegistrationCancelled ? 'Inscripción cancelada' : 'Inscripción confirmada'}</h1>
+            <p>{isRegistrationCancelled ? 'Conservamos el historial de tu inscripción.' : 'Tu lugar está reservado para este evento.'}</p>
           </header>
-          <section className="hu3-success-card" role="status">
+          <section className={isRegistrationCancelled ? "hu4-cancellation-page-result" : "hu3-success-card"}>
+            {!isRegistrationCancelled ? <>
             <span className="hu3-success-icon" aria-hidden="true">✓</span>
-            <h2>¡Ya eres parte del evento!</h2>
-            <span className="hu3-status-chip">CONFIRMADA</span>
+            <h2>{isRegistrationCancelled ? 'Ya no estás inscrito en este evento' : '¡Ya eres parte del evento!'}</h2>
+            <span className="hu3-status-chip">{isRegistrationCancelled ? 'CANCELADA' : 'CONFIRMADA'}</span>
             <div className="hu3-success-summary">
               <strong>{event.title}</strong>
               <span>{formatEventDateTime(event.startDate)} · {event.location || 'Ubicación por definir'}</span>
-              <small>Tu pase QR está disponible</small>
+              <small>{isRegistrationCancelled ? 'El pase QR asociado ya no permite el acceso' : 'Inscripción confirmada a tu nombre'}</small>
             </div>
             <div className="hu3-external-actions" aria-label="Acciones de la inscripción">
-              <button type="button" className="hu3-result-action" disabled title="Disponible al integrar HU9">
-                Ver mis eventos
-              </button>
-              <button type="button" className="hu3-result-action hu3-result-action-primary" disabled title="Disponible al integrar HU10">
+            <Link href="/portal/eventos/mis-eventos" className="hu3-result-action">
+                 Ver mis eventos
+            </Link>
+              <Link href="/mis-pases" className="hu3-result-action hu3-result-action-primary">
                 Ver pase QR
-              </button>
+              </Link>
             </div>
+            </> : null}
+            {isTitulado ? (
+              <CancelRegistrationAction
+                key={registration.id}
+                event={event}
+                status={isRegistrationCancelled ? 'CANCELADA' : registration.status}
+                onConfirm={() => cancelEventRegistration(registration.id)}
+                onCancelled={() => setIsRegistrationCancelled(true)}
+              />
+            ) : null}
+            <Link href={catalogHref} className="hu4-cancellation-back">Volver al catálogo</Link>
           </section>
         </div>
       </main>
@@ -293,12 +308,12 @@ export default function EventDetailPage({
             <p>No necesitas volver a reservar un cupo. Tu inscripción actual continúa confirmada.</p>
             <span className="hu3-status-chip">INSCRIPCIÓN CONFIRMADA</span>
             <div className="hu3-external-actions" aria-label="Acciones de la inscripción">
-              <button type="button" className="hu3-result-action" disabled title="Disponible al integrar HU9">
-                Ver mis eventos
-              </button>
-              <button type="button" className="hu3-result-action hu3-result-action-primary" disabled title="Disponible al integrar HU10">
+            <Link href="/portal/eventos/mis-eventos" className="hu3-result-action">
+                   Ver mis eventos
+                 </Link>
+              <Link href="/mis-pases" className="hu3-result-action hu3-result-action-primary">
                 Ver pase QR
-              </button>
+              </Link>
             </div>
           </section>
         </div>

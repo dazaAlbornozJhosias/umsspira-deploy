@@ -17,7 +17,7 @@ import {
   Menu,
   X,
   LogOut,
-  MessageSquare, // 👈 Importado para el botón de mensajes
+  MessageSquare,
 } from 'lucide-react';
 
 import logoUmss from '@/shared/assets/images/logoumsspira.jpg';
@@ -36,10 +36,10 @@ const formatUnreadCount = (count: number): string =>
 const navItems = [
   { href: '/portal', label: 'Inicio', Icon: Home, exact: true },
   { href: '/portal/eventos', label: 'Eventos', Icon: Calendar },
-  { href: '/portal/empleos', label: 'Bolsa de trabajo', Icon: Briefcase },
-  { href: '/portal/mentorias', label: 'Mentorías', Icon: Award },
+  { href: '/portal/institucional?tab=empleos', label: 'Bolsa de trabajo', Icon: Briefcase },
+  { href: '/mentorship', label: 'Mentorías', Icon: Award },
   { href: '/portal/beneficios', label: 'Beneficios', Icon: Star },
-  { href: '/portal/comunidad', label: 'Comunidad', Icon: Users },
+  { href: '/portal/institucional?tab=comunidad', label: 'Comunidad', Icon: Users },
 ];
 
 export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
@@ -65,10 +65,26 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
 
   const pathname = usePathname() ?? '';
 
-  const isActive = (href: string, exact?: boolean) =>
-    exact
-      ? pathname === href
-      : pathname === href || pathname.startsWith(`${href}/`);
+  // Para enlaces con ?tab=... se compara también la pestaña actual.
+  const [currentSearch, setCurrentSearch] = useState('');
+  
+  useEffect(() => {
+    setCurrentSearch(window.location.search);
+  }, [pathname]);
+
+  const isActive = (href: string, exact?: boolean) => {
+    const [hrefPath, hrefQuery] = href.split('?');
+    if (hrefQuery) {
+      const wantedTab = new URLSearchParams(hrefQuery).get('tab');
+      return (
+        pathname === hrefPath &&
+        new URLSearchParams(currentSearch).get('tab') === wantedTab
+      );
+    }
+    return exact
+      ? pathname === hrefPath
+      : pathname === hrefPath || pathname.startsWith(`${hrefPath}/`);
+  };
 
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -76,11 +92,9 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
-  // 👈 NUEVO: Estado y referencia para el panel de mensajes (HU-09)
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const messagesRef = useRef<HTMLDivElement>(null);
 
-  // HU-10: total y últimas conversaciones con mensajes sin leer
   const { summary: unread, reload: reloadUnread } = useUnreadSummary();
   const unreadTotal = unread.total;
 
@@ -88,7 +102,6 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Cierre de sesión y limpieza de la sesión local.
   const handleLogout = () => {
     clearSession();
     clearAccessToken();
@@ -98,12 +111,11 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
     setIsDrawerOpen(false);
     setIsProfileDropdownOpen(false);
     setIsNotificationsOpen(false);
-    setIsMessagesOpen(false); // 👈 Cerramos también el de mensajes
+    setIsMessagesOpen(false);
 
     hardRedirect('/login');
   };
 
-  // Cerrar los menús al hacer clic fuera.
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -119,20 +131,17 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
         setIsNotificationsOpen(false);
       }
 
-      // 👈 NUEVO: Cerrar mensajes si se hace clic fuera
       if (messagesRef.current && !messagesRef.current.contains(target)) {
         setIsMessagesOpen(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
-  // HU-09 CA-05: cerrar el panel de mensajes con Esc
   useEffect(() => {
     if (!isMessagesOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -142,12 +151,10 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [isMessagesOpen]);
 
-  // Cerrar el menú móvil al cambiar de ruta.
   useEffect(() => {
     setIsDrawerOpen(false);
   }, [pathname]);
 
-  // Cerrar el menú móvil con Escape y controlar el foco.
   useEffect(() => {
     if (!isDrawerOpen) return;
 
@@ -179,7 +186,6 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
         <div
           className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${config.height} flex items-center justify-between`}
         >
-          {/* Logo institucional */}
           <div className="flex items-center">
             <Link
               href="/portal"
@@ -196,7 +202,6 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
             </Link>
           </div>
 
-          {/* Navegación de escritorio */}
           <nav
             aria-label="Principal"
             className={`hidden lg:flex items-center ${config.spacing} ${config.textSize} font-medium`}
@@ -226,11 +231,7 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
             })}
           </nav>
 
-          {/* Acciones de la derecha */}
-          <div
-            className={`flex items-center ${config.rightSectionGap} lg:pr-2`}
-          >
-            {/* Mensajes (HU-09) con insignia y pendientes (HU-10) */}
+          <div className={`flex items-center ${config.rightSectionGap} lg:pr-2`}>
             <div className="relative" ref={messagesRef}>
               <button
                 type="button"
@@ -245,7 +246,6 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
                 className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-slate-800 transition-colors relative text-slate-300 hover:text-white"
               >
                 <MessageSquare className="w-6 h-6" />
-                {/* CA-01 / CA-02: insignia con el total; sin pendientes no se dibuja */}
                 {unreadTotal > 0 && (
                   <span
                     data-testid="messages-unread-badge"
@@ -264,7 +264,6 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
                   </h3>
 
                   {unread.conversations.length > 0 ? (
-                    // CA-04: últimas conversaciones con nombre, último mensaje e indicador de no leído
                     <ul className="max-h-[60dvh] divide-y divide-slate-100 overflow-y-auto">
                       {unread.conversations.map((conversation) => (
                         <li key={conversation.id}>
@@ -307,7 +306,6 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
                       ))}
                     </ul>
                   ) : (
-                    // CA-05: sin pendientes
                     <div className="flex flex-col items-center gap-2 px-4 py-6 text-center text-slate-500">
                       <MessageSquare className="h-6 w-6" aria-hidden="true" />
                       <p className="text-xs">No tienes mensajes nuevos.</p>
@@ -325,7 +323,6 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
               )}
             </div>
 
-            {/* Notificaciones */}
             <div className="relative" ref={notificationsRef}>
               <button
                 type="button"
@@ -349,7 +346,6 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
               )}
             </div>
 
-            {/* Perfil de escritorio */}
             <div
               className={`relative hidden lg:block transform ${config.profilePosition}`}
               ref={dropdownRef}
@@ -420,7 +416,6 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
               )}
             </div>
 
-            {/* Botón del menú móvil */}
             <button
               ref={menuButtonRef}
               type="button"
@@ -436,7 +431,6 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
         </div>
       </header>
 
-      {/* Fondo oscurecido del menú móvil */}
       <div
         onClick={() => setIsDrawerOpen(false)}
         aria-hidden="true"
@@ -445,7 +439,6 @@ export const Navbar: React.FC<{ eventManagement?: boolean }> = ({
         }`}
       />
 
-      {/* Menú lateral para móviles y tabletas */}
       <aside
         id="mobile-drawer"
         role="dialog"

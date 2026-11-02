@@ -7,11 +7,6 @@ const API_URL = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL 
 
 
 export async function middleware(request: NextRequest) {
-  // HU-10: el enlace de corrección se valida con el token, no con la sesión
-  if (request.nextUrl.pathname.startsWith('/applications/correct/')) {
-    return NextResponse.next();
-  }
-
   const path = request.nextUrl.pathname;
   const isReport = path === '/reports' || path.startsWith('/reports/');
   // Sprint 2 T4.1: las encuestas son privadas para el rol titulado.
@@ -29,7 +24,8 @@ export async function middleware(request: NextRequest) {
     });
     if (response.status === 401 || response.status === 403) {
       // La sesión ya no es válida: eliminar cookies de autenticación, no solo redirigir.
-      const expired = redirect(loginDestination);
+      // HU-004 CA-06: en reportería el login explica que la sesión expiró.
+      const expired = redirect(isReport ? '/login?reportes=sesion-expirada' : loginDestination);
       for (const name of ['umsspira_token', 'umsspira_refresh', 'umsspira_csrf', 'umsspira_role']) {
         expired.cookies.delete(name);
       }
@@ -67,6 +63,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = { matcher: [
-  '/applications/:path*', '/reports/:path*', '/surveys/:path*', '/me/:path*', '/afinidad', '/afinidad/:path*',
+  '/applications/:path*', '/reports/:path*', '/company-registry', '/company-registry/:path*', '/surveys/:path*', '/me/:path*', '/afinidad', '/afinidad/:path*',
   '/empresa/postulantes', '/empresa/postulantes/:path*', '/postulantes', '/postulantes/:path*',
+  // Áreas que exigen sesión (el portal institucional /portal/institucional sigue público).
+  '/portal', '/portal/empleos', '/portal/mentorias', '/portal/comunidad', '/portal/beneficios',
+  '/portal/eventos', '/portal/eventos/:path*', '/portal/mensajes',
+  '/mentorship', '/mentorship/:path*', '/job-postings',
 ] };

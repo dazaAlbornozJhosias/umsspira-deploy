@@ -10,6 +10,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly string[]> = {
     'reportes:read',
     'mentores:manage',
     'nlp:extract',
+    'empresas:invite',
   ],
   titulado: [
     'user:self:read',

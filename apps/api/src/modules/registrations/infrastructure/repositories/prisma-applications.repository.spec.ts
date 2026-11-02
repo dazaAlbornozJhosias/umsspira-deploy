@@ -28,6 +28,7 @@ interface Setup {
  
 function createRepository({ pending, others, pendingRows = [], otherRows = [] }: Setup) {
   const prisma = {
+    $queryRaw: jest.fn().mockResolvedValue([{ id: 'solicitud-coincidente' }]),
     $transaction: jest.fn((operations: Promise<unknown>[]) => Promise.all(operations)),
     solicitud: {
       // Primero se cuenta el total y luego los pendientes, como en el repositorio.
@@ -177,21 +178,32 @@ describe('PrismaApplicationsRepository.list', () => {
     expect(where.AND[0]).toEqual({ detalle_solicitud: { is: { id_carrera: { in: ['carrera-1'] } } } });
   });
  
-  it('combina carrera, estado y búsqueda: deben cumplirse todas las condiciones (CA-08.3)', async () => {
+  it('combina carrera, estado y resultados SQL sin perder el alcance del administrador', async () => {
     const { prisma, repository } = createRepository({ pending: 0, others: 0 });
- 
-    await repository.list(actor, query({ career: 'sistemas', status: 'PENDIENTE', search: 'rojas' }));
- 
+
+    await repository.list(
+      actor,
+      query({ career: 'sistemas', status: 'PENDIENTE', search: 'rojas' }),
+    );
+
     const { where } = prisma.solicitud.count.mock.calls[0][0];
+
     expect(where.AND).toEqual(
       expect.arrayContaining([
+        { detalle_solicitud: { is: { id_carrera: { in: ['carrera-1'] } } } },
+        { id: { in: ['solicitud-coincidente'] } },
         { estado: 'PENDIENTE' },
         {
           detalle_solicitud: {
             is: {
               AND: [
-                { carrera: { is: { nombre: { contains: 'sistemas', mode: 'insensitive' } } } },
-                { OR: expect.arrayContaining([{ nombre: { contains: 'rojas', mode: 'insensitive' } }]) },
+                {
+                  carrera: {
+                    is: {
+                      nombre: { contains: 'sistemas', mode: 'insensitive' },
+                    },
+                  },
+                },
               ],
             },
           },
@@ -199,25 +211,79 @@ describe('PrismaApplicationsRepository.list', () => {
       ]),
     );
   });
- 
-  it('busca por Código SIS solo cuando el texto tiene entre 6 y 9 dígitos (CA-08.3)', async () => {
-    const withSis = createRepository({ pending: 0, others: 0 });
-    await withSis.repository.list(actor, query({ search: '201804921' }));
-    expect(JSON.stringify(withSis.prisma.solicitud.count.mock.calls[0][0])).toContain('"cod_sis":"201804921"');
- 
-    const withoutSis = createRepository({ pending: 0, others: 0 });
-    await withoutSis.repository.list(actor, query({ search: '123' }));
-    expect(JSON.stringify(withoutSis.prisma.solicitud.count.mock.calls[0][0])).not.toContain('cod_sis');
-  });
- 
-  it('busca por C.I. con coincidencia parcial (CA-08.3)', async () => {
+
+  it('emplea unaccent y lower en nombre y apellido con valores parametrizados', async () => {
     const { prisma, repository } = createRepository({ pending: 0, others: 0 });
- 
-    await repository.list(actor, query({ search: '68492' }));
- 
-    expect(JSON.stringify(prisma.solicitud.count.mock.calls[0][0])).toContain('{"ci":{"contains":"68492"}}');
+
+    await repository.list(actor, query({ search: 'Jose Garcia' }));
+
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+
+    const statement = prisma.$queryRaw.mock.calls[0][0];
+
+    expect(statement.sql).toContain("extensions.unaccent(lower(coalesce(d.nombre, '')))");
+    expect(statement.sql).toContain("extensions.unaccent(lower(coalesce(d.apellido, '')))");
+    expect(statement.sql).toContain('LIKE extensions.unaccent(lower(');
+    expect(statement.sql).toContain(' AND ');
+    expect(statement.values).toEqual(
+      expect.arrayContaining(['%Jose%', '%Garcia%']),
+    );
+    expect(statement.sql).not.toContain('Jose');
   });
 
+  it('permite nombres en orden invertido y espacios dobles', async () => {
+    const { prisma, repository } = createRepository({ pending: 0, others: 0 });
+
+    await repository.list(actor, query({ search: 'Garcia  Jose' }));
+
+    const statement = prisma.$queryRaw.mock.calls[0][0];
+
+    expect(statement.values).toEqual(
+      expect.arrayContaining(['%Garcia%', '%Jose%']),
+    );
+    expect(statement.values.indexOf('%Garcia%')).toBeLessThan(
+      statement.values.indexOf('%Jose%'),
+    );
+  });
+
+  it('mantiene coincidencia parcial por CI y SIS exacto solo con 6 a 9 digitos', async () => {
+    const withSis = createRepository({ pending: 0, others: 0 });
+
+    await withSis.repository.list(actor, query({ search: '201804921' }));
+
+    const exact = withSis.prisma.$queryRaw.mock.calls[0][0];
+
+    expect(exact.sql).toContain('d.cod_sis =');
+    expect(exact.values).toContain(201804921);
+
+    const withoutSis = createRepository({ pending: 0, others: 0 });
+
+    await withoutSis.repository.list(actor, query({ search: '68492' }));
+
+    const partial = withoutSis.prisma.$queryRaw.mock.calls[0][0];
+
+    expect(partial.sql).not.toContain('d.cod_sis =');
+    expect(partial.sql).toContain("coalesce(d.ci, '') LIKE");
+    expect(partial.values).toContain('%68492%');
+  });
+
+  it('escapa los comodines de LIKE para tratar el texto como literal', async () => {
+    const { prisma, repository } = createRepository({ pending: 0, others: 0 });
+
+    await repository.list(actor, query({ search: 'Ana_%' }));
+
+    const statement = prisma.$queryRaw.mock.calls[0][0];
+
+    expect(statement.values).toContain('%Ana!_!%%');
+  });
+
+  it('no ejecuta SQL sin texto de busqueda', async () => {
+    const { prisma, repository } = createRepository({ pending: 0, others: 0 });
+
+    await repository.list(actor, query({ search: '  ' }));
+
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
+  });
 });
  
 describe('PrismaApplicationsRepository.metrics', () => {
@@ -286,4 +352,156 @@ describe('PrismaApplicationsRepository.metrics', () => {
     expect(metrics.resolvedToday).toBe(1);
     expect(prisma.dictamen.findMany).toHaveBeenCalledWith(expect.objectContaining({ distinct: ['id_solicitud'] }));
   });
+});
+
+
+
+describe('HU11 - Autoría del dictamen', () => {
+  const actor = {
+    id: '11111111-1111-4111-8111-111111111111',
+    name: 'Administrador Prueba',
+    email: 'admin@ejemplo.com',
+    role: 'administrador',
+    scopes: { careerIds: [], companyIds: [], graduateId: null },
+    permissions: ['solicitudes:review'],
+    credentialVersion: 1,
+  } as const;
+
+  const solicitudId =
+    '22222222-2222-4222-8222-222222222222';
+
+  const dictamenId =
+    '33333333-3333-4333-8333-333333333333';
+
+  it('guarda la autoría desde la sesión autenticada', async () => {
+    const tx = {
+      $queryRaw: jest.fn().mockResolvedValue([]),
+      solicitud: {
+        findFirst: jest.fn().mockResolvedValue({
+          estado: 'PENDIENTE',
+          id_documento_respaldo: null,
+        }),
+        update: jest.fn().mockResolvedValue({}),
+      },
+      dictamen: {
+        create: jest.fn().mockResolvedValue({
+          id: dictamenId,
+        }),
+      },
+      auditoriaDictamen: {
+        create: jest.fn().mockResolvedValue({}),
+      },
+      correoPendiente: {
+        create: jest.fn().mockResolvedValue({}),
+      },
+      correoTramite: {
+        create: jest.fn().mockResolvedValue({}),
+      },
+    };
+
+    const prisma = {
+      $transaction: jest.fn(
+        async (callback: (transaction: typeof tx) => Promise<unknown>) =>
+          callback(tx),
+      ),
+    };
+
+    const repository = new PrismaApplicationsRepository(
+      prisma as never,
+    );
+
+    const result = await repository.review(
+      actor as never,
+      solicitudId,
+      { decision: 'APROBADA' },
+      'activation-hash',
+      'encrypted-mail',
+      {
+        type: 'aprobacion',
+        to: 'titulado@ejemplo.com',
+        subject: 'Solicitud aprobada',
+      },
+    );
+
+    expect(tx.dictamen.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          revisor_id: actor.id,
+        }),
+      }),
+    );
+
+    expect(tx.auditoriaDictamen.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          id_dictamen: dictamenId,
+          accion: 'emision',
+          detalle: expect.objectContaining({
+            revisorId: actor.id,
+            revisorNombre: actor.name,
+            revisorCorreo: actor.email,
+          }),
+        }),
+      }),
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        reviewedBy: actor.id,
+        reviewedByName: actor.name,
+        reviewedByEmail: actor.email,
+      }),
+    );
+  });
+
+  it('rechaza un segundo dictamen', async () => {
+    const tx = {
+      $queryRaw: jest.fn().mockResolvedValue([]),
+      solicitud: {
+        findFirst: jest.fn().mockResolvedValue({
+          estado: 'APROBADA',
+          id_documento_respaldo: null,
+        }),
+      },
+      dictamen: {
+        create: jest.fn(),
+      },
+    };
+
+    const prisma = {
+      $transaction: jest.fn(
+        async (callback: (transaction: typeof tx) => Promise<unknown>) =>
+          callback(tx),
+      ),
+    };
+
+    const repository = new PrismaApplicationsRepository(
+      prisma as never,
+    );
+
+    const reviewPromise = repository.review(
+      actor as never,
+      solicitudId,
+      { decision: 'RECHAZADA' },
+      null,
+      'encrypted-mail',
+      {
+      type: 'rechazo',
+      to: 'titulado@ejemplo.com',
+      subject: 'Solicitud rechazada',
+      },
+    );
+
+    await expect(reviewPromise).rejects.toMatchObject({
+    code: 'APPLICATION_ALREADY_REVIEWED',
+    reason: 'conflict',
+    });
+
+    await expect(reviewPromise).rejects.toThrow(
+    'Esta solicitud ya fue revisada',
+    );
+
+    expect(tx.dictamen.create).not.toHaveBeenCalled();
+
+    });
 });

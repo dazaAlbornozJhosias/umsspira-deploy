@@ -1,0 +1,30 @@
+meta {
+  name: Radar
+  seq: 13
+}
+
+docs {
+  Radar de afinidad profesional del titulado (GET /api/v1/radar y POST /api/v1/radar/recalculate).
+
+  Usa el accessToken de un titulado con perfil cargado.
+  Permisos: radar:self:read (GET) y radar:self:write (POST). La empresa recibe 403 y una peticion sin token recibe 401.
+
+  Variables manuales de esta carpeta (escribelas en vars:pre-request):
+  - accessTokenSinPermiso: token de un usuario sin permisos de radar (ej. empresa@umss.edu.bo). Casos 004 y 009.
+  - accessTokenRadarVacio: token de un titulado sin keywords reconocidas. Caso 002.
+  - accessTokenOtroTitulado: token de un titulado distinto al de accessToken. Caso 005.
+
+  Ejecuta los casos en orden: 001 guarda graduateId (lo usa 005) y 006 guarda calculatedAt (lo usa 007).
+}
+
+vars:pre-request {
+  accessTokenSinPermiso:
+  accessTokenRadarVacio:
+  accessTokenOtroTitulado:
+}
+
+vars:secret [
+  accessTokenSinPermiso,
+  accessTokenRadarVacio,
+  accessTokenOtroTitulado
+]

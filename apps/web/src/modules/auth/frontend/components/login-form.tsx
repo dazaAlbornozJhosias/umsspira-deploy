@@ -6,6 +6,12 @@ import { useAuth } from "../hooks/use-auth";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// HU-004: motivos por los que reportería devuelve al login.
+const REPORTS_ACCESS_NOTICES: Record<string, string> = {
+  "requiere-sesion": "Debe iniciar sesión para acceder a este módulo",
+  "sesion-expirada": "Su sesión ha expirado. Inicie sesión nuevamente",
+};
+
 interface FieldErrors {
   email?: string;
   password?: string;
@@ -76,13 +82,12 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [reportsAccessNotice, setReportsAccessNotice] = useState(false);
+  const [reportsAccessNotice, setReportsAccessNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    // El motivo lo añade el middleware tras rechazar una visita a /reports sin sesión.
-    setReportsAccessNotice(
-      new URLSearchParams(window.location.search).get('reportes') === 'requiere-sesion',
-    );
+    // El motivo lo añade el middleware (o la alerta de sesión caducada) al salir de /reports.
+    const reason = new URLSearchParams(window.location.search).get('reportes');
+    setReportsAccessNotice(reason ? REPORTS_ACCESS_NOTICES[reason] ?? null : null);
   }, []);
 
   function validate(): FieldErrors {
@@ -105,7 +110,7 @@ export function LoginForm() {
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
       {reportsAccessNotice && (
         <p role="alert" className="rounded-lg border border-truffle-trouble bg-white px-3 py-2 text-sm text-abyssal-blue">
-          Debe iniciar sesión para acceder a este módulo
+          {reportsAccessNotice}
         </p>
       )}
       {/* Campo de correo electrónico */}

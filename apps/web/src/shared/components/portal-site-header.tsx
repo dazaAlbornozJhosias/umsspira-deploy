@@ -1,4 +1,3 @@
-
 'use client';
 
 import { ConnectedNavbar } from '@/shared/components/navbar/index';

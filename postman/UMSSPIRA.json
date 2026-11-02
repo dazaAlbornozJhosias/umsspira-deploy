@@ -590,6 +590,610 @@
       ]
     },
     {
+      "name": "Radar",
+      "item": [
+        {
+          "name": "GET radar - ok",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Sobre data con el vector de afinidad\", () => {",
+                  "  pm.expect(body.data).to.be.an(\"object\");",
+                  "  pm.expect(body.data.graduateId).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(Number.isNaN(Date.parse(body.data.calculatedAt))).to.equal(false);",
+                  "  pm.expect(body.data.status).to.equal(\"ok\");",
+                  "  pm.expect(body.data.algorithmVersion).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.data.hasPendingChanges).to.be.a(\"boolean\");",
+                  "  pm.collectionVariables.set(\"radarGraduateId\", body.data.graduateId);",
+                  "});",
+                  "pm.test(\"Los 6 ejes de afinidad vienen en el orden fijo esperado\", () => {",
+                  "  const areas = body.data.areas;",
+                  "  pm.expect(areas).to.be.an(\"array\").with.lengthOf(6);",
+                  "  const ordenEsperado = [\"software-development\", \"cloud-devops\", \"data-ai\", \"quality-assurance\", \"cybersecurity-networks\", \"it-management\"];",
+                  "  pm.expect(areas.map((a) => a.area)).to.deep.equal(ordenEsperado);",
+                  "});",
+                  "pm.test(\"Cada eje incluye affinity, previousAffinity, weighting y topKeywords (máx. 5, aporte > 0, orden descendente)\", () => {",
+                  "  const areas = body.data.areas;",
+                  "  areas.forEach((a) => {",
+                  "    pm.expect(a.affinity).to.be.a(\"number\").and.within(0, 100);",
+                  "    if (a.previousAffinity !== null) {",
+                  "      pm.expect(a.previousAffinity).to.be.a(\"number\").and.within(0, 100);",
+                  "    }",
+                  "    if (a.weighting !== null) {",
+                  "      pm.expect(a.weighting).to.be.a(\"number\").and.within(1, 5);",
+                  "    }",
+                  "    pm.expect(a.topKeywords).to.be.an(\"array\");",
+                  "    pm.expect(a.topKeywords.length).to.be.at.most(5);",
+                  "    const seenKeywords = [];",
+                  "    a.topKeywords.forEach((k, index) => {",
+                  "      pm.expect(k.keyword).to.be.a(\"string\").and.not.empty;",
+                  "      pm.expect(seenKeywords).to.not.include(k.keyword);",
+                  "      seenKeywords.push(k.keyword);",
+                  "      pm.expect(k.weight).to.be.a(\"number\").and.within(1, 5);",
+                  "      pm.expect(k.frequency).to.be.a(\"number\").and.at.least(1);",
+                  "      pm.expect(k.points).to.be.a(\"number\").and.above(0);",
+                  "      pm.expect(k.points).to.equal(k.weight * Math.min(k.frequency, 3));",
+                  "      pm.expect(k.percentage).to.be.a(\"number\").and.above(0).and.at.most(100);",
+                  "      if (index > 0) {",
+                  "        const prev = a.topKeywords[index - 1];",
+                  "        pm.expect(prev.points).to.be.at.least(k.points);",
+                  "        pm.expect(prev.percentage).to.be.at.least(k.percentage);",
+                  "        if (prev.points === k.points) {",
+                  "          pm.expect(prev.keyword <= k.keyword).to.equal(true);",
+                  "        }",
+                  "      }",
+                  "    });",
+                  "  });",
+                  "  pm.expect(areas.some((a) => a.topKeywords.length > 0)).to.equal(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Usa el accessToken de un titulado con perfil cargado (ej. titulado@umss.edu.bo).\nDevuelve { data: AffinityVectorResponse } con 6 areas. La primera llamada de un titulado calcula el radar (lazy GET).\nGuarda graduateId en radarGraduateId para el caso 005.\n\nPermiso: radar:self:read.\nCA-HU7-01: estado ok y esquema del vector.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/radar",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "radar"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "GET radar - vacío",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status empty y los 6 ejes en orden fijo con afinidad 0, previousAffinity null y sin topKeywords\", () => {",
+                  "  pm.expect(body.data.status).to.equal(\"empty\");",
+                  "  pm.expect(body.data.hasPendingChanges).to.be.a(\"boolean\");",
+                  "  pm.expect(body.data.areas).to.be.an(\"array\").with.lengthOf(6);",
+                  "  const ordenEsperado = [\"software-development\", \"cloud-devops\", \"data-ai\", \"quality-assurance\", \"cybersecurity-networks\", \"it-management\"];",
+                  "  pm.expect(body.data.areas.map((a) => a.area)).to.deep.equal(ordenEsperado);",
+                  "  body.data.areas.forEach((a) => {",
+                  "    pm.expect(a.affinity).to.equal(0);",
+                  "    pm.expect(a.previousAffinity).to.equal(null);",
+                  "    pm.expect(a.weighting).to.be.oneOf([null, 0]);",
+                  "    pm.expect(a.topKeywords).to.deep.equal([]);",
+                  "  });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessTokenRadarVacio}}",
+                "type": "string"
+              }
+            },
+            "description": "Requiere configurar manualmente {{accessTokenRadarVacio}} con el token de un titulado cuyo perfil no tenga ninguna keyword reconocida.\nSi la variable esta vacia o el titulado tiene datos, el test falla (no es un bug de la API).\n\nPermiso: radar:self:read.\nCA-HU6-16: estado vacio -> status empty, 6 areas en 0.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/radar",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "radar"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "GET radar - sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 401\", () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Esquema de error\", () => {",
+                  "  pm.expect(body.error).to.be.an(\"object\");",
+                  "  pm.expect(body.error.code).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.error.message).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Código UNAUTHENTICATED\", () => pm.expect(body.error.code).to.eql(\"UNAUTHENTICATED\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Sin Authorization debe responder 401.\n\nCA-HU7-24: acceso sin autenticar.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/radar",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "radar"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "GET radar - sin permiso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 403\", () => pm.response.to.have.status(403));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Esquema de error\", () => {",
+                  "  pm.expect(body.error).to.be.an(\"object\");",
+                  "  pm.expect(body.error.code).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.error.message).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Código FORBIDDEN\", () => pm.expect(body.error.code).to.eql(\"FORBIDDEN\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessTokenSinPermiso}}",
+                "type": "string"
+              }
+            },
+            "description": "Requiere configurar manualmente {{accessTokenSinPermiso}} con el token de un usuario SIN radar:self:read (ej. empresa@umss.edu.bo).\nSi la variable esta vacia o el token tiene permiso, el test falla (no es un bug de la API).\n\nPermiso exigido: radar:self:read.\nCA-HU7-24: acceso sin permiso.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/radar",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "radar"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "GET radar - otro titulado solo ve su radar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"graduateId distinto al del titulado del caso 001\", () => {",
+                  "  const primero = pm.collectionVariables.get(\"radarGraduateId\");",
+                  "  pm.expect(primero, \"Ejecuta antes el caso 001\").to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.data.graduateId).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.data.graduateId).to.not.eql(primero);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessTokenOtroTitulado}}",
+                "type": "string"
+              }
+            },
+            "description": "Requiere {{accessTokenOtroTitulado}} con el token de un titulado DISTINTO al de accessToken. Ejecuta antes el caso 001, que guarda su graduateId.\nEl id sale del JWT, no de la URL: no existe forma de pedir el radar de otro titulado. El graduateId devuelto debe ser el del dueno del token y distinto al del caso 001.\n\nPermiso: radar:self:read.\nCA-HU7-24: un titulado solo ve su radar.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/radar",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "radar"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "POST recalculate - ok",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Recálculo devuelve los 6 ejes en orden fijo, limpia hasPendingChanges y expone recalculated\", () => {",
+                  "  pm.expect(body.data).to.be.an(\"object\");",
+                  "  pm.expect(body.data.graduateId).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(Number.isNaN(Date.parse(body.data.calculatedAt))).to.equal(false);",
+                  "  pm.expect(body.data.status).to.be.oneOf([\"ok\", \"empty\"]);",
+                  "  pm.expect(body.data.hasPendingChanges).to.equal(false);",
+                  "  pm.expect(body.data.recalculated).to.be.a(\"boolean\");",
+                  "  pm.expect(body.data.areas).to.be.an(\"array\").with.lengthOf(6);",
+                  "  const ordenEsperado = [\"software-development\", \"cloud-devops\", \"data-ai\", \"quality-assurance\", \"cybersecurity-networks\", \"it-management\"];",
+                  "  pm.expect(body.data.areas.map((a) => a.area)).to.deep.equal(ordenEsperado);",
+                  "  pm.collectionVariables.set(\"radarCalculatedAt\", body.data.calculatedAt);",
+                  "  pm.collectionVariables.set(\"radarPreviousAffinityJson\", JSON.stringify(body.data.areas.map((a) => [a.area, a.previousAffinity])));",
+                  "  pm.collectionVariables.set(\"radarTopKeywordsJson\", JSON.stringify(body.data.areas.map((a) => [a.area, a.topKeywords])));",
+                  "});",
+                  "pm.test(\"Top keywords normalizados (máx. 5, aporte > 0, orden descendente) y previousAffinity válida\", () => {",
+                  "  body.data.areas.forEach((a) => {",
+                  "    pm.expect(a.affinity).to.be.within(0, 100);",
+                  "    if (a.previousAffinity !== null) {",
+                  "      pm.expect(a.previousAffinity).to.be.a(\"number\").and.within(0, 100);",
+                  "    }",
+                  "    if (a.weighting !== null) {",
+                  "      pm.expect(a.weighting).to.be.a(\"number\").and.within(1, 5);",
+                  "    }",
+                  "    pm.expect(a.topKeywords).to.be.an(\"array\");",
+                  "    pm.expect(a.topKeywords.length).to.be.at.most(5);",
+                  "    const seenKeywords = [];",
+                  "    a.topKeywords.forEach((k, index) => {",
+                  "      pm.expect(k.keyword).to.be.a(\"string\").and.not.empty;",
+                  "      pm.expect(seenKeywords).to.not.include(k.keyword);",
+                  "      seenKeywords.push(k.keyword);",
+                  "      pm.expect(k.weight).to.be.a(\"number\").and.within(1, 5);",
+                  "      pm.expect(k.frequency).to.be.a(\"number\").and.at.least(1);",
+                  "      pm.expect(k.points).to.be.a(\"number\").and.above(0);",
+                  "      pm.expect(k.points).to.equal(k.weight * Math.min(k.frequency, 3));",
+                  "      pm.expect(k.percentage).to.be.a(\"number\").and.above(0).and.at.most(100);",
+                  "      if (index > 0) {",
+                  "        const prev = a.topKeywords[index - 1];",
+                  "        pm.expect(prev.points).to.be.at.least(k.points);",
+                  "        pm.expect(prev.percentage).to.be.at.least(k.percentage);",
+                  "        if (prev.points === k.points) {",
+                  "          pm.expect(prev.keyword <= k.keyword).to.equal(true);",
+                  "        }",
+                  "      }",
+                  "    });",
+                  "  });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Usa el accessToken de un titulado. Recalcula con los textos actuales del perfil.\nSi el perfil no cambio desde el ultimo calculo, devuelve el calculo existente (recalculated = false).\nGuarda calculatedAt en radarCalculatedAt para el caso 007.\n\nPermiso: radar:self:write.\nCA-HU7-12: recalcular y esquema del vector.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/radar/recalculate",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "radar",
+                "recalculate"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "POST recalculate - segunda llamada sin cambios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"recalculated es false (mismo hash, sin cálculo nuevo)\", () => pm.expect(body.data.recalculated).to.eql(false));",
+                  "pm.test(\"calculatedAt igual al del caso 006 (sin fila nueva)\", () => {",
+                  "  const anterior = pm.collectionVariables.get(\"radarCalculatedAt\");",
+                  "  pm.expect(anterior, \"Ejecuta antes el caso 006\").to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.data.calculatedAt).to.eql(anterior);",
+                  "});",
+                  "pm.test(\"Tiempo de respuesta menor o igual a 3 000 ms\", () => pm.expect(pm.response.responseTime).to.be.at.most(3000));",
+                  "pm.test(\"Conserva previousAffinity y topKeywords del cálculo vigente (CA-HU8-11)\", () => {",
+                  "  const previousSaved = pm.collectionVariables.get(\"radarPreviousAffinityJson\");",
+                  "  const topSaved = pm.collectionVariables.get(\"radarTopKeywordsJson\");",
+                  "  pm.expect(previousSaved, \"Ejecuta antes el caso POST recalculate - ok\").to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(topSaved, \"Ejecuta antes el caso POST recalculate - ok\").to.be.a(\"string\").and.not.empty;",
+                  "  const body = pm.response.json();",
+                  "  const previousNow = JSON.stringify(body.data.areas.map((area) => [area.area, area.previousAffinity]));",
+                  "  const topNow = JSON.stringify(body.data.areas.map((area) => [area.area, area.topKeywords]));",
+                  "  pm.expect(previousNow).to.eql(previousSaved);",
+                  "  pm.expect(topNow).to.eql(topSaved);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Ejecuta antes el caso 006 con el mismo accessToken y sin editar el perfil entre ambos.\nMismo hash de entrada -> idempotente: recalculated = false y el mismo calculatedAt (no se crea fila nueva).\nLa API no expone el hash ni el conteo de filas; la verificacion directa en BD se hace en T3.9.\n\nPermiso: radar:self:write.\nCA-HU7-13: idempotencia del recalculo.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/radar/recalculate",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "radar",
+                "recalculate"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "POST recalculate - sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 401\", () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Esquema de error\", () => {",
+                  "  pm.expect(body.error).to.be.an(\"object\");",
+                  "  pm.expect(body.error.code).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.error.message).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Código UNAUTHENTICATED\", () => pm.expect(body.error.code).to.eql(\"UNAUTHENTICATED\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Sin Authorization debe responder 401.\n\nCA-HU7-24: acceso sin autenticar.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/radar/recalculate",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "radar",
+                "recalculate"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "POST recalculate - sin permiso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 403\", () => pm.response.to.have.status(403));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Esquema de error\", () => {",
+                  "  pm.expect(body.error).to.be.an(\"object\");",
+                  "  pm.expect(body.error.code).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(body.error.message).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Código FORBIDDEN\", () => pm.expect(body.error.code).to.eql(\"FORBIDDEN\"));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessTokenSinPermiso}}",
+                "type": "string"
+              }
+            },
+            "description": "Requiere configurar manualmente {{accessTokenSinPermiso}} con el token de un usuario SIN radar:self:write (ej. empresa@umss.edu.bo).\nSi la variable esta vacia o el token tiene permiso, el test falla (no es un bug de la API).\n\nPermiso exigido: radar:self:write.\nCA-HU7-24: acceso sin permiso.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/radar/recalculate",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "radar",
+                "recalculate"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "GET radar - keywords persistidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Estado 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Conserva los 6 ejes en orden fijo, topKeywords (máx. 5, aporte > 0, orden descendente) y previousAffinity\", () => {",
+                  "  pm.expect(body.data.areas).to.be.an(\"array\").with.lengthOf(6);",
+                  "  const ordenEsperado = [\"software-development\", \"cloud-devops\", \"data-ai\", \"quality-assurance\", \"cybersecurity-networks\", \"it-management\"];",
+                  "  pm.expect(body.data.areas.map((a) => a.area)).to.deep.equal(ordenEsperado);",
+                  "  const prevJson = pm.collectionVariables.get(\"radarPreviousAffinityJson\");",
+                  "  const topJson = pm.collectionVariables.get(\"radarTopKeywordsJson\");",
+                  "  if (prevJson) {",
+                  "    pm.expect(JSON.stringify(body.data.areas.map((a) => [a.area, a.previousAffinity]))).to.equal(prevJson);",
+                  "  }",
+                  "  if (topJson) {",
+                  "    pm.expect(JSON.stringify(body.data.areas.map((a) => [a.area, a.topKeywords]))).to.equal(topJson);",
+                  "  }",
+                  "  body.data.areas.forEach((a) => {",
+                  "    pm.expect(a.topKeywords).to.be.an(\"array\");",
+                  "    pm.expect(a.topKeywords.length).to.be.at.most(5);",
+                  "    a.topKeywords.forEach((k, index) => {",
+                  "      pm.expect(k.points).to.be.above(0);",
+                  "      pm.expect(k.percentage).to.be.above(0).and.at.most(100);",
+                  "      if (index > 0) {",
+                  "        const prev = a.topKeywords[index - 1];",
+                  "        pm.expect(prev.points).to.be.at.least(k.points);",
+                  "        pm.expect(prev.percentage).to.be.at.least(k.percentage);",
+                  "        if (prev.points === k.points) {",
+                  "          pm.expect(prev.keyword <= k.keyword).to.equal(true);",
+                  "        }",
+                  "      }",
+                  "    });",
+                  "  });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+              }
+            },
+            "description": "Ejecuta antes los casos POST recalculate - ok y POST recalculate - segunda llamada sin cambios con el mismo accessToken.\nVerifica que palabras_clave_top y previousAffinity se leen de la base de datos con el mismo contenido que devolvio el recalculo (persistencia JSONB).\n\nPermiso: radar:self:read.\nHU-8: keywords influyentes persistidas y expuestas por GET tras el recalculo.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/radar",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "radar"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Auth",
       "item": [
         {
@@ -4400,6 +5004,30 @@
       "value": "",
       "type": "default",
       "description": "Token JWT válido pero sin el permiso nlp:extract. Usar para el caso 403 de la carpeta NLP. NO guardar tokens reales aquí."
+    },
+    {
+      "key": "accessTokenRadarVacio",
+      "value": ""
+    },
+    {
+      "key": "accessTokenOtroTitulado",
+      "value": ""
+    },
+    {
+      "key": "radarGraduateId",
+      "value": ""
+    },
+    {
+      "key": "radarCalculatedAt",
+      "value": ""
+    },
+    {
+      "key": "radarPreviousAffinityJson",
+      "value": ""
+    },
+    {
+      "key": "radarTopKeywordsJson",
+      "value": ""
     }
   ]
 }

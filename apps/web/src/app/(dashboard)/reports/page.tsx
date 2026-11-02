@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { KpiCard } from '../../../modules/reports/components/kpi-card';
 import { GraduatesTable } from '../../../modules/reports/components/graduates-table';
 import { EmptyState } from '../../../modules/reports/components/empty-state';
+import { ConnectionErrorBanner } from '../../../modules/reports/components/connection-error-banner';
 import { GraduatesSearch } from '../../../modules/reports/components/graduates-search';
 import {
   GraduatesStatusFilter,
@@ -40,7 +41,11 @@ export default function ReportsPage() {
     loading: loadingIndicators,
     error: errorIndicators,
   } = useDashboardIndicators();
-  const { data: graduates, loading: loadingGraduates } = useGraduates();
+  const {
+    data: graduates,
+    loading: loadingGraduates,
+    error: errorGraduates,
+  } = useGraduates();
 
   // Estados de filtrado (HU 2)
   const [searchTerm, setSearchTerm] = useState('');
@@ -167,10 +172,9 @@ export default function ReportsPage() {
             </p>
           </div>
 
+          {/* HU-004 CA-08: banner de conexión en lugar de un error genérico. */}
           {errorIndicators ? (
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">
-              {errorIndicators}
-            </div>
+            <ConnectionErrorBanner />
           ) : (
             indicators && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -196,8 +200,15 @@ export default function ReportsPage() {
         </section>
       )}
 
+      {/* HU-004 CA-08: si falla el padrón no se presenta como una lista vacía. */}
+      {activeTab === 'graduates' && errorGraduates && (
+        <section aria-label="Titulados">
+          <ConnectionErrorBanner />
+        </section>
+      )}
+
       {/* Pestaña: Titulados (Filtros, Acciones y Tabla Base) */}
-      {activeTab === 'graduates' && (
+      {activeTab === 'graduates' && !errorGraduates && (
         <section aria-labelledby="graduates-heading" className="space-y-4">
           <div className="flex flex-col gap-4 rounded-lg border border-[#C9C1B1] bg-[#EEE9DF] p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">

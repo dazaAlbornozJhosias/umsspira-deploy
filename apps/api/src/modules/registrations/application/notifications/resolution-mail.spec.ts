@@ -15,6 +15,22 @@ describe('buildResolutionMail', () => {
     expect(mail.text).not.toContain('TIT-');
     expect(mail.text).toContain('/activate');
   });
+  
+    it('incluye una versión HTML con el código y el enlace en el correo de aprobación', () => {
+    const mail = buildResolutionMail({ ...base, decision: 'APROBADA', code: '123456' });
+    expect(mail.subject).toBe('[UMSSPIRA] ¡Tu solicitud de registro ha sido aprobada!');
+    const cells = (mail.html ?? '').match(/font-size:38px[^>]*>(\d)<\/td>/g) ?? [];
+    expect(cells.map((cell) => cell.slice(-6, -5)).join('')).toBe('123456');
+    expect(mail.html).toContain('/activate?applicationId=' + base.applicationId);
+    expect(mail.html).not.toContain('TIT-');
+  });
+
+  it('solo el correo de aprobación lleva versión HTML por ahora', () => {
+    const observed = buildResolutionMail({ ...base, decision: 'OBSERVADA', category: 'a', note: 'b' });
+    const rejected = buildResolutionMail({ ...base, decision: 'RECHAZADA', category: 'a', note: 'b' });
+    expect(observed.html).toBeUndefined();
+    expect(rejected.html).toBeUndefined();
+  });
 
   it('exige el código para un dictamen aprobado', () => {
     expect(() => buildResolutionMail({ ...base, decision: 'APROBADA' })).toThrow();

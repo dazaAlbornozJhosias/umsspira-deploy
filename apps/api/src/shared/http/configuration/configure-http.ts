@@ -17,7 +17,7 @@ export function configureHttp(app: INestApplication): void {
   app.enableCors({
     origin: (origin, callback) => callback(null, !origin || origins.includes(origin)),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
-    allowedHeaders: ['Authorization', 'Content-Type', 'X-CSRF-Token'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-CSRF-Token', 'X-Correction-Token'],
     credentials: true,
   });
   app.useGlobalFilters(new ErrorHandlerFilter());

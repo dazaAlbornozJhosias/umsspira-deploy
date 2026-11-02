@@ -1,0 +1,35 @@
+meta {
+  name: HU-11 T-11.2 - Consultar autoría persistida
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/v1/applications/{{hu112ApprovedId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  const body = res.getBody();
+  test("T-11.2: consulta detalle de solicitud", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("T-11.2: recupera la autoría guardada", function () {
+    const author = body?.data?.reviewAuthor;
+    expect(author).to.be.an("object");
+    expect(author.id).to.equal(bru.getVar("hu112ExpectedAdminId"));
+    expect(author.email.toLowerCase()).to.equal(
+      String(bru.getVar("hu112ExpectedAdminEmail")).toLowerCase()
+    );
+    expect(Number.isNaN(Date.parse(author.reviewedAt))).to.equal(false);
+  });
+}
+
+docs {
+  Ejecutar después de 001. Requiere que hayas aplicado también el cambio find() para devolver reviewAuthor. Para expedientes anteriores a ese cambio puede ser null.
+}

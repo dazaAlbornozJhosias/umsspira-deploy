@@ -1,0 +1,42 @@
+meta {
+  name: HU-11 T-11.2 - Rechazo de autoría manipulada
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/applications/{{hu112ApprovedId}}/review
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "decision": "APROBADA",
+    "reviewedBy": "00000000-0000-4000-8000-000000000000",
+    "reviewedByName": "Administrador falso",
+    "reviewedByEmail": "falso@example.com"
+  }
+}
+
+tests {
+  const body = res.getBody();
+  test("T-11.2: no acepta autoría editable en el JSON", function () {
+    expect(res.getStatus()).to.equal(400);
+  });
+  test("T-11.2: no devuelve un dictamen creado", function () {
+    expect(body?.data?.id).to.be.undefined;
+  });
+}
+
+docs {
+  El esquema reviewSchema es strictObject: rechaza campos de autoría desconocidos antes de entrar al repositorio. Puede usarse un ID de solicitud existente.
+}

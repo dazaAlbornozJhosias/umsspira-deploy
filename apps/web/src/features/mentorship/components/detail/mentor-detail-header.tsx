@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { InfoIcon, SendIcon } from 'lucide-react';
 import {
   availabilityBadgeConfig,
@@ -58,17 +59,25 @@ export function MentorDetailHeader({ mentor }: { mentor: MentorDetailProfile }) 
         </div>
 
         <div className="mentor-detail-header-action">
-          {/* Botón activo solo lectura; se conectará con el flujo de solicitud en la HU correspondiente */}
-          <button
-            type="button"
-            disabled={!isAvailable}
-            className={`mentor-button mentor-detail-request-btn ${
-              isAvailable ? 'mentor-button-primary' : 'mentor-button-disabled'
-            }`}
-          >
-            <SendIcon className="icon" aria-hidden="true" />
-            Solicitar mentoría
-          </button>
+          {/* Con el mentor disponible abre el flujo de solicitud de la HU 6.10 */}
+          {isAvailable ? (
+            <Link
+              href={`/mentorship/request/${encodeURIComponent(mentor.id)}`}
+              className="mentor-button mentor-button-primary mentor-detail-request-btn"
+            >
+              <SendIcon className="icon" aria-hidden="true" />
+              Solicitar mentoría
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="mentor-button mentor-button-disabled mentor-detail-request-btn"
+            >
+              <SendIcon className="icon" aria-hidden="true" />
+              Solicitar mentoría
+            </button>
+          )}
         </div>
       </div>
 

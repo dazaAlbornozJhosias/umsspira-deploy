@@ -1,0 +1,50 @@
+meta {
+  name: HU-11 T-11.3 - Bloquear tercera observación
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/v1/applications/{{hu113ObservationLimitId}}/review
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "decision": "OBSERVADA",
+    "category": "Documento ilegible",
+    "note": "El documento todavía requiere una corrección de legibilidad."
+  }
+}
+
+tests {
+  const body = res.getBody();
+  test("T-11.3: rechaza la tercera observación con HTTP 409", function () {
+    expect(res.getStatus()).to.equal(409);
+  });
+  test("T-11.3: identifica el límite de observaciones", function () {
+    expect(body?.error?.code).to.equal("OBSERVATION_LIMIT_REACHED");
+  });
+  test("T-11.3: no devuelve un nuevo dictamen", function () {
+    expect(body?.data?.id).to.be.undefined;
+  });
+}
+
+docs {
+  Solo en un entorno de pruebas. Configurar baseUrl y accessToken de un administrador autorizado.
+  Configurar hu113ObservationLimitId con el UUID de una solicitud PENDIENTE de su carrera,
+  con exactamente DOS dictámenes OBSERVADA previos, ambos subsanados y reenviados.
+  No usar una solicitud que siga OBSERVADA: devolvería APPLICATION_ALREADY_REVIEWED.
+  Preparar el historial mediante dos ciclos de observar y subsanar de HU-10.
+  Comprobar primero el detalle con 010. Esta petición debe fallar sin crear otro dictamen.
+  Si la precondición no se cumple, podría emitir una observación y un correo real.
+}

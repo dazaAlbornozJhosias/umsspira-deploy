@@ -1,0 +1,31 @@
+meta {
+  name: HU-11 T-11.2 - Dictamen sin sesión
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/applications/{{hu112ApprovedId}}/review
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "decision": "APROBADA"
+  }
+}
+
+tests {
+  test("T-11.2: bloquea solicitud sin credenciales", function () {
+    expect(res.getStatus()).to.equal(401);
+  });
+}
+
+docs {
+  No envía Authorization. Si Bruno hereda autorización de colección, eliminarla de esta petición. No modifica solicitudes.
+}

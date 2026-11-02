@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CompassIcon, LayoutGridIcon, Loader2Icon } from 'lucide-react';
+import { Loader2Icon } from 'lucide-react';
 import { useMentorDirectory } from '../../hooks/use-mentor-directory';
 import { emptyDirectoryFilters } from '../../model/mentor-directory';
 import { MentorDirectoryCard } from './mentor-directory-card';
@@ -17,10 +17,6 @@ export function MentorDirectoryPage() {
     : `${directory.total} ${directory.total === 1 ? 'mentor encontrado' : 'mentores encontrados'}`;
 
   return <main className="mentorship-shell directory-shell">
-    <nav className="directory-tabs" aria-label="Navegación de mentorías">
-      <Link href="/mentorship"><LayoutGridIcon className="icon" aria-hidden="true" />Inicio</Link>
-      <Link href="/mentorship/directory" aria-current="page"><CompassIcon className="icon" aria-hidden="true" />Explorar mentores</Link>
-    </nav>
     <nav className="mentorship-breadcrumb" aria-label="Ruta de navegación"><ol className="breadcrumb-list">
       <li><Link href="/" className="breadcrumb-link">Inicio</Link></li><li aria-hidden="true">/</li>
       <li><Link href="/mentorship" className="breadcrumb-link">Mentorías</Link></li><li aria-hidden="true">/</li>

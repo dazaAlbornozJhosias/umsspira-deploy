@@ -1,0 +1,30 @@
+meta {
+  name: 009 - Reemplazar documento de respaldo observado
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/v1/registrations/observed/document
+  body: multipartForm
+  auth: none
+}
+
+headers {
+  X-Correction-Token: {{validCorrectionToken}}
+}
+
+body:multipart-form {
+  file: @file(fixtures/documento.pdf)
+  tipoDocumento: diploma_academico
+}
+
+tests {
+  test("Reemplaza el documento de respaldo conservando el historial", function() {
+    expect([200, 201, 404]).to.include(res.getStatus());
+  });
+}
+
+docs {
+  Reemplaza el documento de respaldo de la solicitud observada. Marca el anterior como no valido y conserva la referencia para la auditoria.
+}

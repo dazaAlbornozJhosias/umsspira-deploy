@@ -1,9 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
+import {
+  AFFINITY_AREA_LABELS,
+  AFFINITY_AREA_SHORT_LABELS,
+  type AffinityAreaScore,
+} from '@umsspira/shared-types/src/affinity';
 import { clampPercentage, formatPercentage } from '../utils/percentage';
 import { Code, Cloud, BrainCircuit, ShieldCheck, CheckSquare, LayoutDashboard } from 'lucide-react';
+import { VariationIndicator } from './variation-indicator';
 
 const AXES_ORDER = [
   'software-development',
@@ -15,24 +20,6 @@ const AXES_ORDER = [
 ] as const;
 
 type AreaId = typeof AXES_ORDER[number];
-
-const AREA_LABELS: Record<AreaId, string> = {
-  'software-development': 'Desarrollo de Software',
-  'cloud-devops': 'Cloud/DevOps',
-  'data-ai': 'Ciencia de Datos/IA',
-  'quality-assurance': 'QA',
-  'cybersecurity-networks': 'Ciberseguridad',
-  'it-management': 'Gestión TI',
-};
-
-const AREA_SHORT_LABELS: Record<AreaId, string> = {
-  'software-development': 'Desarrollo de Software',
-  'cloud-devops': 'Cloud/Devops',
-  'data-ai': 'Ciencia de Datos/IA',
-  'quality-assurance': 'QA',
-  'cybersecurity-networks': 'Ciberseguridad',
-  'it-management': 'Gestión TI',
-};  
 
 const AREA_ICONS: Record<AreaId, React.ElementType> = {
   'software-development': Code,
@@ -86,10 +73,12 @@ export default function AffinityRadar({
     
     return {
       id,
-      label: AREA_LABELS[id],
-      shortLabel: AREA_SHORT_LABELS[id],
+      label: AFFINITY_AREA_LABELS[id],
+      shortLabel: AFFINITY_AREA_SHORT_LABELS[id],
+      previousAffinity: found?.previousAffinity ?? null,
       value: clampPercentage(rawValue),
       displayValue: formatPercentage(rawValue),
+      currentAffinity: rawValue,
     };
   });
 
@@ -256,8 +245,8 @@ export default function AffinityRadar({
             const isSelected = selectedArea === data.id;
             const Icon = AREA_ICONS[data.id as AreaId] || Code;
 
-            const width = 210;
-            const height = 50;
+            const width = 250;
+            const height = 70;
 
             return (
               <foreignObject
@@ -280,7 +269,7 @@ export default function AffinityRadar({
                     <Icon className="w-3.5 h-3.5 text-white" />
                   </div>
 
-                  <div className="flex flex-col items-start leading-none justify-center">
+                  <div className="flex flex-col items-start gap-1 leading-none justify-center">
                     <span className={`text-[11px] font-bold ${isSelected ? 'text-white' : 'text-slate-800'}`}>
                       {data.label} {!isRadarEmpty && (
                         <span className={isSelected ? 'text-red-400 font-black' : 'text-red-700 font-black'}>
@@ -288,6 +277,13 @@ export default function AffinityRadar({
                         </span>
                       )}
                     </span>
+                    {!isRadarEmpty && (
+                      <VariationIndicator
+                        current={data.currentAffinity}
+                        previous={data.previousAffinity}
+                        areaLabel={data.label}
+                      />
+                    )}
                   </div>
                 </div>
               </foreignObject>

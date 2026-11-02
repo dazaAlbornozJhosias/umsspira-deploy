@@ -1,4 +1,6 @@
 import { RadarArea } from '../../domain/entities/radar-area';
+import type { KeywordContribution } from '../../domain/policies/affinity-calculator';
+
 /**
  * Representa los datos calculados de un área del radar listos para almacenarse
  * en la tabla 'afinidad_radar' de la base de datos.
@@ -9,14 +11,8 @@ export interface AreaScoreRecord {
   puntaje: number;
   porcentaje: number;
   ponderacion: number | null;
-  // Detalle de las palabras clave que más aportaron al área (HU-4 / Explicabilidad)
-  palabrasClaveTop: Array<{ 
-    keyword: string; 
-    weight: number; 
-    frequency: number; 
-    points: number; 
-    percentage: number; 
-  }>;
+  // Detalle de las palabras clave que más aportaron al área (HU-8 / Explicabilidad)
+  palabrasClaveTop: KeywordContribution[];
 }
 
 /**
@@ -35,13 +31,7 @@ export interface RadarCalculationSnapshot {
     puntaje: number;
     porcentaje: number;
     ponderacion: number | null;
-    palabrasClaveTop: Array<{ 
-      keyword: string; 
-      weight: number; 
-      frequency: number; 
-      points: number; 
-      percentage: number; 
-    }>;
+    palabrasClaveTop: KeywordContribution[];
   }>;
 }
 
@@ -67,15 +57,24 @@ export interface RadarRepositoryPort {
   getPreviousCalculation(tituladoId: string, currentCalculationId: string): Promise<RadarCalculationSnapshot | null>;
 
   /**
+   * Obtiene los términos no mapeados vigentes del titulado para exponerlos en la respuesta.
+   */
+  getUnmappedKeywords(tituladoId: string): Promise<string[]>;
+
+  /**
    * Ejecuta una rutina dentro de un bloqueo asesor a nivel de transacción (pg_advisory_xact_lock).
    * Garantiza la serialización de peticiones simultáneas sobre el mismo titulado y evita registros duplicados.
+   * La operación recibe un repositorio ligado a esa transacción: todas las lecturas y escrituras
+   * deben hacerse con él para que el bloqueo cubra el cálculo completo.
    */
-  executeWithAdvisoryLock<T>(tituladoId: string, operation: () => Promise<T>): Promise<T>;
-  
+  executeWithAdvisoryLock<T>(
+    tituladoId: string,
+    operation: (repository: RadarRepositoryPort) => Promise<T>,
+  ): Promise<T>;
+
   /**
    * Persiste de manera atómica en una sola transacción:
    * 1 fila en calculo_radar + 6 filas en afinidad_radar + sincronización de términos no mapeados.
-   * (Evolución completa del método genérico de guardado de radar).
    */
   saveCalculation(params: {
     tituladoId: string;
@@ -88,6 +87,7 @@ export interface RadarRepositoryPort {
 
   /**
    * Consulta el catálogo de pesos asignados por área desde la tabla 'palabra_clave_area'.
+   * La clave del registro es el UUID del área.
    */
   getAreaWeights(): Promise<Record<string, Array<{ term: string; peso: number }>>>;
 }

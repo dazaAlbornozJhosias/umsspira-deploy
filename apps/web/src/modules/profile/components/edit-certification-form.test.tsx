@@ -72,10 +72,18 @@ function elegirFoto(archivo: File) {
   fireEvent.change(inputFoto, { target: { files: [archivo] } });
 }
 
-// El perfil ya cargado en el estado compartido (incluye cert-1 y cert-3)
+// El perfil ya cargado en el estado compartido (incluye cert-1 y cert-3). El respaldo de cert-1 se nombra
+// distinto al de GUARDADA para distinguir en la pantalla el valor del estado del que muestra el formulario
+const PERFIL_CARGADO = {
+  ...PROFILE_RECORDS_MOCK,
+  certification: (PROFILE_RECORDS_MOCK.certification as CertificationRecord[]).map((record) =>
+    record.id === 'cert-1' ? { ...record, backupFile: 'respaldo-estado.jpg' } : record,
+  ),
+};
+
 function renderForm() {
   render(
-    <ProfileStoreProvider initialRecords={PROFILE_RECORDS_MOCK}>
+    <ProfileStoreProvider initialRecords={PERFIL_CARGADO}>
       <EditCertificationForm />
       <CertificationName id={routeId} />
     </ProfileStoreProvider>,

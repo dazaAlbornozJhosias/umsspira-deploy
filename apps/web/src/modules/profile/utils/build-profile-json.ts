@@ -8,24 +8,25 @@ import type {
 import { formatExportDate } from '@/modules/profile/utils/profile-file-name';
 
 export type ProfileJson = {
-  idEgresado: string;
-  fechaDescarga: string;
-  nombre: string;
-  carrera: string;
+  // Datos generales con mayúscula inicial, igual que los campos de cada registro
+  IdEgresado: string;
+  FechaDescarga: string;
+  Nombre: string;
+  Carrera: string;
   // null = la API todavía no la registra
-  promocion: number | null;
+  Promocion: number | null;
   // respaldo: nombre del archivo adjunto, null si no tiene
   // Claves de las secciones con los nombres del Sprint Backlog (HU5-05)
-  'Formación académica': { institucion: string; titulo: string; grado: string; anio: number | null; respaldo: string | null }[];
+  'Formación académica': { Institucion: string; Titulo: string; Grado: string; Anio: number | null; Respaldo: string | null }[];
   // periodo: texto del resumen; fechas AAAA-MM-DD, fechaFin null = trabajo actual
   'Experiencia laboral': {
-    empresa: string;
-    cargo: string;
-    periodo: string;
-    fechaInicio: string;
-    fechaFin: string | null;
+    Empresa: string;
+    Cargo: string;
+    Periodo: string;
+    FechaInicio: string;
+    FechaFin: string | null;
   }[];
-  Certificaciones: { nombre: string; entidad: string; anio: number | null; grado: string }[];
+  Certificaciones: { Nombre: string; Entidad: string; Anio: number | null; Grado: string }[];
 };
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -50,30 +51,30 @@ export function hasProfileBlocks(records: ProfileRecords): boolean {
 // Se arma desde los registros del perfil y no desde la línea de tiempo, que no trae todos los datos
 export function buildProfileJson(header: ProfileHeader, records: ProfileRecords, date: Date): ProfileJson {
   return {
-    idEgresado: header.id,
-    fechaDescarga: formatExportDate(date),
-    nombre: header.name,
-    carrera: header.career,
-    promocion: header.graduationYear,
+    IdEgresado: header.id,
+    FechaDescarga: formatExportDate(date),
+    Nombre: header.name,
+    Carrera: header.career,
+    Promocion: header.graduationYear,
     'Formación académica': (records.education as EducationRecord[]).map((record) => ({
-      institucion: record.institution,
-      titulo: record.title,
-      grado: record.degree,
-      anio: toYear(record.graduationYear),
-      respaldo: record.backupFile ?? null,
+      Institucion: record.institution,
+      Titulo: record.title,
+      Grado: record.degree,
+      Anio: toYear(record.graduationYear),
+      Respaldo: record.backupFile ?? null,
     })),
     'Experiencia laboral': (records.experience as ExperienceRecord[]).map((record) => ({
-      empresa: record.company,
-      cargo: record.position,
-      periodo: `${formatMonthYear(record.startDate)} – ${formatMonthYear(record.endDate)}`,
-      fechaInicio: record.startDate,
-      fechaFin: record.endDate || null,
+      Empresa: record.company,
+      Cargo: record.position,
+      Periodo: `${formatMonthYear(record.startDate)} – ${formatMonthYear(record.endDate)}`,
+      FechaInicio: record.startDate,
+      FechaFin: record.endDate || null,
     })),
     Certificaciones: (records.certification as CertificationRecord[]).map((record) => ({
-      nombre: record.name,
-      entidad: record.issuer,
-      anio: toYear(record.issueYear),
-      grado: record.degree,
+      Nombre: record.name,
+      Entidad: record.issuer,
+      Anio: toYear(record.issueYear),
+      Grado: record.degree,
     })),
   };
 }

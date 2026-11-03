@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Camera, Check, FileText } from 'lucide-react';
+import { Camera, Check, FileText, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 import { MensajeError } from '@/modules/profile/validation/mensaje-error';
@@ -107,12 +107,21 @@ type BackupFieldProps = {
   documentUrl?: string;
   isVerified: boolean;
   onDocumentChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  // Deshace la foto elegida que todavía no se guardó y vuelve al respaldo guardado; sin él no se muestra «Quitar imagen»
+  onDocumentRemove?: () => void;
   // Abre el visor del respaldo guardado (HU-10); sin él no se muestra «Ver respaldo»
   onViewBackup?: () => void;
 };
 
 // Respaldo documental con estado, enlace al archivo y botones para subir foto o documento
-export function BackupField({ documentName, documentUrl, isVerified, onDocumentChange, onViewBackup }: BackupFieldProps) {
+export function BackupField({
+  documentName,
+  documentUrl,
+  isVerified,
+  onDocumentChange,
+  onDocumentRemove,
+  onViewBackup,
+}: BackupFieldProps) {
   // Mismas reglas que en Completar perfil: el atributo accept se puede saltar eligiendo "Todos los archivos"
   const [backupError, setBackupError] = useState<string>();
 
@@ -127,6 +136,8 @@ export function BackupField({ documentName, documentUrl, isVerified, onDocumentC
       return;
     }
     onDocumentChange(event);
+    // Se limpia el input para poder volver a elegir el mismo archivo después de quitarlo
+    event.target.value = '';
   }
 
   return (
@@ -148,6 +159,16 @@ export function BackupField({ documentName, documentUrl, isVerified, onDocumentC
             </a>
           ) : (
             <span className="text-[13px] font-medium text-truffle-trouble">{documentName}</span>
+          )}
+          {onDocumentRemove && (
+            <button
+              type="button"
+              onClick={onDocumentRemove}
+              className="inline-flex items-center gap-1 rounded-md border border-oatmeal bg-white px-2 py-1 text-xs font-semibold text-truffle-trouble transition hover:bg-palladian"
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Quitar imagen
+            </button>
           )}
           {onViewBackup && (
             <button

@@ -231,6 +231,28 @@ describe('EditCertificationForm', () => {
       expect(screen.getByTestId('respaldo-guardado')).toHaveTextContent('certificado-nuevo.jpg');
     });
 
+    it('"Quitar imagen" deshace la foto elegida que aún no se guardó y vuelve al respaldo guardado', async () => {
+      renderForm();
+      await screen.findByLabelText('Nombre de la certificación');
+      // Sin foto nueva no hay nada que quitar
+      expect(screen.queryByRole('button', { name: 'Quitar imagen' })).not.toBeInTheDocument();
+
+      elegirFoto(jpg('certificado-nuevo.jpg'));
+      expect(screen.getByText('certificado-nuevo.jpg', { selector: 'span' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Quitar imagen' }));
+
+      expect(screen.queryByText('certificado-nuevo.jpg')).not.toBeInTheDocument();
+      expect(screen.getByText('respaldo.jpg', { selector: 'span' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Quitar imagen' })).not.toBeInTheDocument();
+
+      // Al guardar solo se actualiza el registro: no se sube ningún respaldo
+      actualizarCertificacionMock.mockResolvedValue(GUARDADA);
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+      expect(await screen.findByRole('status')).toHaveTextContent('Registro actualizado');
+      expect(subirRespaldoMock).not.toHaveBeenCalled();
+    });
+
     it('si la subida falla muestra el error y conserva el respaldo guardado y la foto elegida (CA-08)', async () => {
       actualizarCertificacionMock.mockResolvedValue(GUARDADA);
       subirRespaldoMock.mockRejectedValueOnce(new ApiError(0, 'No fue posible conectar con el servidor'));

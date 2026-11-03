@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 import { DeleteRecordModal } from '@/modules/profile/components/delete-record-modal';
 import { ProfileRecordsTable } from '@/modules/profile/components/profile-records-table';
-import { PROFILE_RECORDS_MOCK, SECTION_LABELS } from '@/modules/profile/data/profile-records-data';
+import { EMPTY_PROFILE_RECORDS, SECTION_LABELS } from '@/modules/profile/data/profile-records-data';
 import { DeleteRecordException, deleteProfileRecord } from '@/modules/profile/services/profile-records-service';
 import { useOptionalProfileStore } from '@/modules/profile/state/profile-store';
 import type {
@@ -29,7 +29,7 @@ type ProfileRecordsManagerProps = {
 };
 
 export function ProfileRecordsManager({
-  initialRecords = PROFILE_RECORDS_MOCK,
+  initialRecords = EMPTY_PROFILE_RECORDS,
   initialSection = 'education',
 }: ProfileRecordsManagerProps) {
   // Dentro de las pantallas del perfil usa el estado compartido; sin proveedor (pruebas) usa su propio estado

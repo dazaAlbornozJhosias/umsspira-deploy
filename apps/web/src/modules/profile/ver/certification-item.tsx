@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
-import { ChevronDown, Download, Eye, FileText } from 'lucide-react';
+import { ChevronDown, Download, Eye, Image as ImageIcon } from 'lucide-react';
 
 import { BackupViewerModal } from '@/modules/profile/components/backup-viewer-modal';
 import type { TimelineItem } from '@/modules/profile/data/profile-data';
@@ -76,12 +76,12 @@ export default function CertificationItem({
             rel="noopener noreferrer"
             className="inline-flex w-fit items-center gap-1.5 rounded-md border border-oatmeal bg-white px-2 py-1.5 text-[11px] font-semibold text-blue-fantastic transition hover:bg-palladian"
           >
-            <FileText className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
+            <ImageIcon className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
             {item.document}
           </a>
         ) : (
           <span className="inline-flex w-fit items-center gap-1.5 rounded-md border border-oatmeal bg-white px-2 py-1.5 text-[11px] font-semibold text-blue-fantastic">
-            <FileText className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
+            <ImageIcon className="h-3.5 w-3.5 text-truffle-trouble" aria-hidden="true" />
             {item.document}
           </span>
         ))}
@@ -116,7 +116,7 @@ export default function CertificationItem({
 
           {item.document ? (
             <div className="flex items-center gap-2.5 rounded-lg border border-oatmeal bg-white px-3 py-2.5">
-              <FileText className="h-4 w-4 shrink-0 text-truffle-trouble" aria-hidden="true" />
+              <ImageIcon className="h-4 w-4 shrink-0 text-truffle-trouble" aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-blue-fantastic">
                 {item.document}
               </span>

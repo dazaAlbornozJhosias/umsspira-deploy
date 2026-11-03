@@ -2,14 +2,14 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
-import { PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
+import { PROFILE_RECORDS_MOCK, profileHeader } from '@/modules/profile/testing/profile-fixtures';
 import { ProfileStoreProvider } from '@/modules/profile/state/profile-store';
 import ProfileSummary from '@/modules/profile/ver/profile-summary';
 
 describe('ProfileSummary - T7.5 responsive', () => {
   it('muestra las secciones del resumen con datos de prueba', () => {
     render(
-      <ProfileStoreProvider initialRecords={PROFILE_RECORDS_MOCK}>
+      <ProfileStoreProvider initialRecords={PROFILE_RECORDS_MOCK} initialHeader={profileHeader}>
         <ProfileSummary />
       </ProfileStoreProvider>,
     );
@@ -45,7 +45,7 @@ describe('ProfileSummary - T7.5 responsive', () => {
 
   it('mantiene el contenedor principal preparado para el ancho disponible', () => {
     const { container } = render(
-      <ProfileStoreProvider initialRecords={PROFILE_RECORDS_MOCK}>
+      <ProfileStoreProvider initialRecords={PROFILE_RECORDS_MOCK} initialHeader={profileHeader}>
         <ProfileSummary />
       </ProfileStoreProvider>,
     );

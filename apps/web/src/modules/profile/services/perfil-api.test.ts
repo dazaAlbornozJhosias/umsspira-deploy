@@ -1,4 +1,3 @@
-import { CURRENT_GRADUATE_ID } from '@/modules/profile/data/profile-records-data';
 import type { CertificationRecord } from '@/modules/profile/types/profile-record';
 import { ApiError } from '@/shared/services/api-client';
 import { clearAccessToken, setAccessToken } from '@/shared/services/auth-session';
@@ -24,9 +23,12 @@ function responder(status: number, cuerpo: unknown) {
   fetchMock.mockResolvedValue({ ok, status, json: async () => (ok ? { data: cuerpo } : cuerpo) });
 }
 
-const base = { idTitulado: '9bab2c02-d99b-4e06-a16c-ba5ee762654e', fechaCreacion: '2026-10-01' };
+// ownerId de los registros = idTitulado que devuelve la API
+const ID_TITULADO = '9bab2c02-d99b-4e06-a16c-ba5ee762654e';
+const base = { idTitulado: ID_TITULADO, fechaCreacion: '2026-10-01' };
 
 const PERFIL_API: PerfilApi = {
+  titulado: { id: ID_TITULADO, nombre: 'Ana Rojas', carrera: 'Ingeniería de Sistemas', promocion: null },
   formacionAcademica: {
     registros: [
       { ...base, id: 'f-1', institucion: 'UMSS', titulo: 'Ingeniería de Sistemas', grado: 'Licenciatura', anioEgreso: 2018 },
@@ -77,7 +79,7 @@ describe('obtenerPerfil', () => {
     expect(registros.education).toEqual([
       {
         id: 'f-1',
-        ownerId: CURRENT_GRADUATE_ID,
+        ownerId: ID_TITULADO,
         institution: 'UMSS',
         title: 'Ingeniería de Sistemas',
         graduationYear: '2018',
@@ -85,7 +87,7 @@ describe('obtenerPerfil', () => {
       },
     ]);
     expect(registros.experience).toEqual([
-      { id: 'e-1', ownerId: CURRENT_GRADUATE_ID, company: 'Jalasoft', position: 'Dev', startDate: '2023-08-01', endDate: '' },
+      { id: 'e-1', ownerId: ID_TITULADO, company: 'Jalasoft', position: 'Dev', startDate: '2023-08-01', endDate: '' },
     ]);
     expect((registros.certification as CertificationRecord[]).map((c) => [c.id, c.issueYear, c.backupFile])).toEqual([
       ['c-1', '2022', 'respaldo.jpg'],
@@ -100,6 +102,26 @@ describe('obtenerPerfil', () => {
 
     expect(resumen.description).toBe('Ingeniero de sistemas.');
     expect(resumen.records.education).toHaveLength(1);
+  });
+
+  it('toma el nombre y la carrera del titulado con sesión', async () => {
+    responder(200, PERFIL_API);
+
+    expect((await obtenerResumenPerfil()).header).toEqual({
+      id: ID_TITULADO,
+      name: 'Ana Rojas',
+      career: 'Ingeniería de Sistemas',
+      graduationYear: null,
+    });
+  });
+
+  it('deja nombre y carrera vacíos si la API no los tiene registrados', async () => {
+    responder(200, { ...PERFIL_API, titulado: { id: ID_TITULADO, nombre: null, carrera: null, promocion: null } });
+
+    const { header } = await obtenerResumenPerfil();
+
+    expect(header.name).toBe('');
+    expect(header.career).toBe('');
   });
 
   it('deja la descripción vacía si el egresado aún no la registró', async () => {
@@ -187,7 +209,7 @@ describe('crearFormacion', () => {
 
     await expect(crearFormacion(formacion)).resolves.toEqual({
       id: 'f-1',
-      ownerId: CURRENT_GRADUATE_ID,
+      ownerId: ID_TITULADO,
       institution: 'UMSS',
       title: 'Ingeniería de Sistemas',
       graduationYear: '2018',
@@ -251,7 +273,7 @@ describe('crearExperiencia', () => {
 
     await expect(crearExperiencia({ ...experiencia, fechaFin: undefined })).resolves.toEqual({
       id: 'e-1',
-      ownerId: CURRENT_GRADUATE_ID,
+      ownerId: ID_TITULADO,
       company: 'Jalasoft',
       position: 'Dev',
       startDate: '2023-08-01',

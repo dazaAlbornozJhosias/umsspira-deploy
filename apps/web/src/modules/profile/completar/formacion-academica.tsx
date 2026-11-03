@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GraduationCap, Plus } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
 import {
@@ -23,16 +23,20 @@ type FormacionAcademicaFormProps = {
   formaciones: FormacionAcademica[];
   // Si la promesa falla con ApiError (409, 400...), se muestra su mensaje y no se limpia el formulario
   onAgregar: (formacion: FormacionAcademica) => void | Promise<void>;
+  // Avisa cuántos errores hay a la vista, para el contador del encabezado de la sección (HU-02, AC 6)
+  onErroresChange?: (errores: number) => void;
 };
 
 const VACIO: FormacionAcademica = { institucion: '', titulo: '', anioEgreso: '', grado: '' };
 
 const subtituloClase = 'text-xs font-bold uppercase tracking-wide text-[#2C3B4D]';
 const labelClase = 'block text-xs font-semibold text-[#2C3B4D]';
+// Campo obligatorio: asterisco igual al de Experiencia laboral (no forma parte del texto de la etiqueta)
+const labelObligatorioClase = `${labelClase} after:ml-1 after:text-[#A35139] after:content-['*']`;
 const inputClase =
   'mt-1.5 h-11 w-full rounded-md border border-[#C9C1B1] bg-white px-3 text-sm text-[#2C3B4D] placeholder:text-[#2C3B4D]/40 focus:border-[#FFB162] focus:outline-none';
 
-export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcademicaFormProps) {
+export function FormacionAcademicaForm({ formaciones, onAgregar, onErroresChange }: FormacionAcademicaFormProps) {
   const [datos, setDatos] = useState<FormacionAcademica>(VACIO);
   // Error del año de egreso; una vez mostrado se recalcula mientras se corrige
   const [errorAnio, setErrorAnio] = useState<string>();
@@ -40,6 +44,9 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
   const [errorDuplicada, setErrorDuplicada] = useState<string>();
   // Mensaje del backend al guardar, tal como lo envía; se quita al cambiar cualquier campo
   const [errorGuardar, setErrorGuardar] = useState<string>();
+
+  const cantidadErrores = [errorAnio, errorDuplicada, errorGuardar].filter(Boolean).length;
+  useEffect(() => onErroresChange?.(cantidadErrores), [cantidadErrores, onErroresChange]);
   const [guardando, setGuardando] = useState(false);
 
   function cambiar(campo: keyof FormacionAcademica, valor: string) {
@@ -107,7 +114,7 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
 
       <form onSubmit={agregar} className="mt-4 space-y-4">
         <div>
-          <label htmlFor="institucion" className={labelClase}>Institución</label>
+          <label htmlFor="institucion" className={labelObligatorioClase}>Institución</label>
           <input
             id="institucion"
             type="text"
@@ -121,7 +128,7 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
         </div>
 
         <div>
-          <label htmlFor="titulo" className={labelClase}>Título</label>
+          <label htmlFor="titulo" className={labelObligatorioClase}>Título</label>
           <input
             id="titulo"
             type="text"
@@ -136,7 +143,7 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label htmlFor="anioEgreso" className={labelClase}>Año de egreso</label>
+            <label htmlFor="anioEgreso" className={labelObligatorioClase}>Año de egreso</label>
             <input
               id="anioEgreso"
               type="text"
@@ -157,7 +164,7 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
           </div>
 
           <div>
-            <label htmlFor="grado" className={labelClase}>Grado</label>
+            <label htmlFor="grado" className={labelObligatorioClase}>Grado</label>
             <select
               id="grado"
               required

@@ -23,6 +23,34 @@ describe('FormacionAcademicaForm', () => {
     }
   });
 
+  it('marca con asterisco los 4 campos obligatorios', () => {
+    const { container } = render(<FormacionAcademicaForm formaciones={[]} onAgregar={jest.fn()} />);
+
+    for (const id of ['institucion', 'titulo', 'anioEgreso', 'grado']) {
+      expect(container.querySelector(`label[for="${id}"]`)?.className).toContain("after:content-['*']");
+    }
+  });
+
+  it('avisa cuántos errores hay a la vista para el contador de la sección (HU-02, AC 6)', async () => {
+    const onErroresChange = jest.fn();
+    render(
+      <FormacionAcademicaForm
+        formaciones={[]}
+        onAgregar={jest.fn().mockRejectedValue(new ApiError(409, 'La formación académica ya se encuentra registrada.'))}
+        onErroresChange={onErroresChange}
+      />,
+    );
+    expect(onErroresChange).toHaveBeenLastCalledWith(0);
+
+    fireEvent.change(screen.getByLabelText('Institución'), { target: { value: 'UMSS' } });
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Ingeniería de Sistemas' } });
+    fireEvent.change(screen.getByLabelText('Año de egreso'), { target: { value: '2018' } });
+    fireEvent.change(screen.getByLabelText('Grado'), { target: { value: 'Licenciatura' } });
+    fireEvent.click(screen.getByRole('button', { name: /agregar/i }));
+
+    await waitFor(() => expect(onErroresChange).toHaveBeenLastCalledWith(1));
+  });
+
   it('limita institución y título a 150 caracteres (HU5-01)', () => {
     render(<FormacionAcademicaForm formaciones={[]} onAgregar={jest.fn()} />);
 

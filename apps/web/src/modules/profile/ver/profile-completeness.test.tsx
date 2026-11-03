@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { render, screen, within } from '@testing-library/react';
 
-import { PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
+import { PROFILE_RECORDS_MOCK } from '@/modules/profile/testing/profile-fixtures';
 import { profileCompleteness } from '@/modules/profile/utils/profile-completeness';
 
 import ProfileCompleteness from './profile-completeness';

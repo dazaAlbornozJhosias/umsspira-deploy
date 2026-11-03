@@ -1,7 +1,7 @@
 import type { Certificacion } from '@/modules/profile/completar/certificaciones';
 import type { Experiencia } from '@/modules/profile/completar/experiencia-laboral';
 import type { FormacionAcademica } from '@/modules/profile/completar/formacion-academica';
-import { CURRENT_GRADUATE_ID } from '@/modules/profile/data/profile-records-data';
+import type { ProfileHeader } from '@/modules/profile/data/profile-data';
 import type {
   CertificationRecord,
   EducationRecord,
@@ -62,6 +62,8 @@ export type CertificacionApi = RegistroApi & Required<CertificacionCuerpo> & {
 
 // GET /api/v1/perfil (profile.presenter.ts del backend)
 export type PerfilApi = {
+  // nombre y carrera null = no registrados; promocion todavía llega null
+  titulado: { id: string; nombre: string | null; carrera: string | null; promocion: number | null };
   formacionAcademica: { registros: FormacionApi[] };
   experienciaLaboral: { registros: ExperienciaApi[] };
   certificaciones: { registros: CertificacionApi[] };
@@ -77,15 +79,16 @@ export type DescripcionApi = {
 
 // Resumen del perfil: registros de las 3 secciones y descripción profesional (vacía = sin registrar)
 export type ResumenPerfil = {
+  header: ProfileHeader;
   records: ProfileRecords;
   description: string;
 };
 
-// La API solo devuelve registros del titulado actual, así que todos son del egresado con sesión
+// La API solo devuelve registros del titulado actual; ownerId es su id (idTitulado)
 export function aEducationRecord(formacion: FormacionApi): EducationRecord {
   return {
     id: formacion.id,
-    ownerId: CURRENT_GRADUATE_ID,
+    ownerId: formacion.idTitulado,
     institution: formacion.institucion,
     title: formacion.titulo,
     graduationYear: String(formacion.anioEgreso),
@@ -96,7 +99,7 @@ export function aEducationRecord(formacion: FormacionApi): EducationRecord {
 export function aExperienceRecord(experiencia: ExperienciaApi): ExperienceRecord {
   return {
     id: experiencia.id,
-    ownerId: CURRENT_GRADUATE_ID,
+    ownerId: experiencia.idTitulado,
     company: experiencia.empresa,
     position: experiencia.cargo,
     startDate: experiencia.fechaInicio,
@@ -108,7 +111,7 @@ export function aExperienceRecord(experiencia: ExperienciaApi): ExperienceRecord
 export function aCertificationRecord(certificacion: CertificacionApi): CertificationRecord {
   return {
     id: certificacion.id,
-    ownerId: CURRENT_GRADUATE_ID,
+    ownerId: certificacion.idTitulado,
     name: certificacion.nombre,
     issuer: certificacion.entidadEmisora,
     degree: certificacion.grado,
@@ -181,6 +184,13 @@ export async function actualizarExperiencia(id: string, experiencia: Experiencia
 export async function obtenerResumenPerfil(): Promise<ResumenPerfil> {
   const perfil = await apiFetch<PerfilApi>(PERFIL_URL);
   return {
+    // Si una versión anterior de la API no envía el titulado, el perfil se muestra igual sin nombre
+    header: {
+      id: perfil.titulado?.id ?? '',
+      name: perfil.titulado?.nombre?.trim() ?? '',
+      career: perfil.titulado?.carrera?.trim() ?? '',
+      graduationYear: perfil.titulado?.promocion ?? null,
+    },
     records: {
       education: perfil.formacionAcademica.registros.map(aEducationRecord),
       experience: perfil.experienciaLaboral.registros.map(aExperienceRecord),

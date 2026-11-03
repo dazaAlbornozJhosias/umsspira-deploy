@@ -130,6 +130,17 @@ function EditCertificationFields({ certification }: { certification: Certificati
     setSaveError(undefined);
   }
 
+  // Deshace la foto elegida que aún no se sube y vuelve al respaldo que ya estaba guardado
+  function handleDocumentRemove() {
+    setDocumentName(savedBackup.file ?? '');
+    setDocumentUrl(savedBackup.url);
+    setIsNewDocument(false);
+    setPendingDocument(null);
+    setDocumentError(undefined);
+    setIsSaved(false);
+    setSaveError(undefined);
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSaving) return;
@@ -229,6 +240,7 @@ function EditCertificationFields({ certification }: { certification: Certificati
         documentUrl={documentUrl}
         isVerified={Boolean(documentName) && !isNewDocument && Boolean(certification.backupVerified)}
         onDocumentChange={handleDocumentChange}
+        onDocumentRemove={pendingDocument ? handleDocumentRemove : undefined}
         // Un archivo recién elegido aún no está en la API: se sigue abriendo con su enlace local
         onViewBackup={certification.backupFile && !isNewDocument ? () => setIsViewerOpen(true) : undefined}
       />

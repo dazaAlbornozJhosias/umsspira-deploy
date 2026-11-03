@@ -82,6 +82,14 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
     }
   }
 
+  // Deshace la foto elegida que aún no se guardó y vuelve al respaldo que ya tenía el registro
+  function handleDocumentRemove() {
+    setDocumentName(education.backupFile ?? '');
+    setDocumentUrl(education.backupUrl);
+    setIsNewDocument(false);
+    setIsSaved(false);
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSaving) return;
@@ -192,6 +200,9 @@ function EditEducationFields({ education }: { education: EducationRecord }) {
         documentUrl={documentUrl}
         isVerified={Boolean(documentName) && !isNewDocument}
         onDocumentChange={handleDocumentChange}
+        onDocumentRemove={
+          isNewDocument && documentName !== (education.backupFile ?? '') ? handleDocumentRemove : undefined
+        }
       />
 
       <MensajeError id="error-education-save" mensaje={saveError} />

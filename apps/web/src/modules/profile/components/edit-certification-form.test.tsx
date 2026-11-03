@@ -4,6 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { actualizarCertificacion, obtenerCertificacion, subirRespaldo } from '@/modules/profile/services/perfil-api';
 
 import { ProfileStoreProvider, useProfileStore } from '@/modules/profile/state/profile-store';
+import { PROFILE_RECORDS_MOCK } from '@/modules/profile/testing/profile-fixtures';
 import type { CertificationRecord } from '@/modules/profile/types/profile-record';
 import { ApiError } from '@/shared/services/api-client';
 
@@ -71,9 +72,18 @@ function elegirFoto(archivo: File) {
   fireEvent.change(inputFoto, { target: { files: [archivo] } });
 }
 
+// El perfil ya cargado en el estado compartido (incluye cert-1 y cert-3). El respaldo de cert-1 se nombra
+// distinto al de GUARDADA para distinguir en la pantalla el valor del estado del que muestra el formulario
+const PERFIL_CARGADO = {
+  ...PROFILE_RECORDS_MOCK,
+  certification: (PROFILE_RECORDS_MOCK.certification as CertificationRecord[]).map((record) =>
+    record.id === 'cert-1' ? { ...record, backupFile: 'respaldo-estado.jpg' } : record,
+  ),
+};
+
 function renderForm() {
   render(
-    <ProfileStoreProvider>
+    <ProfileStoreProvider initialRecords={PERFIL_CARGADO}>
       <EditCertificationForm />
       <CertificationName id={routeId} />
     </ProfileStoreProvider>,
@@ -219,6 +229,28 @@ describe('EditCertificationForm', () => {
       expect(screen.getByText('certificado-nuevo.jpg', { selector: 'span' })).toBeInTheDocument();
       expect(screen.queryByText('respaldo.jpg')).not.toBeInTheDocument();
       expect(screen.getByTestId('respaldo-guardado')).toHaveTextContent('certificado-nuevo.jpg');
+    });
+
+    it('"Quitar imagen" deshace la foto elegida que aún no se guardó y vuelve al respaldo guardado', async () => {
+      renderForm();
+      await screen.findByLabelText('Nombre de la certificación');
+      // Sin foto nueva no hay nada que quitar
+      expect(screen.queryByRole('button', { name: 'Quitar imagen' })).not.toBeInTheDocument();
+
+      elegirFoto(jpg('certificado-nuevo.jpg'));
+      expect(screen.getByText('certificado-nuevo.jpg', { selector: 'span' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Quitar imagen' }));
+
+      expect(screen.queryByText('certificado-nuevo.jpg')).not.toBeInTheDocument();
+      expect(screen.getByText('respaldo.jpg', { selector: 'span' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Quitar imagen' })).not.toBeInTheDocument();
+
+      // Al guardar solo se actualiza el registro: no se sube ningún respaldo
+      actualizarCertificacionMock.mockResolvedValue(GUARDADA);
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+      expect(await screen.findByRole('status')).toHaveTextContent('Registro actualizado');
+      expect(subirRespaldoMock).not.toHaveBeenCalled();
     });
 
     it('si la subida falla muestra el error y conserva el respaldo guardado y la foto elegida (CA-08)', async () => {

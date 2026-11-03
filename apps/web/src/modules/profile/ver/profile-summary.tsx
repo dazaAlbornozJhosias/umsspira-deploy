@@ -4,7 +4,6 @@ import { Pencil } from 'lucide-react';
 import Link from 'next/link';
 
 import DownloadProfileButton from '@/modules/profile/components/download-profile-button';
-import { profileHeader } from '@/modules/profile/data/profile-data';
 import AffinityLinkCard from '@/modules/profile/ver/affinity-link-card';
 import ProfessionalDescription from '@/modules/profile/ver/professional-description';
 import ProfileCompleteness from '@/modules/profile/ver/profile-completeness';
@@ -16,7 +15,7 @@ import Timeline from '@/shared/components/timeline';
 
 // Resumen del perfil (HU-03) con la descarga en JSON (HU-05), leyendo el estado compartido del perfil
 export default function ProfileSummary() {
-  const { records, description, isLoading, loadError, retryLoad } = useProfileStore();
+  const { header, records, description, isLoading, loadError, retryLoad } = useProfileStore();
   const timeline = recordsToTimeline(records);
 
   const validatedBackups = timeline
@@ -24,6 +23,10 @@ export default function ProfileSummary() {
     .filter((item) => item.status === 'verified').length;
   const experiences = records.experience.length;
   const completeness = profileCompleteness(records, description);
+  // Carrera y promoción solo si la API las tiene registradas
+  const careerLine = [header?.career, header?.graduationYear ? `Promoción ${header.graduationYear}` : '']
+    .filter(Boolean)
+    .join(' · ');
 
   if (isLoading) {
   return <p role="status">Cargando tu perfil…</p>;
@@ -50,14 +53,14 @@ if (loadError) {
       <header className="flex flex-col gap-6 rounded-2xl border border-abyssal-blue/10 bg-white px-5 py-6 md:flex-row md:items-end md:justify-between md:px-8 md:py-7">
         <div className="flex min-w-0 flex-col gap-2">
           <p className="text-sm font-bold uppercase tracking-[0.1em] text-truffle-trouble">
-            {profileHeader.verified ? 'Perfil profesional verificado' : 'Perfil profesional'}
+            Perfil profesional
           </p>
           <h1 className="text-[28px] font-bold leading-tight text-blue-fantastic md:text-[40px]">
-            {profileHeader.title} {profileHeader.name}
+            {header?.name || 'Mi perfil'}
           </h1>
-          <p className="text-base font-medium text-blue-fantastic/80 md:text-lg">
-            {profileHeader.career} · Promoción {profileHeader.graduationYear}
-          </p>
+          {careerLine && (
+            <p className="text-base font-medium text-blue-fantastic/80 md:text-lg">{careerLine}</p>
+          )}
         </div>
 
         {/* Acciones del perfil */}
@@ -70,7 +73,7 @@ if (loadError) {
             <Pencil className="h-4 w-4" aria-hidden="true" />
             Editar perfil
           </Link>
-          <DownloadProfileButton header={profileHeader} records={records} />
+          {header && <DownloadProfileButton header={header} records={records} />}
         </div>
       </header>
 

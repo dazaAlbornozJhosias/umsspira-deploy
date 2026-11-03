@@ -1,4 +1,4 @@
-import { PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
+import { PROFILE_RECORDS_MOCK } from '@/modules/profile/testing/profile-fixtures';
 
 import { recordsToTimeline } from './records-to-timeline';
 

@@ -29,6 +29,8 @@ type FormularioCertificacionesProps = {
   progreso?: number;
   // Ruta interna desde la que se llegó (por ejemplo /afinidad desde la Épica 3); al guardar se ofrece volver ahí (T8.5)
   returnTo?: string;
+  // Avisa cuántos errores hay a la vista, para el contador del encabezado de la sección (HU-02, AC 6)
+  onErroresChange?: (errores: number) => void;
 };
  
 const VACIO: Certificacion = { nombre: '', entidadEmisora: '', anioEmision: '', grado: '', respaldo: null };
@@ -47,6 +49,7 @@ export function FormularioCertificaciones({
   onAgregar,
   progreso,
   returnTo,
+  onErroresChange,
 }: FormularioCertificacionesProps) {
   const [datos, setDatos] = useState<Certificacion>(VACIO);
   const fotoRef = useRef<HTMLInputElement>(null);
@@ -62,6 +65,9 @@ export function FormularioCertificaciones({
   const [vistaPrevia, setVistaPrevia] = useState<string>();
   // Aviso «Certificación guardada» tras guardar (T8.5); se quita al empezar a escribir otra
   const [guardada, setGuardada] = useState(false);
+
+  const cantidadErrores = [errorRespaldo, errorGuardar].filter(Boolean).length;
+  useEffect(() => onErroresChange?.(cantidadErrores), [cantidadErrores, onErroresChange]);
  
   // Se crea al elegir la foto y se libera al quitarla, cambiarla o salir (evita fugas de memoria)
   useEffect(() => {

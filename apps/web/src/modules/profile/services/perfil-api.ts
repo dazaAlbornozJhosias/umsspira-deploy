@@ -253,10 +253,10 @@ function cuerpoCertificacion(certificacion: Certificacion): CertificacionCuerpo 
 }
 
 // POST /api/v1/perfil/certificaciones -> 201 con el registro creado (con su id) o 400 por campo
-export async function crearCertificacion(certificacion: Certificacion): Promise<CertificationRecord> {
+export async function crearCertificacion(certificacion: Certificacion, idOperacion?: string): Promise<CertificationRecord> {
   const creada = await apiFetch<CertificacionApi>(`${PERFIL_URL}/certificaciones`, {
     method: 'POST',
-    body: JSON.stringify(cuerpoCertificacion(certificacion)),
+    body: JSON.stringify({ ...cuerpoCertificacion(certificacion), ...(idOperacion ? { idOperacion } : {}) }),
   });
   return aCertificationRecord(creada);
 }

@@ -59,6 +59,7 @@ export const certificationSchema = z.strictObject({
 export const DEFAULT_CERTIFICATION_DEGREE = 'Profesional';
 export const createCertificationSchema = certificationSchema.extend({
   grado: text(50).default(DEFAULT_CERTIFICATION_DEGREE),
+  idOperacion: z.uuid().optional(),
 });
 // Vacía se acepta: borra la descripción y la sección vuelve a contar como pendiente (T6.5)
 export const professionalDescriptionSchema = z.strictObject({

@@ -76,3 +76,15 @@ describe('Descripción profesional (T6.4)', () => {
     ).toBe(false);
   });
 });
+
+describe('Identificador opcional de creación de certificación', () => {
+  const input = { nombre: 'AWS', entidadEmisora: 'Amazon', anioEmision: 2026 };
+  it('mantiene el cliente antiguo y admite UUID en la creación nueva', () => {
+    expect(createCertificationSchema.safeParse(input).success).toBe(true);
+    expect(createCertificationSchema.safeParse({ ...input, idOperacion: '12345678-1234-4234-8234-123456789abc' }).success).toBe(true);
+  });
+  it('rechaza identificadores vacíos o arbitrarios', () => {
+    expect(createCertificationSchema.safeParse({ ...input, idOperacion: '' }).success).toBe(false);
+    expect(createCertificationSchema.safeParse({ ...input, idOperacion: 'otro' }).success).toBe(false);
+  });
+});

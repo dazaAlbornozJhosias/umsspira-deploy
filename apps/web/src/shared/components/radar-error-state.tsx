@@ -18,7 +18,7 @@ export const RadarErrorState: React.FC<RadarErrorStateProps> = ({ onRetry, isRet
   return (
     <div
       role="alert"
-      className="flex flex-col items-center text-center gap-3 p-6 w-full max-w-xs rounded-2xl border border-dashed border-oatmeal bg-palladian/70"
+      className="flex flex-col items-center text-center gap-3 p-6 w-full max-w-xs rounded-2xl border border-dashed border-oatmeal bg-palladian"
     >
       <div className="p-3 rounded-lg bg-white border border-oatmeal">
         <BarChart3 className="w-5 h-5 text-truffle-trouble" />
@@ -38,6 +38,11 @@ export const RadarErrorState: React.FC<RadarErrorStateProps> = ({ onRetry, isRet
         <RefreshCw className={`w-3.5 h-3.5 ${isRetrying ? 'animate-spin' : ''}`} />
         <span>Reintentar</span>
       </button>
+      {isRetrying && (
+        <p role="status" className="text-xs font-medium text-abyssal-blue">
+          Actualizando tu afinidad…
+        </p>
+      )}
     </div>
   );
 };

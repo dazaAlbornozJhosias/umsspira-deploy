@@ -15,7 +15,7 @@ import affinityVectorMock from '../mocks/affinity-vector-mock.json';
 import { useRecalculateState } from '../hooks/use-recalculate-state';
 import { recalculateAffinity, getAffinityVector } from '../services/affinity-service';
 import { AFFINITY_AREAS, type AffinityAreaScore } from '@umsspira/shared-types/src/affinity';
-import { ArrowLeft, Tag } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -114,10 +114,13 @@ export const GraduateAffinityView: React.FC = () => {
   }, [changeVersion, hasPendingChanges]);
 
   useEffect(() => {
+    let isCancelled = false;
+
     async function loadInitialVector() {
       try {
         setIsLoading(true);
         const result = await getAffinityVector();
+        if (isCancelled) return;
         const processed = processVectorAreas(result.areas as any, mockAreas);
         setCandidateAreas(processed);
         setLoadedKeywords(extractKeywords(processed));
@@ -125,13 +128,20 @@ export const GraduateAffinityView: React.FC = () => {
         setLastCalculatedDate(formatCalculatedDate(result.calculatedAt));
         setHasRadarError(false);
       } catch {
-        setHasRadarError(true);
+        if (!isCancelled) {
+          setHasRadarError(true);
+        }
       } finally {
-        setIsLoading(false);
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
       }
     }
 
     loadInitialVector();
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
   const handleRecalculate = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
@@ -177,6 +187,32 @@ export const GraduateAffinityView: React.FC = () => {
     }
   }, [hasPendingChanges, hasRadarError, clearPendingChanges, candidateAreas]);
 
+  const handleRetry = useCallback(async () => {
+    if (isRecalculatingRef.current) return;
+
+    if (!hasValidRadar) {
+      isRecalculatingRef.current = true;
+      setIsLoading(true);
+      try {
+        const result = await getAffinityVector();
+        const processed = processVectorAreas(result.areas as any, mockAreas);
+        setCandidateAreas(processed);
+        setLoadedKeywords(extractKeywords(processed));
+        setHasValidRadar(true);
+        setLastCalculatedDate(formatCalculatedDate(result.calculatedAt));
+        setHasRadarError(false);
+      } catch {
+        setHasRadarError(true);
+      } finally {
+        isRecalculatingRef.current = false;
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    await handleRecalculate({ force: true });
+  }, [hasValidRadar, handleRecalculate]);
+
   const handleProfileChange = useCallback(() => {
     changeVersionRef.current += 1;
     setChangeVersion(changeVersionRef.current);
@@ -192,11 +228,14 @@ export const GraduateAffinityView: React.FC = () => {
   }, []);
 
   const triggerTimeoutSimulation = useCallback(async () => {
+    if (isRecalculatingRef.current) return;
+    isRecalculatingRef.current = true;
     setIsLoading(true);
     setHasRadarError(false);
     await new Promise((resolve) => setTimeout(resolve, 7000));
     setHasRadarError(true);
     setIsLoading(false);
+    isRecalculatingRef.current = false;
   }, []);
 
   const isEmptyVector = candidateAreas.length === 0;
@@ -281,7 +320,7 @@ export const GraduateAffinityView: React.FC = () => {
                 </div>
 
                 <div className="relative py-4 flex flex-col items-center justify-center bg-palladian/40 rounded-xl border border-oatmeal/60">
-                  <div className={hasRadarError && hasValidRadar ? 'opacity-40' : undefined}>
+                  <div className={hasRadarError ? 'opacity-40 pointer-events-none' : undefined}>
                     <AffinityRadar
                       affinityData={radarData}
                       hasData={hasValidRadar && !isEmptyVector}
@@ -292,7 +331,7 @@ export const GraduateAffinityView: React.FC = () => {
                     />
                   </div>
 
-                  {hasValidRadar && isEmptyVector && (
+                  {hasValidRadar && isEmptyVector && !hasRadarError && (
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-white/40 backdrop-blur-[3px] rounded-xl border border-white/50 shadow-sm">
                       <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                         <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,9 +355,27 @@ export const GraduateAffinityView: React.FC = () => {
                     </div>
                   )}
 
+                  {isLoading && !hasRadarError && (
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-white/60 backdrop-blur-[1px] rounded-xl pointer-events-none"
+                    >
+                      <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-oatmeal shadow-sm text-sm font-semibold text-abyssal-blue">
+                        <RefreshCw className="w-4 h-4 animate-spin text-burning-flame" />
+                        <span>Actualizando tu afinidad...</span>
+                      </div>
+                    </div>
+                  )}
+
                   {hasRadarError && (
-                    <div className="absolute inset-0 flex items-center justify-center p-4">
-                      <RadarErrorState onRetry={handleRecalculate} isRetrying={isLoading} />
+                    <div className="absolute inset-0 z-20 flex items-center justify-center p-4 bg-white/75 backdrop-blur-[2px] rounded-xl">
+                      <RadarErrorState
+                        onRetry={() => {
+                          void handleRetry();
+                        }}
+                        isRetrying={isLoading}
+                      />
                     </div>
                   )}
                 </div>
@@ -374,8 +431,9 @@ export const GraduateAffinityView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(true)}
+                    disabled={isLoading}
                     aria-label="Simular actualización del radar"
-                    className="h-11 px-4 rounded-lg border border-oatmeal bg-white text-blue-fantastic text-sm font-semibold hover:bg-palladian transition-colors flex items-center justify-center"
+                    className="h-11 px-4 rounded-lg border border-oatmeal bg-white text-blue-fantastic text-sm font-semibold hover:bg-palladian disabled:opacity-50 transition-colors flex items-center justify-center"
                   >
                     Simular Actualización
                   </button>
@@ -383,13 +441,16 @@ export const GraduateAffinityView: React.FC = () => {
                   <RecalculateButton
                     hasPendingChanges={hasPendingChanges}
                     isLoading={isLoading}
-                    onRecalculate={handleRecalculate}
+                    onRecalculate={() => {
+                      void handleRecalculate();
+                    }}
                   />
 
                   <button
                     type="button"
                     onClick={triggerTimeoutSimulation}
-                    className="min-h-[44px] px-3.5 py-1.5 border border-red-300 rounded-lg hover:bg-red-50 transition-colors flex flex-col items-center justify-center text-center cursor-pointer select-none"
+                    disabled={isLoading}
+                    className="min-h-[44px] px-3.5 py-1.5 border border-red-300 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors flex flex-col items-center justify-center text-center cursor-pointer select-none"
                   >
                     <span className="text-xs font-bold text-red-600 leading-tight">
                       Simular Timeout
@@ -434,7 +495,9 @@ export const GraduateAffinityView: React.FC = () => {
 
       <PendingChangesDialog
         open={isPendingDialogOpen}
-        onRecalculate={handleRecalculate}
+        onRecalculate={() => {
+          void handleRecalculate();
+        }}
         onDismiss={handleDismissPendingChanges}
       />
       <SuccessToast open={isSuccessToastOpen} onClose={handleCloseToast} />
@@ -466,7 +529,7 @@ export const GraduateAffinityView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  handleRecalculate({ force: true });
+                  void handleRecalculate({ force: true });
                   setIsModalOpen(false);
                 }}
                 className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"

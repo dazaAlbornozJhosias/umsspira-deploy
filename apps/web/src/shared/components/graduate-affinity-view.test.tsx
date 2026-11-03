@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   render,
@@ -233,6 +232,42 @@ describe('GraduateAffinityView', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('permite reintentar tras un fallo 503 o timeout en la carga inicial mostrando "Actualizando tu afinidad..."', async () => {
+    mockGetAffinityVector.mockRejectedValueOnce(
+      Object.assign(new Error('Error 503 al consultar afinidad'), { status: 503 })
+    );
+
+    render(<GraduateAffinityView />);
+
+    expect(
+      await screen.findByText('No se pudo actualizar tu radar')
+    ).toBeInTheDocument();
+
+    let resolveRetry!: (value: ReturnType<typeof makeVector>) => void;
+    const retryPromise = new Promise<ReturnType<typeof makeVector>>((resolve) => {
+      resolveRetry = resolve;
+    });
+    mockGetAffinityVector.mockReturnValueOnce(retryPromise);
+
+    fireEvent.click(screen.getByRole('button', { name: /reintentar/i }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Actualizando tu afinidad...'
+    );
+    expect(screen.getByRole('button', { name: /reintentar/i })).toBeDisabled();
+
+    await act(async () => {
+      resolveRetry(makeVector());
+      await retryPromise;
+    });
+
+    expect(await screen.findByText('Resumen de tu afinidad')).toBeInTheDocument();
+    expect(
+      screen.queryByText('No se pudo actualizar tu radar')
+    ).not.toBeInTheDocument();
+    expect(mockGetAffinityVector).toHaveBeenCalledTimes(2);
+  });
+
   it('muestra el diálogo al simular una actualización', async () => {
     render(<GraduateAffinityView />);
 
@@ -279,6 +314,65 @@ describe('GraduateAffinityView', () => {
     expect(
       screen.getByRole('button', { name: /reintentar/i })
     ).toBeInTheDocument();
+  });
+
+  it('al hacer clic en Reintentar tras fallo de recálculo cambia a "Actualizando tu afinidad..." y soporta múltiples reintentos', async () => {
+    render(<GraduateAffinityView />);
+
+    await waitFor(() => {
+      expect(mockGetAffinityVector).toHaveBeenCalledTimes(1);
+    });
+
+    mockRecalculateAffinity.mockRejectedValueOnce(
+      new Error('Error 503 al recalcular afinidad')
+    );
+
+    await clickSimulateProfileChange();
+
+    expect(
+      await screen.findByText('No se pudo actualizar tu radar')
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('radar')).toBeInTheDocument();
+
+    // Primer reintento vuelve a fallar con 503
+    mockRecalculateAffinity.mockRejectedValueOnce(
+      new Error('Error 503 al recalcular afinidad')
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /reintentar/i }));
+    });
+
+    expect(
+      await screen.findByText('No se pudo actualizar tu radar')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reintentar/i })).toBeEnabled();
+
+    // Segundo reintento queda en progreso y luego se resuelve con éxito
+    let resolveRetry!: (value: ReturnType<typeof makeVector>) => void;
+    const retryPromise = new Promise<ReturnType<typeof makeVector>>((resolve) => {
+      resolveRetry = resolve;
+    });
+    mockRecalculateAffinity.mockReturnValueOnce(retryPromise);
+
+    fireEvent.click(screen.getByRole('button', { name: /reintentar/i }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Actualizando tu afinidad...'
+    );
+    expect(screen.getByRole('button', { name: /reintentar/i })).toBeDisabled();
+
+    await act(async () => {
+      resolveRetry(makeVector());
+      await retryPromise;
+    });
+
+    await waitFor(() => {
+      expect(mockRecalculateAffinity).toHaveBeenCalledTimes(3);
+      expect(
+        screen.queryByText('No se pudo actualizar tu radar')
+      ).not.toBeInTheDocument();
+    });
   });
 
   it('navega al flujo de certificaciones con returnTo', async () => {

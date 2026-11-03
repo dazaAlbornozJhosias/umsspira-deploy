@@ -1,20 +1,137 @@
 // Import directo al módulo de afinidad para no arrastrar el resto del paquete
-import { AFFINITY_AREAS, type AffinityArea, type AffinityVectorResponse } from '@umsspira/shared-types/src/affinity';
+import {
+  AFFINITY_AREAS,
+  RADAR_AREA_IDS,
+  type AffinityArea,
+  type AffinityVectorResponse,
+} from '@umsspira/shared-types/src/affinity';
 import { apiClient } from './api-client';
+import { apiUrl } from './api-contract';
+import { csrfToken, getAccessToken, refreshSession } from './auth-session';
 import affinityVectorMock from '../mocks/affinity-vector-mock.json';
 import affinityConfigMock from '../mocks/affinity-config-mock.json';
 import affinitySnapshotsMock from '../mocks/affinity-snapshots-mock.json';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
-const AFFINITY_ENDPOINT = '/affinity/me';
-const AFFINITY_CALCULATE_ENDPOINT = '/affinity/calculate';
+const AFFINITY_ENDPOINT = '/api/v1/radar';
+const AFFINITY_CALCULATE_ENDPOINT = '/api/v1/radar/recalculate';
 const AFFINITY_CONFIG_ENDPOINT = '/affinity/config';
 export const RECALCULATE_TIMEOUT_MS = 7000;
-// Por defecto se usa el mock a menos que explícitamente se desactive con 'false'
-const USE_AFFINITY_MOCK = process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK !== 'false';
+// Por defecto consulta la API real; el mock solo se activa cuando se solicita explícitamente con 'true'
+const USE_AFFINITY_MOCK = process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK === 'true';
 
 // Avanza en cada recálculo con mock para mostrar un radar distinto por intento
 let snapshotIndex = 0;
+
+const AREA_SLUG_BY_ID = new Map<string, AffinityArea>(
+  (Object.entries(RADAR_AREA_IDS) as Array<[AffinityArea, string]>).map(([slug, id]) => [id, slug]),
+);
+
+type RawAffinityAreaItem = {
+  area: string;
+  affinity: number;
+  keywords?: string[];
+  topKeywords?: Array<string | { term?: string }>;
+  evidence?: unknown[];
+};
+
+function buildAuthHeaders(initial?: HeadersInit): Headers {
+  const headers = new Headers(initial);
+  const token = getAccessToken();
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  const csrf = csrfToken();
+  if (csrf && !headers.has('X-CSRF-Token')) {
+    headers.set('X-CSRF-Token', csrf);
+  }
+  return headers;
+}
+
+function normalizeAffinityVectorResponse(raw: unknown): AffinityVectorResponse {
+  const unwrapped =
+    raw && typeof raw === 'object' && 'data' in raw && (raw as { data?: unknown }).data
+      ? (raw as { data: Record<string, unknown> }).data
+      : (raw as Record<string, unknown>);
+
+  if (!unwrapped || typeof unwrapped !== 'object') {
+    throw new Error('No se pudo actualizar tu radar');
+  }
+
+  const rawAreas = Array.isArray(unwrapped.areas) ? (unwrapped.areas as RawAffinityAreaItem[]) : [];
+  const isBackendEmpty = unwrapped.status === 'empty';
+
+  const areas = isBackendEmpty
+    ? []
+    : rawAreas.map((item) => {
+        const mappedArea = (AREA_SLUG_BY_ID.get(item.area) ?? item.area) as AffinityArea;
+        const normalizedTopKeywords = Array.isArray(item.topKeywords)
+          ? item.topKeywords
+              .map((kw) => (typeof kw === 'string' ? kw : kw?.term ?? ''))
+              .filter((kw): kw is string => kw.length > 0)
+          : undefined;
+        const keywords = item.keywords ?? normalizedTopKeywords;
+
+        return {
+          ...item,
+          area: mappedArea,
+          ...(keywords !== undefined ? { keywords } : {}),
+        };
+      });
+
+  return {
+    ...(unwrapped as unknown as AffinityVectorResponse),
+    areas,
+  };
+}
+
+async function requestAffinityWithTimeout(
+  endpoint: string,
+  options: RequestInit,
+  errorContext: string,
+): Promise<AffinityVectorResponse> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), RECALCULATE_TIMEOUT_MS);
+
+  try {
+    let response = await fetch(apiUrl(endpoint), {
+      ...options,
+      credentials: 'same-origin',
+      headers: buildAuthHeaders(options.headers),
+      signal: controller.signal,
+    });
+
+    if (response.status === 401 && csrfToken()) {
+      const renewedToken = await refreshSession();
+      const retryHeaders = buildAuthHeaders(options.headers);
+      retryHeaders.set('Authorization', `Bearer ${renewedToken}`);
+      response = await fetch(apiUrl(endpoint), {
+        ...options,
+        credentials: 'same-origin',
+        headers: retryHeaders,
+        signal: controller.signal,
+      });
+    }
+
+    if (!response.ok) {
+      throw Object.assign(new Error(`Error ${response.status} al ${errorContext}`), {
+        status: response.status,
+      });
+    }
+
+    const data = await response.json();
+    return normalizeAffinityVectorResponse(data);
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('No se pudo actualizar tu radar');
+    }
+    if (err instanceof TypeError) {
+      throw new Error('No se pudo actualizar tu radar');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 export interface AffinityAxisConfig {
   area: AffinityArea;
@@ -46,7 +163,7 @@ export async function getAffinityVector(): Promise<AffinityVectorResponse> {
   if (USE_AFFINITY_MOCK) {
     return affinityVectorMock as AffinityVectorResponse;
   }
-  return apiClient.get<AffinityVectorResponse>(AFFINITY_ENDPOINT);
+  return requestAffinityWithTimeout(AFFINITY_ENDPOINT, { method: 'GET' }, 'consultar afinidad');
 }
 
 /**
@@ -65,7 +182,15 @@ export async function calculateAffinityVector(): Promise<AffinityVectorResponse>
     } as AffinityVectorResponse;
   }
 
-  return apiClient.post<AffinityVectorResponse>(AFFINITY_CALCULATE_ENDPOINT, {});
+  return requestAffinityWithTimeout(
+    AFFINITY_CALCULATE_ENDPOINT,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    },
+    'recalcular afinidad',
+  );
 }
 
 /**
@@ -114,28 +239,13 @@ export async function recalculateAffinity(): Promise<AffinityVectorResponse> {
     } as AffinityVectorResponse;
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), RECALCULATE_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(`${API_BASE_URL}${AFFINITY_CALCULATE_ENDPOINT}`, {
+  return requestAffinityWithTimeout(
+    AFFINITY_CALCULATE_ENDPOINT,
+    {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status} al recalcular afinidad`);
-    }
-
-    return (await response.json()) as AffinityVectorResponse;
-  } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
-      throw new Error('No se pudo actualizar tu radar');
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+    },
+    'recalcular afinidad',
+  );
 }

@@ -1,4 +1,5 @@
 /// <reference types="jest" />
+import { RADAR_AREA_IDS } from '@umsspira/shared-types/src/affinity';
 import snapshotsMock from '../mocks/affinity-snapshots-mock.json';
 
 const AREAS_ORDER = [
@@ -21,6 +22,7 @@ describe('getAffinityVector', () => {
 
   afterEach(() => {
     process.env = originalEnv;
+    jest.useRealTimers();
   });
 
   it('devuelve el mock con 6 áreas en orden fijo y valores entre 0 y 100', async () => {
@@ -36,27 +38,93 @@ describe('getAffinityVector', () => {
     });
   });
 
-  it('consulta el endpoint real cuando el mock está desactivado', async () => {
-    process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK = 'false';
+  it('consulta el endpoint real /api/v1/radar por defecto cuando no se fuerza el mock', async () => {
+    delete process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK;
     const payload = { graduateId: 'id-1', calculatedAt: '2026-09-28T12:00:00.000Z', areas: [] };
-    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => payload });
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => payload });
     const { getAffinityVector } = await import('./affinity-service');
 
     const result = await getAffinityVector();
 
     expect(result).toEqual(payload);
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/affinity/me'),
+      expect.stringContaining('/api/v1/radar'),
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
+
+  it('consulta el endpoint real cuando el mock está desactivado', async () => {
+    process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK = 'false';
+    const payload = { graduateId: 'id-1', calculatedAt: '2026-09-28T12:00:00.000Z', areas: [] };
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => payload });
+    const { getAffinityVector } = await import('./affinity-service');
+
+    const result = await getAffinityVector();
+
+    expect(result).toEqual(payload);
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/radar'),
       expect.anything(),
     );
   });
 
-  it('lanza error con el estado HTTP cuando el backend responde con fallo', async () => {
+  it('normaliza UUIDs de áreas y topKeywords devueltos por el backend de radar', async () => {
     process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK = 'false';
-    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 });
+    const backendPayload = {
+      graduateId: 'id-1',
+      calculatedAt: '2026-09-28T12:00:00.000Z',
+      status: 'ok',
+      areas: [
+        {
+          area: RADAR_AREA_IDS['software-development'],
+          affinity: 88,
+          topKeywords: ['React', 'TypeScript'],
+        },
+      ],
+    };
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => backendPayload });
     const { getAffinityVector } = await import('./affinity-service');
 
-    await expect(getAffinityVector()).rejects.toMatchObject({ status: 500 });
+    const result = await getAffinityVector();
+
+    expect(result.areas[0]).toMatchObject({
+      area: 'software-development',
+      affinity: 88,
+      keywords: ['React', 'TypeScript'],
+    });
+  });
+
+  it('lanza error con el estado HTTP cuando el backend responde con fallo 500 o 503', async () => {
+    process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK = 'false';
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 503 });
+    const { getAffinityVector } = await import('./affinity-service');
+
+    await expect(getAffinityVector()).rejects.toMatchObject({ status: 503 });
+  });
+
+  it('lanza el mensaje del criterio ante caída de red (TypeError) o timeout de 7000 ms', async () => {
+    process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK = 'false';
+    global.fetch = jest.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+    const { getAffinityVector } = await import('./affinity-service');
+
+    await expect(getAffinityVector()).rejects.toThrow('No se pudo actualizar tu radar');
+
+    jest.useFakeTimers();
+    global.fetch = jest.fn().mockImplementation(
+      (_input: unknown, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            const error = new Error('The operation was aborted');
+            error.name = 'AbortError';
+            reject(error);
+          });
+        }),
+    ) as unknown as typeof fetch;
+
+    const pending = getAffinityVector();
+    const assertion = expect(pending).rejects.toThrow('No se pudo actualizar tu radar');
+    await jest.advanceTimersByTimeAsync(7000);
+    await assertion;
   });
 });
 
@@ -192,7 +260,10 @@ describe('recalculateAffinity', () => {
     await jest.advanceTimersByTimeAsync(6999);
 
     expect(settled).toBe(false);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/radar/recalculate'),
+      expect.objectContaining({ method: 'POST' }),
+    );
 
     await jest.advanceTimersByTimeAsync(1);
 
@@ -206,6 +277,14 @@ describe('recalculateAffinity', () => {
     const { recalculateAffinity } = await import('./affinity-service');
 
     await expect(recalculateAffinity()).rejects.toThrow('Error 503 al recalcular afinidad');
+  });
+
+  it('lanza el mensaje del criterio cuando ocurre un fallo de red en recálculo', async () => {
+    process.env.NEXT_PUBLIC_USE_AFFINITY_MOCK = 'false';
+    global.fetch = jest.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+    const { recalculateAffinity } = await import('./affinity-service');
+
+    await expect(recalculateAffinity()).rejects.toThrow('No se pudo actualizar tu radar');
   });
 
   it(

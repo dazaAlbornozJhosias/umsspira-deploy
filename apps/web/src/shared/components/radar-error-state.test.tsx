@@ -29,17 +29,21 @@ describe('RadarErrorState', () => {
     expect(message.textContent).toBe('No se pudo actualizar tu radar');
   });
 
-  it('ejecuta onRetry al hacer clic en Reintentar', () => {
+  it('ejecuta onRetry sin pasar el evento del DOM al hacer clic en Reintentar', () => {
     const onRetry = jest.fn();
     render(<RadarErrorState {...defaultProps} onRetry={onRetry} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(onRetry).toHaveBeenCalledWith();
   });
 
-  it('deshabilita Reintentar mientras isRetrying es true', () => {
+  it('deshabilita Reintentar y cambia el estado a "Actualizando tu afinidad..." mientras isRetrying es true', () => {
     const onRetry = jest.fn();
     render(<RadarErrorState {...defaultProps} onRetry={onRetry} isRetrying={true} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Actualizando tu afinidad...');
+    expect(screen.queryByText('No se pudo actualizar tu radar')).not.toBeInTheDocument();
 
     const button = screen.getByRole('button', { name: 'Reintentar' });
     expect(button).toBeDisabled();

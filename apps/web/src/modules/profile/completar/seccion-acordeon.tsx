@@ -11,6 +11,8 @@ type SeccionAcordeonProps = {
   textoCompleto?: string;
   // Llega abierta y a la vista desde un acceso directo del indicador de completitud (T6.6)
   abiertaInicial?: boolean;
+  // Errores sin corregir en el formulario de la sección (HU-02, AC 6)
+  errores?: number;
   children?: React.ReactNode;
 };
 
@@ -22,6 +24,7 @@ export function SeccionAcordeon({
   cantidad,
   textoCompleto,
   abiertaInicial = false,
+  errores = 0,
   children,
 }: SeccionAcordeonProps) {
   const [abierta, setAbierta] = useState(abiertaInicial);
@@ -77,6 +80,11 @@ export function SeccionAcordeon({
                 ? (textoCompleto ?? `(Completado · ${cantidad} ${cantidad === 1 ? 'registro' : 'registros'})`)
                 : '(Sin iniciar)'}
             </span>
+            {errores > 0 && (
+              <span className="rounded-full bg-truffle-trouble px-2 py-0.5 text-[11px] font-bold text-white">
+                {errores} {errores === 1 ? 'error' : 'errores'}
+              </span>
+            )}
           </span>
         </span>
 
@@ -87,7 +95,10 @@ export function SeccionAcordeon({
         )}
       </button>
 
-      {abierta && <div className="border-t border-oatmeal/70 px-4 py-4 md:px-6 md:py-5">{children}</div>}
+      {/* Se oculta en vez de desmontarse para que los errores (y su contador) sigan al cerrar la sección */}
+      <div hidden={!abierta} className="border-t border-oatmeal/70 px-4 py-4 md:px-6 md:py-5">
+        {children}
+      </div>
     </section>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GraduationCap, Plus } from 'lucide-react';
 import { MensajeError, claseCampo } from '@/modules/profile/validation/mensaje-error';
 import {
@@ -23,6 +23,8 @@ type FormacionAcademicaFormProps = {
   formaciones: FormacionAcademica[];
   // Si la promesa falla con ApiError (409, 400...), se muestra su mensaje y no se limpia el formulario
   onAgregar: (formacion: FormacionAcademica) => void | Promise<void>;
+  // Avisa cuántos errores hay a la vista, para el contador del encabezado de la sección (HU-02, AC 6)
+  onErroresChange?: (errores: number) => void;
 };
 
 const VACIO: FormacionAcademica = { institucion: '', titulo: '', anioEgreso: '', grado: '' };
@@ -32,7 +34,7 @@ const labelClase = 'block text-xs font-semibold text-[#2C3B4D]';
 const inputClase =
   'mt-1.5 h-11 w-full rounded-md border border-[#C9C1B1] bg-white px-3 text-sm text-[#2C3B4D] placeholder:text-[#2C3B4D]/40 focus:border-[#FFB162] focus:outline-none';
 
-export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcademicaFormProps) {
+export function FormacionAcademicaForm({ formaciones, onAgregar, onErroresChange }: FormacionAcademicaFormProps) {
   const [datos, setDatos] = useState<FormacionAcademica>(VACIO);
   // Error del año de egreso; una vez mostrado se recalcula mientras se corrige
   const [errorAnio, setErrorAnio] = useState<string>();
@@ -40,6 +42,9 @@ export function FormacionAcademicaForm({ formaciones, onAgregar }: FormacionAcad
   const [errorDuplicada, setErrorDuplicada] = useState<string>();
   // Mensaje del backend al guardar, tal como lo envía; se quita al cambiar cualquier campo
   const [errorGuardar, setErrorGuardar] = useState<string>();
+
+  const cantidadErrores = [errorAnio, errorDuplicada, errorGuardar].filter(Boolean).length;
+  useEffect(() => onErroresChange?.(cantidadErrores), [cantidadErrores, onErroresChange]);
   const [guardando, setGuardando] = useState(false);
 
   function cambiar(campo: keyof FormacionAcademica, valor: string) {

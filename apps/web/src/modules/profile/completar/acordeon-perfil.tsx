@@ -44,6 +44,10 @@ export function AcordeonPerfil({
     useProfileStore();
   const router = useRouter();
   const [avisoBorrador, setAvisoBorrador] = useState(false);
+  // Errores sin corregir por sección, para el contador del encabezado (HU-02, AC 6)
+  const [erroresFormacion, setErroresFormacion] = useState(0);
+  const [erroresExperiencia, setErroresExperiencia] = useState(0);
+  const [erroresCertificaciones, setErroresCertificaciones] = useState(0);
   // Avance (0 a 100) de la subida del respaldo mientras se guarda una certificación
   const [progresoSubida, setProgresoSubida] = useState<number>();
   // Certificación ya creada cuyo respaldo no se pudo subir: al reintentar se sube solo la foto, sin duplicar (T8.6)
@@ -153,9 +157,11 @@ export function AcordeonPerfil({
         titulo="Formación académica"
         descripcion="Tu formación académica principal"
         cantidad={formaciones.length}
+        errores={erroresFormacion}
       >
         <FormacionAcademicaForm
           formaciones={formaciones}
+          onErroresChange={setErroresFormacion}
           onAgregar={async (formacion) => {
             // Solo se agrega al estado lo que la API guardó (201), con su id real
             addEducation(await crearFormacion(formacion));
@@ -168,9 +174,11 @@ export function AcordeonPerfil({
         titulo="Experiencia laboral"
         descripcion="Tu experiencia profesional más relevante"
         cantidad={experiencias.length}
+        errores={erroresExperiencia}
       >
         <FormularioExperiencia
           experiencias={experiencias}
+          onErroresChange={setErroresExperiencia}
           onAgregar={async (experiencia) => {
             // Solo se agrega al estado lo que la API guardó (201), con su id real
             addExperience(await crearExperiencia(experiencia));
@@ -183,9 +191,11 @@ export function AcordeonPerfil({
         titulo="Certificaciones"
         descripcion="Credenciales que respaldan tu perfil"
         cantidad={certificaciones.length}
+        errores={erroresCertificaciones}
       >
         <FormularioCertificaciones
           certificaciones={certificaciones}
+          onErroresChange={setErroresCertificaciones}
           returnTo={returnTo}
           progreso={progresoSubida}
           onAgregar={async (certificacion) => {

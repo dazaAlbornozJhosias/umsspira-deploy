@@ -46,3 +46,13 @@ describe('BackupField · validación del respaldo al editar', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
+
+it('quitar la selección pendiente también retira su error de archivo inválido', () => {
+  const remove = jest.fn();
+  const { container } = render(<BackupField documentName="pendiente.jpg" isVerified={false} onDocumentChange={jest.fn()} onDocumentRemove={remove} />);
+  fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [new File(['x'], 'malo.pdf', { type: 'application/pdf' })] } });
+  expect(screen.getByRole('alert')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Quitar imagen' }));
+  expect(remove).toHaveBeenCalledTimes(1);
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});

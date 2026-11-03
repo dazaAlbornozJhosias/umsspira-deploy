@@ -163,7 +163,10 @@ export function BackupField({
           {onDocumentRemove && (
             <button
               type="button"
-              onClick={onDocumentRemove}
+              onClick={() => {
+                setBackupError(undefined);
+                onDocumentRemove?.();
+              }}
               className="inline-flex items-center gap-1 rounded-md border border-oatmeal bg-white px-2 py-1 text-xs font-semibold text-truffle-trouble transition hover:bg-palladian"
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />

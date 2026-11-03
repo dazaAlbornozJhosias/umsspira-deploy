@@ -66,7 +66,9 @@ export function FormularioCertificaciones({
   // Aviso «Certificación guardada» tras guardar (T8.5); se quita al empezar a escribir otra
   const [guardada, setGuardada] = useState(false);
 
-  const cantidadErrores = [errorRespaldo, errorGuardar].filter(Boolean).length;
+  const cantidadErrores = Object.values(errores).filter(Boolean).length
+    + Number(Boolean(errorRespaldo && !errores.respaldo))
+    + Number(Boolean(errorGuardar));
   useEffect(() => onErroresChange?.(cantidadErrores), [cantidadErrores, onErroresChange]);
  
   // Se crea al elegir la foto y se libera al quitarla, cambiarla o salir (evita fugas de memoria)

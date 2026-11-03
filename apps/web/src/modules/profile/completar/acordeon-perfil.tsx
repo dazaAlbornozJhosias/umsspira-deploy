@@ -40,7 +40,7 @@ export function AcordeonPerfil({
   seccionInicial?: CompletenessSectionId;
 }) {
   // Los registros vienen del estado compartido del perfil, así lo agregado aquí aparece en el resumen
-  const { records, description, addEducation, addExperience, addCertification, setDescription } =
+  const { records, description, isLoading, loadError, retryLoad, addEducation, addExperience, addCertification, setDescription } =
     useProfileStore();
   const router = useRouter();
   const [avisoBorrador, setAvisoBorrador] = useState(false);
@@ -97,6 +97,18 @@ export function AcordeonPerfil({
   const secciones = profileCompleteness(records, description).sections;
   const completas = secciones.filter((seccion) => seccion.complete).length;
  
+  if (isLoading) return <p role="status">Cargando tu perfil…</p>;
+  if (loadError) {
+    return (
+      <div role="alert" className="flex flex-col items-start gap-3">
+        <p>No se pudo cargar tu perfil. {loadError}</p>
+        <button type="button" onClick={retryLoad} className="rounded-lg bg-burning-flame px-4 py-2 font-bold text-abyssal-blue">
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       {/* Cabecera con progreso (v3: "Completar Perfil Profesional") */}

@@ -334,3 +334,13 @@ describe('aviso de resultado al editar (T9.6)', () => {
     expect(fetchMock.mock.calls[0][0]).toMatch(new RegExp(`/api/v1/perfil/${ruta}/${id}$`));
   });
 });
+
+it('permite deshacer una foto pendiente aunque tenga el mismo nombre que la guardada', () => {
+  routeId = 'edu-1';
+  const { container } = render(<ProfileStoreProvider initialRecords={PROFILE_RECORDS_MOCK}><EditEducationForm /></ProfileStoreProvider>);
+  const savedName = (PROFILE_RECORDS_MOCK.education[0] as EducationRecord).backupFile!;
+  fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [new File(['x'], savedName, { type: 'image/jpeg' })] } });
+  fireEvent.click(screen.getByRole('button', { name: 'Quitar imagen' }));
+  expect(screen.queryByRole('button', { name: 'Quitar imagen' })).not.toBeInTheDocument();
+  expect(fetchMock).not.toHaveBeenCalled();
+});

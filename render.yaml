@@ -12,8 +12,8 @@ services:
     # El plan gratuito se duerme tras 15 minutos sin tráfico.
     plan: free
 
-    # Rama de integracion: aqui se mergean todas las epicas.
-    branch: dev
+    # Rama de la API del repositorio paralelo; publicar después de validar la integración.
+    branch: pruebas
 
     # La raíz conserva pnpm-workspace.yaml y el lockfile; solo se compila la API.
     rootDir: .
@@ -31,7 +31,7 @@ services:
         value: production
       # Datos falsos de integración. Usar production para la base del sistema real.
       - key: APP_ENV
-        value: dev
+        value: epic
       - key: AUTH_RATE_LIMIT_STORE
         value: memory
 
@@ -46,7 +46,7 @@ services:
 
       # Origen del frontend, sin /login. Para otros despliegues usar su propio origen.
       - key: CORS_ORIGINS
-        value: https://umsspira-web.vercel.app
+        value: https://umsspira-soty.vercel.app
 
       # Configurar con un proveedor real para registro, verificación y activación.
       # En Free, los puertos SMTP 25/465/587 están bloqueados: consultar la guía.

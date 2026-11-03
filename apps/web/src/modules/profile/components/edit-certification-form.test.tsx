@@ -4,6 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { actualizarCertificacion, obtenerCertificacion, subirRespaldo } from '@/modules/profile/services/perfil-api';
 
 import { ProfileStoreProvider, useProfileStore } from '@/modules/profile/state/profile-store';
+import { PROFILE_RECORDS_MOCK } from '@/modules/profile/testing/profile-fixtures';
 import type { CertificationRecord } from '@/modules/profile/types/profile-record';
 import { ApiError } from '@/shared/services/api-client';
 
@@ -71,9 +72,10 @@ function elegirFoto(archivo: File) {
   fireEvent.change(inputFoto, { target: { files: [archivo] } });
 }
 
+// El perfil ya cargado en el estado compartido (incluye cert-1 y cert-3)
 function renderForm() {
   render(
-    <ProfileStoreProvider>
+    <ProfileStoreProvider initialRecords={PROFILE_RECORDS_MOCK}>
       <EditCertificationForm />
       <CertificationName id={routeId} />
     </ProfileStoreProvider>,

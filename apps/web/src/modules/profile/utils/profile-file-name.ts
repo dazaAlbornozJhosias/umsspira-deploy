@@ -18,5 +18,6 @@ export function slugifyName(name: string): string {
 
 /** Nombre del archivo exportado: perfil_[nombre_egresado]_[fecha_exportacion].json */
 export function buildProfileFileName(name: string, date: Date): string {
-  return `perfil_${slugifyName(name)}_${formatExportDate(date)}.json`;
+  // Sin nombre registrado se usa "egresado" para no dejar el archivo como "perfil__fecha.json"
+  return `perfil_${slugifyName(name) || 'egresado'}_${formatExportDate(date)}.json`;
 }

@@ -1,4 +1,4 @@
-import { profileTimeline } from '@/modules/profile/data/profile-data';
+import { profileTimeline } from '@/modules/profile/testing/profile-fixtures';
 import type { TimelineSection } from '@/modules/profile/data/profile-data';
 
 import { sortSectionsByRecency } from './sort-by-recency';

@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
+import { PROFILE_RECORDS_MOCK } from '@/modules/profile/testing/profile-fixtures';
 import { ProfileStoreProvider, useProfileStore } from '@/modules/profile/state/profile-store';
 import type { EducationRecord, ExperienceRecord } from '@/modules/profile/types/profile-record';
 import { clearAccessToken, setAccessToken } from '@/shared/services/auth-session';

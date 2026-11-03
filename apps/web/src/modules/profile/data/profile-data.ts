@@ -1,6 +1,3 @@
-import { PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
-import { recordsToTimeline } from '@/modules/profile/utils/records-to-timeline';
-
 // verified = validado por la administración, pending = subido y en revisión
 export type BackupStatus = 'verified' | 'pending' | 'missing';
 
@@ -27,23 +24,10 @@ export type TimelineSection = {
   items: TimelineItem[];
 };
 
+// Datos del titulado con sesión que devuelve GET /api/v1/perfil; vacío = la API no lo tiene registrado
 export type ProfileHeader = {
   id: string;
-  title: string;
   name: string;
   career: string;
-  graduationYear: number;
-  verified: boolean;
+  graduationYear: number | null;
 };
-
-export const profileHeader: ProfileHeader = {
-  id: '000452',
-  title: 'Ing.',
-  name: 'Carlos Mendoza Ríos',
-  career: 'Ingeniería de Sistemas',
-  graduationYear: 2018,
-  verified: true,
-};
-
-// Línea de tiempo de los datos de prueba únicos (profile-records-data.ts)
-export const profileTimeline: TimelineSection[] = recordsToTimeline(PROFILE_RECORDS_MOCK);

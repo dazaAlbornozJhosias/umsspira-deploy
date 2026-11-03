@@ -1,4 +1,4 @@
-import { PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
+import { PROFILE_RECORDS_MOCK } from '@/modules/profile/testing/profile-fixtures';
 import type { ProfileRecords } from '@/modules/profile/types/profile-record';
 
 import { completarSeccionHref, profileCompleteness, seccionDeUrl } from './profile-completeness';

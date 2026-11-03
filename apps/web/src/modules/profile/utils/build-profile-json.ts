@@ -12,7 +12,8 @@ export type ProfileJson = {
   fechaDescarga: string;
   nombre: string;
   carrera: string;
-  promocion: number;
+  // null = la API todavía no la registra
+  promocion: number | null;
   // respaldo: nombre del archivo adjunto, null si no tiene
   // Claves de las secciones con los nombres del Sprint Backlog (HU5-05)
   'Formación académica': { institucion: string; titulo: string; grado: string; anio: number | null; respaldo: string | null }[];

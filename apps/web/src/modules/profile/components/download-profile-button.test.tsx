@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 
-import { profileHeader } from '@/modules/profile/data/profile-data';
-import { PROFILE_RECORDS_MOCK } from '@/modules/profile/data/profile-records-data';
+import { profileHeader } from '@/modules/profile/testing/profile-fixtures';
+import { PROFILE_RECORDS_MOCK } from '@/modules/profile/testing/profile-fixtures';
 
 import DownloadProfileButton from './download-profile-button';
 

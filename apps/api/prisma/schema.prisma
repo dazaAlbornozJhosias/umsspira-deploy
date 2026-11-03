@@ -410,6 +410,8 @@ model Titulado {
   calculo_radar_registros            CalculoRadar[]
   palabra_clave_no_mapeada_registros PalabraClaveNoMapeada[]
 
+  certificacion_creacion_registros CertificacionCreacion[]
+
   @@map("titulado")
 }
 
@@ -1394,4 +1396,18 @@ model EmpresaUsuario {
   @@index([id_empresa, estado], map: "idx_e4_empresa_usuario_estado")
   @@index([id_usuario], map: "idx_e4_empresa_usuario_usuario")
   @@map("empresa_usuario")
+}
+
+// Conserva el resultado del intento cuando se elimina el registro.
+// id_certificacion no lleva FK para impedir que un replay resucite un registro borrado.
+model CertificacionCreacion {
+  id_titulado      String   @db.Uuid
+  id_operacion     String   @db.Uuid
+  hash_entrada     String   @db.VarChar(64)
+  id_certificacion String   @db.Uuid
+  creada_en        DateTime @default(now()) @db.Timestamptz(6)
+  titulado         Titulado @relation(fields: [id_titulado], references: [id], onDelete: Cascade)
+
+  @@id([id_titulado, id_operacion])
+  @@map("certificacion_creacion")
 }

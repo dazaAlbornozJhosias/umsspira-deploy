@@ -26,6 +26,10 @@ export interface CertificationInput {
   anioEmision: number;
 }
 
+export interface CertificationCreationInput extends CertificationInput {
+  idOperacion?: string;
+}
+
 export type ProfileChange =
   | { section: 'formacion-academica'; data: EducationInput }
   | { section: 'experiencia-laboral'; data: ExperienceInput }

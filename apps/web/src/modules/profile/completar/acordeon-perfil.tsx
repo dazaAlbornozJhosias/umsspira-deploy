@@ -19,6 +19,7 @@ import {
   subirRespaldo,
 } from '@/modules/profile/services/perfil-api';
 import { useProfileStore } from '@/modules/profile/state/profile-store';
+import { crearIdOperacion } from '@/modules/profile/utils/certification-operation';
 import { urlDeArchivo } from '@/modules/profile/utils/backup-url';
 import {
   profileCompleteness,
@@ -51,7 +52,7 @@ export function AcordeonPerfil({
   // Avance (0 a 100) de la subida del respaldo mientras se guarda una certificación
   const [progresoSubida, setProgresoSubida] = useState<number>();
   // Certificación ya creada cuyo respaldo no se pudo subir: al reintentar se sube solo la foto, sin duplicar (T8.6)
-  const pendienteRef = useRef<{ clave: string; creada: CertificationRecord } | null>(null);
+  const pendienteRef = useRef<{ clave: string; idOperacion: string; creada?: CertificationRecord } | null>(null);
  
   useEffect(() => {
     if (!avisoBorrador) return;
@@ -219,11 +220,12 @@ export function AcordeonPerfil({
               certificacion.grado,
             ]);
             // 1) se crea la certificación (o se reutiliza la que ya quedó creada) y 2) con su id se sube la foto
-            let creada = pendienteRef.current?.clave === clave ? pendienteRef.current.creada : null;
-            if (!creada) {
-              creada = await crearCertificacion(certificacion);
-              pendienteRef.current = { clave, creada };
+            if (!pendienteRef.current || pendienteRef.current.clave !== clave) {
+              pendienteRef.current = { clave, idOperacion: crearIdOperacion() };
             }
+            const intento = pendienteRef.current;
+            const creada = intento.creada ?? await crearCertificacion(certificacion, intento.idOperacion);
+            intento.creada = creada;
             if (certificacion.respaldo) {
               await subirRespaldo(creada.id, certificacion.respaldo, setProgresoSubida);
             }

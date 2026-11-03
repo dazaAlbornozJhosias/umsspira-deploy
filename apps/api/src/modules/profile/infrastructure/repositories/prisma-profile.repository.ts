@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../../../../generated/prisma/client';
 import { PrismaService } from '../../../../shared/infrastructure/database/prisma.service';
@@ -5,7 +6,7 @@ import { BusinessRuleError } from '../../../../shared/errors/business-rule-error
 import type { StoredFile } from '../../../../shared/files/contracts/uploaded-file';
 import type { ProfileRepository } from '../../application/ports/profile-repository.port';
 import type {
-  CertificationInput,
+  CertificationCreationInput,
   EducationInput,
   ExperienceInput,
   ProfileChange,
@@ -120,21 +121,52 @@ export class PrismaProfileRepository implements ProfileRepository {
     );
   }
 
-  async createCertification(scope: ProfileScope, input: CertificationInput) {
+  async createCertification(scope: ProfileScope, input: CertificationCreationInput) {
     return this.prisma.$transaction(
       async (tx) => {
         await lockGraduate(tx, scope);
-        return toCertification(
-          await tx.certificacion.create({
-            data: {
-              id_titulado: scope.graduateId,
-              nombre: input.nombre,
-              entidad_emisora: input.entidadEmisora,
-              grado: input.grado,
-              anio_emision: input.anioEmision,
-            },
-          }),
-        );
+        const inputHash = createHash('sha256').update(JSON.stringify({
+          nombre: input.nombre,
+          entidadEmisora: input.entidadEmisora,
+          grado: input.grado,
+          anioEmision: input.anioEmision,
+        })).digest('hex');
+        if (input.idOperacion) {
+          const previous = await tx.certificacionCreacion.findUnique({
+            where: { id_titulado_id_operacion: { id_titulado: scope.graduateId, id_operacion: input.idOperacion } },
+          });
+          if (previous) {
+            if (previous.hash_entrada !== inputHash) {
+              throw new BusinessRuleError('conflict', 'CERTIFICATION_OPERATION_CONFLICT', 'El identificador del intento ya se utilizó con otros datos');
+            }
+            const existing = await tx.certificacion.findFirst({
+              where: { id: previous.id_certificacion, id_titulado: scope.graduateId },
+              include: certificationInclude,
+            });
+            if (!existing) {
+              throw new BusinessRuleError('expired', 'CERTIFICATION_OPERATION_GONE', 'La certificación de este intento ya fue eliminada. Inicia un nuevo registro');
+            }
+            return toCertification(existing);
+          }
+        }
+        const created = await tx.certificacion.create({
+          data: {
+            id_titulado: scope.graduateId,
+            nombre: input.nombre,
+            entidad_emisora: input.entidadEmisora,
+            grado: input.grado,
+            anio_emision: input.anioEmision,
+          },
+        });
+        if (input.idOperacion) {
+          await tx.certificacionCreacion.create({ data: {
+            id_titulado: scope.graduateId,
+            id_operacion: input.idOperacion,
+            hash_entrada: inputHash,
+            id_certificacion: created.id,
+          } });
+        }
+        return toCertification(created);
       },
       { timeout: 15000 },
     );

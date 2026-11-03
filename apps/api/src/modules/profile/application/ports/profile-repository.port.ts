@@ -10,7 +10,7 @@ import type {
 } from '../../domain/entities/profile-record';
 import type { ProfessionalDescription } from '../../domain/entities/professional-description';
 import type {
-  CertificationInput,
+  CertificationCreationInput,
   EducationInput,
   ExperienceInput,
   ProfileChange,
@@ -29,7 +29,7 @@ export interface ProfileRepository {
   summary(scope: ProfileScope): Promise<ProfileSnapshot>;
   createEducation(scope: ProfileScope, input: EducationInput): Promise<EducationRecord>;
   createExperience(scope: ProfileScope, input: ExperienceInput): Promise<ExperienceRecord>;
-  createCertification(scope: ProfileScope, input: CertificationInput): Promise<CertificationRecord>;
+  createCertification(scope: ProfileScope, input: CertificationCreationInput): Promise<CertificationRecord>;
   find(scope: ProfileScope, section: ProfileSection, id: string): Promise<ProfileRecord>;
   update(scope: ProfileScope, id: string, change: ProfileChange): Promise<ProfileRecord>;
   remove(scope: ProfileScope, section: ProfileSection, id: string): Promise<void>;

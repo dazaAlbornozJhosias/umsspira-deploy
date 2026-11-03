@@ -167,7 +167,7 @@ describe('ProfileRecordsManager', () => {
 
   describe('aviso de resultado al eliminar (T9.6)', () => {
     it.each([
-      ['education', 'Educación', PROFILE_RECORDS_MOCK.education[0].id, 'formacion-academica'],
+      ['education', 'Formación académica', PROFILE_RECORDS_MOCK.education[0].id, 'formacion-academica'],
       ['experience', 'Experiencia', PROFILE_RECORDS_MOCK.experience[0].id, 'experiencia-laboral'],
       ['certification', 'Certificaciones', PROFILE_RECORDS_MOCK.certification[0].id, 'certificaciones'],
     ])('en %s muestra "Registro eliminado" y solo llama a nuestro endpoint', async (_section, pestana, id, ruta) => {

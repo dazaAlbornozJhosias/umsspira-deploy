@@ -23,6 +23,14 @@ describe('FormacionAcademicaForm', () => {
     }
   });
 
+  it('marca con asterisco los 4 campos obligatorios', () => {
+    const { container } = render(<FormacionAcademicaForm formaciones={[]} onAgregar={jest.fn()} />);
+
+    for (const id of ['institucion', 'titulo', 'anioEgreso', 'grado']) {
+      expect(container.querySelector(`label[for="${id}"]`)?.className).toContain("after:content-['*']");
+    }
+  });
+
   it('avisa cuántos errores hay a la vista para el contador de la sección (HU-02, AC 6)', async () => {
     const onErroresChange = jest.fn();
     render(

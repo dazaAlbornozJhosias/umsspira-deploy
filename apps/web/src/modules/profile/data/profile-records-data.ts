@@ -17,7 +17,7 @@ export function toRecordSection(value: string | undefined): RecordSection {
 }
 
 export const SECTION_LABELS: Record<RecordSection, string> = {
-  education: 'Educación',
+  education: 'Formación académica',
   experience: 'Experiencia',
   certification: 'Certificaciones',
 };

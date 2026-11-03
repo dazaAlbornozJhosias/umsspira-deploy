@@ -118,3 +118,30 @@ describe('Completar perfil · guardar certificación con respaldo (T8.4 y T8.6)'
   });
 });
  
+
+beforeEach(() => { crearCertificacion.mockReset(); subirRespaldo.mockReset(); });
+
+it('reutiliza el identificador de operación al reintentar una respuesta de creación perdida', async () => {
+  crearCertificacion.mockRejectedValueOnce(new ApiError(0, 'Respuesta perdida')).mockResolvedValueOnce(CREADA);
+  subirRespaldo.mockResolvedValue(undefined);
+  abrirCertificaciones();
+  llenarYAgregar();
+  await screen.findByRole('button', { name: 'Reintentar' });
+  const firstKey = crearCertificacion.mock.calls[0][1];
+  expect(firstKey).toMatch(/^[0-9a-f-]{36}$/i);
+  fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+  await screen.findByText('Certificación guardada');
+  expect(crearCertificacion.mock.calls[1][1]).toBe(firstKey);
+});
+
+it('un registro nuevo después de un éxito usa otra operación aunque tenga los mismos textos', async () => {
+  crearCertificacion.mockResolvedValue(CREADA);
+  subirRespaldo.mockResolvedValue(undefined);
+  abrirCertificaciones();
+  llenarYAgregar();
+  await screen.findByText('Certificación guardada');
+  const firstKey = crearCertificacion.mock.calls[0][1];
+  llenarYAgregar();
+  await waitFor(() => expect(crearCertificacion).toHaveBeenCalledTimes(2));
+  expect(crearCertificacion.mock.calls[1][1]).not.toBe(firstKey);
+});

@@ -27,10 +27,12 @@ const displayKeywords = safeKeywords.slice(0, 5);
       </h3>
       <ul className="flex flex-col gap-2">
         {displayKeywords.map((kw, index) => (
-          <li key={index} className="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-md shadow-sm">
+          <li key={index} className="flex flex-wrap gap-2 justify-between items-center p-3 bg-white border border-gray-200 rounded-md shadow-sm">
             <span className="font-medium text-gray-700 capitalize">{kw.keyword}</span>
-            <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
               <span>Freq: {kw.frequency}</span>
+              <span>Puntos: {Number.isFinite(kw.points) ? kw.points : "—"}</span>
+              <span>Peso: {Number.isFinite(kw.weight) ? kw.weight : "—"}</span>
               <span className="font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
                 {(kw.percentage ?? 0).toFixed(0)}%
               </span>

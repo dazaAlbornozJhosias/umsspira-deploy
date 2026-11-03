@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { clearPendingProfileChanges } from '../services/pending-profile-changes';
 
 export interface UseRecalculateStateReturn {
   hasPendingChanges: boolean;
@@ -21,6 +22,7 @@ export function useRecalculateState(): UseRecalculateStateReturn {
   }, []);
 
   const clearPendingChanges = useCallback(() => {
+    clearPendingProfileChanges();
     setHasPendingChanges(false);
   }, []);
 

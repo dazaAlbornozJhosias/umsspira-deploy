@@ -7,7 +7,7 @@ import {
   type AffinityKeywordContribution,
 } from '@umsspira/shared-types/src/affinity';
 
-import { apiClient, apiFetch } from './api-client';
+import { ApiError, apiClient, apiFetch } from './api-client';
 
 import affinityVectorMock from '../mocks/affinity-vector-mock.json';
 import affinityConfigMock from '../mocks/affinity-config-mock.json';
@@ -18,7 +18,6 @@ const AREA_BY_ID = Object.fromEntries(
 ) as Record<string, AffinityArea>;
 
 const AFFINITY_ENDPOINT = '/api/v1/radar';
-const AFFINITY_CALCULATE_ENDPOINT = '/affinity/calculate';
 const RADAR_RECALCULATE_ENDPOINT = '/api/v1/radar/recalculate';
 const AFFINITY_CONFIG_ENDPOINT = '/affinity/config';
 
@@ -126,7 +125,7 @@ export async function getAffinityVector(): Promise<AffinityVectorResponse> {
     return affinityVectorMock as AffinityVectorResponse;
   }
 
-  const response = await apiFetch<RadarApiResponse>(AFFINITY_ENDPOINT);
+  const response = await requestRadar(AFFINITY_ENDPOINT);
 
   return adaptRadarResponse(response);
 }
@@ -141,10 +140,7 @@ export async function calculateAffinityVector(): Promise<AffinityVectorResponse>
     } as AffinityVectorResponse;
   }
 
-  return apiClient.post<AffinityVectorResponse>(
-    AFFINITY_CALCULATE_ENDPOINT,
-    {},
-  );
+  return recalculateAffinity();
 }
 
 export async function getAffinityConfig(): Promise<AffinityConfigPayload> {
@@ -186,33 +182,37 @@ export async function recalculateAffinity(): Promise<AffinityVectorResponse> {
     } as AffinityVectorResponse;
   }
 
-  const controller = new AbortController();
-
-  const timeoutId = setTimeout(
-    () => controller.abort(),
-    RECALCULATE_TIMEOUT_MS,
+  return adaptRadarResponse(
+    await requestRadar(RADAR_RECALCULATE_ENDPOINT, { method: 'POST' }),
   );
+}
+
+// El límite incluye autenticación, respuesta y lectura del cuerpo.
+async function requestRadar(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<RadarApiResponse> {
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new Error('No se pudo actualizar tu radar'));
+    }, RECALCULATE_TIMEOUT_MS);
+  });
 
   try {
-    const response = await apiFetch<RadarApiResponse>(
-      RADAR_RECALCULATE_ENDPOINT,
-      {
-        method: 'POST',
-        signal: controller.signal,
-      },
-    );
-
-    return adaptRadarResponse(response);
+    return await Promise.race([
+      apiFetch<RadarApiResponse>(endpoint, { ...options, signal: controller.signal }),
+      timeout,
+    ]);
   } catch (error) {
-    if (
-      controller.signal.aborted ||
-      (error instanceof Error && error.name === 'AbortError')
-    ) {
+    if (controller.signal.aborted ||
+      (error instanceof ApiError && error.status === 0)) {
       throw new Error('No se pudo actualizar tu radar');
     }
-
     throw error;
   } finally {
-    clearTimeout(timeoutId);
+    clearTimeout(timeoutId!);
   }
 }

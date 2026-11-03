@@ -14,6 +14,7 @@ import { VariationIndicator } from './variation-indicator';
 import { clampPercentage, formatPercentage } from '../utils/percentage';
 import { sortAreasByAffinityDesc } from '../utils/affinity-math';
 import { useRecalculateState } from '../hooks/use-recalculate-state';
+import { hasPendingProfileChanges } from '../services/pending-profile-changes';
 import { DEBOUNCE_MS } from '../hooks/use-debounced-batch';
 import {
   recalculateAffinity,
@@ -113,6 +114,9 @@ export const GraduateAffinityView: React.FC<GraduateAffinityViewProps> = ({
   const hasPendingChangesRef = useRef<boolean>(hasPendingChanges);
   const hasRadarErrorRef = useRef<boolean>(hasRadarError);
   const recalculateRequestIdRef = useRef<number>(0);
+  const readRequestIdRef = useRef(0);
+  const isMountedRef = useRef(false);
+  const retryInFlightRef = useRef(false);
   const autoRecalculateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const changeVersionRef = useRef<number>(0);
 
@@ -135,8 +139,6 @@ export const GraduateAffinityView: React.FC<GraduateAffinityViewProps> = ({
 
     const requestId = ++recalculateRequestIdRef.current;
     setIsLoading(true);
-    hasRadarErrorRef.current = false;
-    setHasRadarError(false);
     setIsPendingDialogOpen(false);
     const versionAtStart = changeVersionRef.current;
 
@@ -220,51 +222,77 @@ export const GraduateAffinityView: React.FC<GraduateAffinityViewProps> = ({
     }, DEBOUNCE_MS);
   }, [handleRecalculate]);
 
-  useEffect(() => {
-    let isMounted = true;
+  const loadInitialVector = useCallback(async () => {
+    const requestId = ++readRequestIdRef.current;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_resolve, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('No se pudo actualizar tu radar')), DEFAULT_RECALCULATE_TIMEOUT_MS);
+    });
+    try {
+      setIsLoading(true);
+      const result = await Promise.race([getAffinityVector(), timeout]);
+      if (!isMountedRef.current || requestId !== readRequestIdRef.current) return;
+      const processed = processVectorAreas(result.areas);
+      setHasLaborHistory(result.hasLaborHistory ?? null);
+      candidateAreasRef.current = processed;
+      setCandidateAreas(processed);
+      setLoadedKeywords(extractKeywords(processed));
+      setHasValidRadar(true);
+      setLastCalculatedDate(formatCalculatedDate(result.calculatedAt));
+      hasRadarErrorRef.current = false;
+      setHasRadarError(false);
 
-    async function loadInitialVector() {
-      try {
-        setIsLoading(true);
-        const result = await getAffinityVector();
-        if (!isMounted) return;
-        const processed = processVectorAreas(result.areas);
-        setHasLaborHistory(result.hasLaborHistory ?? null);
-        candidateAreasRef.current = processed;
-        setCandidateAreas(processed);
-        setLoadedKeywords(extractKeywords(processed));
-        setHasValidRadar(true);
-        setLastCalculatedDate(formatCalculatedDate(result.calculatedAt));
-        hasRadarErrorRef.current = false;
-        setHasRadarError(false);
-
-        if ((result as { hasPendingChanges?: boolean }).hasPendingChanges) {
-          hasPendingChangesRef.current = true;
-          markPendingChanges();
+      const hasPendingDeletion = hasPendingProfileChanges();
+      if (result.hasPendingChanges || hasPendingDeletion) {
+        hasPendingChangesRef.current = true;
+        markPendingChanges();
+        if (hasPendingDeletion) {
+          changeVersionRef.current += 1;
+          setChangeVersion(changeVersionRef.current);
+        } else {
           scheduleDebouncedRecalculate();
         }
-      } catch {
-        if (isMounted) {
-          hasRadarErrorRef.current = true;
-          setHasRadarError(true);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+      }
+    } catch {
+      if (isMountedRef.current && requestId === readRequestIdRef.current) {
+        hasRadarErrorRef.current = true;
+        setHasRadarError(true);
+      }
+    } finally {
+      clearTimeout(timeoutId);
+      if (isMountedRef.current && requestId === readRequestIdRef.current) {
+        setIsLoading(false);
       }
     }
+  }, [markPendingChanges, scheduleDebouncedRecalculate]);
 
-    loadInitialVector();
-
+  useEffect(() => {
+    isMountedRef.current = true;
+    void loadInitialVector();
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
+      readRequestIdRef.current += 1;
+      recalculateRequestIdRef.current += 1;
       if (autoRecalculateTimerRef.current !== null) {
         clearTimeout(autoRecalculateTimerRef.current);
         autoRecalculateTimerRef.current = null;
       }
     };
-  }, [markPendingChanges, scheduleDebouncedRecalculate]);
+  }, [loadInitialVector]);
+
+  const handleRetry = useCallback(async () => {
+    if (retryInFlightRef.current) return;
+    retryInFlightRef.current = true;
+    try {
+      if (hasValidRadar) {
+        await handleRecalculate({ force: true });
+      } else {
+        await loadInitialVector();
+      }
+    } finally {
+      retryInFlightRef.current = false;
+    }
+  }, [hasValidRadar, handleRecalculate, loadInitialVector]);
 
   const handleProfileChange = useCallback(() => {
     changeVersionRef.current += 1;
@@ -428,9 +456,9 @@ export const GraduateAffinityView: React.FC<GraduateAffinityViewProps> = ({
                   )}
 
                   {hasRadarError && (
-                    <div className="absolute inset-0 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 z-20 flex items-center justify-center p-4 rounded-xl">
                       <RadarErrorState
-                        onRetry={() => handleRecalculate({ force: true })}
+                        onRetry={() => { void handleRetry(); }}
                         isRetrying={isLoading}
                       />
                     </div>

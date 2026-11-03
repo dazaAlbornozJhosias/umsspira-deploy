@@ -40,6 +40,8 @@ it('HU8: muestra los aportes reales recibidos por el servicio en la inspección'
   const panel = screen.getByText('Palabras clave más influyentes').parentElement!;
   expect(within(panel).getByText('keyword-real-hu8')).toBeInTheDocument();
   expect(within(panel).getByText('Freq: 2')).toBeInTheDocument();
+  expect(within(panel).getByText('Puntos: 10')).toBeInTheDocument();
+  expect(within(panel).getByText('Peso: 5')).toBeInTheDocument();
   expect(within(panel).getByText('25%')).toBeInTheDocument();
 });
 
@@ -76,6 +78,8 @@ it('actualiza los aportes y el indicador de historial después de recalcular', a
   await screen.findByText('Radar actualizado');
   const panel = screen.getByText('Palabras clave más influyentes').parentElement!;
   expect(within(panel).getByText('nuevo-aporte')).toBeInTheDocument();
+  expect(within(panel).getByText('Puntos: 5')).toBeInTheDocument();
+  expect(within(panel).getByText('Peso: 5')).toBeInTheDocument();
   expect(within(panel).queryByText('keyword-real-hu8')).not.toBeInTheDocument();
   expect(screen.getByText('Sin datos de historial laboral')).toBeInTheDocument();
 });

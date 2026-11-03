@@ -1,8 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { Camera, Check, FileText } from 'lucide-react';
 import Link from 'next/link';
 
+import { MensajeError } from '@/modules/profile/validation/mensaje-error';
+import { validarRespaldo } from '@/modules/profile/validation/reglas-perfil';
 
 // Campos de la v3 del Figma: fondo crema, borde arena y esquinas de 8px
 export const INPUT_CLASS =
@@ -110,6 +113,22 @@ type BackupFieldProps = {
 
 // Respaldo documental con estado, enlace al archivo y botones para subir foto o documento
 export function BackupField({ documentName, documentUrl, isVerified, onDocumentChange, onViewBackup }: BackupFieldProps) {
+  // Mismas reglas que en Completar perfil: el atributo accept se puede saltar eligiendo "Todos los archivos"
+  const [backupError, setBackupError] = useState<string>();
+
+  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const error = validarRespaldo(file);
+    setBackupError(error);
+    if (error) {
+      // El archivo inválido no se adjunta; se limpia para poder elegir otro
+      event.target.value = '';
+      return;
+    }
+    onDocumentChange(event);
+  }
+
   return (
     <div className="flex flex-col gap-[7px]">
       <span className="text-[13px] font-semibold text-blue-fantastic">Respaldo documental</span>
@@ -146,16 +165,17 @@ export function BackupField({ documentName, documentUrl, isVerified, onDocumentC
         <label className="flex cursor-pointer items-center gap-2 rounded-md border border-oatmeal bg-white px-4 py-2.5 text-[13px] font-semibold text-blue-fantastic transition hover:bg-palladian">
           <Camera className="h-4 w-4" aria-hidden="true" />
           Subir foto
-          <input type="file" accept="image/jpeg" className="hidden" onChange={onDocumentChange} />
+          <input type="file" accept="image/jpeg" className="hidden" onChange={handleChange} />
         </label>
         <label className="flex cursor-pointer items-center gap-2 rounded-md bg-abyssal-blue px-4 py-2.5 text-[13px] font-semibold text-white transition hover:brightness-110">
           <FileText className="h-4 w-4" aria-hidden="true" />
           Subir documento
-          <input type="file" accept="image/jpeg" className="hidden" onChange={onDocumentChange} />
+          <input type="file" accept="image/jpeg" className="hidden" onChange={handleChange} />
         </label>
         {/* Decisión del equipo: solo JPG (BUG-HU2-007) */}
         <p className="w-full text-center text-xs text-blue-fantastic/70">Solo JPG, máximo 5 MB</p>
       </div>
+      <MensajeError id="error-backup" mensaje={backupError} />
     </div>
   );
 }
